@@ -1,0 +1,2080 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aniversários — Paróquia de São Paulo de Luanda</title>
+
+  <!-- SheetJS -->
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- html2canvas para exportar gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #fffdf6;
+      --card: #ffffff;
+      --ink: #1b1a17;
+      --muted: #6b7280;
+      --accent: #c28402;
+      --accent-2: #d39f21;
+      --ok: #16a34a;
+      --warn: #b45309;
+      --border: #ecd39a;
+      --border-light: #f0e1b6;
+      --radius: 16px;
+      --error: #dc2626;
+      --info: #2563eb;
+      --birthday: #d97706;
+      --birthday-light: #fef3c7;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 16px;
+      width: 100%;
+    }
+
+    .card {
+      width: 100%;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: -1px 9px 8px rgba(0, 0, 0, 0.08);
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .hero-brand {
+      width: 100%;
+      padding: 16px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .hero-brand img {
+      width: 72px;
+      height: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 4px;
+    }
+
+    .title {
+      font-weight: 800;
+      font-size: 18px;
+    }
+
+    .subtitle {
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .info {
+      margin-top: 6px;
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .meta {
+      color: #374151;
+      margin-top: 2px;
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: 0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .btn.secondary {
+      background: #fff;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .btn.birthday {
+      background: var(--birthday);
+      border-color: var(--birthday);
+    }
+
+    .btn.small {
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .btn:hover {
+      background: var(--accent-2);
+      transform: translateY(-1px);
+    }
+
+    .btn.secondary:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn.birthday:hover {
+      background: #db2777;
+    }
+
+    .debug-upload {
+      margin: 16px 0;
+      padding: 16px;
+      border: 2px dashed #dc2626;
+      border-radius: 12px;
+      text-align: center;
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    .debug-upload input[type="file"] {
+      margin: 8px 0;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+      width: 100%;
+    }
+
+    .dashboard-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: -1px 9px 8px rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--border);
+      position: relative;
+    }
+
+    .dashboard-card.wide {
+      grid-column: span 2;
+    }
+
+    .dashboard-card.full {
+      grid-column: 1 / -1;
+    }
+
+    .dashboard-card.birthday-highlight {
+      background: linear-gradient(135deg, var(--birthday), #f472b6);
+      color: white;
+      border-color: var(--birthday);
+    }
+
+    .dashboard-card.birthday-highlight .stat-number {
+      color: white;
+    }
+
+    .dashboard-card.birthday-highlight .stat-label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .card-header h3 {
+      margin: 0;
+      color: var(--accent);
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .birthday-highlight .card-header h3 {
+      color: white;
+    }
+
+    .birthday-highlight .card-header {
+      border-bottom-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .stat-number {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin: 8px 0;
+      line-height: 1;
+    }
+
+    .stat-number.large {
+      font-size: 3rem;
+    }
+
+    .stat-number.medium {
+      font-size: 1.8rem;
+    }
+
+    .stat-number.small {
+      font-size: 1.4rem;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .birthday-person {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--birthday-light);
+      border: 1px solid var(--birthday);
+      border-radius: 12px;
+      margin-bottom: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .birthday-person:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.2);
+    }
+
+    .birthday-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--birthday);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: white;
+    }
+
+    .birthday-info {
+      flex: 1;
+    }
+
+    .birthday-name {
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 2px;
+    }
+
+    .birthday-details {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .birthday-age {
+      background: var(--birthday);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin: 16px 0;
+    }
+
+    .chart-container.small {
+      height: 200px;
+    }
+
+    .table-controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(194, 132, 2, 0.15);
+    }
+
+    .filter-select {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      background: white;
+    }
+
+    .table-container {
+      max-height: 400px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 12px;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      min-width: 600px;
+    }
+
+    .data-table th {
+      background: #faf7ee;
+      padding: 8px 12px;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .data-table th:hover {
+      background: #f0e68c;
+    }
+
+    .data-table th.sortable::after {
+      content: ' ↕️';
+      font-size: 12px;
+      opacity: 0.5;
+    }
+
+    .data-table th.sort-asc::after {
+      content: ' ↑';
+      opacity: 1;
+    }
+
+    .data-table th.sort-desc::after {
+      content: ' ↓';
+      opacity: 1;
+    }
+
+    .data-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border-light);
+      white-space: nowrap;
+    }
+
+    .data-table tr:hover {
+      background: #fffbf0;
+    }
+
+    .month-selector {
+      display: flex;
+      gap: 8px;
+      margin: 16px 0;
+      flex-wrap: wrap;
+    }
+
+    .month-btn {
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .month-btn.active {
+      background: var(--birthday);
+      color: white;
+      border-color: var(--birthday);
+    }
+
+    .month-btn:hover {
+      background: var(--birthday-light);
+      border-color: var(--birthday);
+    }
+
+    .month-btn.active:hover {
+      background: #db2777;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+
+    .empty-state .icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .footer {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      margin: 24px 0;
+    }
+
+    /* Responsividade Mobile */
+    @media (max-width: 480px) {
+      .container {
+        padding: 8px;
+        max-width: 100%;
+      }
+
+      .dashboard-grid {
+        /* grid-template-columns: 1fr; */
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .dashboard-card {
+        padding: 12px;
+        margin-bottom: 8px;
+        border-radius: 12px;
+      }
+
+      .dashboard-card.wide,
+      .dashboard-card.full {
+        grid-column: 1;
+      }
+
+      .hero-brand {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px;
+        gap: 8px;
+      }
+
+      .hero-brand img {
+        width: 48px;
+      }
+
+      .title {
+        font-size: 16px;
+      }
+
+      .subtitle {
+        font-size: 14px;
+      }
+
+      .info {
+        font-size: 14px;
+      }
+
+      .meta {
+        font-size: 12px;
+      }
+
+      .actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 6px;
+      }
+
+      .actions .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px;
+        font-size: 14px;
+      }
+
+      .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .card-header h3 {
+        font-size: 14px;
+      }
+
+      .card-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .btn.small {
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+
+      .month-selector {
+        justify-content: flex-start;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+
+      .month-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+        min-width: 60px;
+      }
+
+      .table-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .search-input,
+      .filter-select {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+      }
+
+      .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .data-table {
+        min-width: 600px;
+        font-size: 12px;
+      }
+
+      .data-table th,
+      .data-table td {
+        padding: 6px 8px;
+        white-space: nowrap;
+      }
+
+      .chart-container {
+        height: 200px;
+        margin: 8px 0;
+      }
+
+      .chart-container.small {
+        height: 180px;
+      }
+
+      .stat-number {
+        font-size: 1.8rem;
+      }
+
+      .stat-number.large {
+        font-size: 2.2rem;
+      }
+
+      .stat-number.medium {
+        font-size: 1.4rem;
+      }
+
+      .stat-number.small {
+        font-size: 1.2rem;
+      }
+
+      .stat-label {
+        font-size: 11px;
+      }
+
+      .birthday-person {
+        flex-direction: row;
+        text-align: left;
+        gap: 12px;
+        padding: 10px;
+      }
+
+      .birthday-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+
+      .birthday-info {
+        flex: 1;
+        text-align: left;
+      }
+
+      .birthday-name {
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+
+      .birthday-details {
+        font-size: 11px;
+        line-height: 1.3;
+      }
+
+      .birthday-age {
+        font-size: 11px;
+        padding: 4px 6px;
+        flex-shrink: 0;
+      }
+
+      .empty-state {
+        padding: 20px 10px;
+      }
+
+      .empty-state .icon {
+        font-size: 32px;
+        margin-bottom: 8px;
+      }
+    }
+
+    @media (max-width: 768px) and (min-width: 481px) {
+      .container {
+        padding: 12px;
+      }
+
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .dashboard-card.wide,
+      .dashboard-card.full {
+        grid-column: 1;
+      }
+
+      .actions {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .actions .btn {
+        flex: 1;
+        min-width: 140px;
+      }
+
+      .chart-container {
+        height: 250px;
+      }
+
+      .chart-container.small {
+        height: 200px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="card">
+    <div class="container">
+      <div class="hero-brand card">
+        <img id="logoImg" alt="Logo da Paróquia" onerror="this.style.display='none'" />
+        <div>
+          <div class="title" id="paroquiaNome">A carregar...</div>
+          <div class="subtitle" id="secretariado">A carregar...</div>
+          <div class="info">🎂 Aniversários da Catequese</div>
+          <div class="meta">Ano Catequético: <strong id="anoCatequetico">A carregar...</strong></div>
+          <div class="meta">Hoje: <strong id="dataHoje">-</strong></div>
+        </div>
+      </div>
+
+      <!-- Debug Mode: File Upload (só aparece se DEBUG_MODE = true) -->
+      <div id="debugUpload" class="debug-upload" style="display:none">
+        <div><strong>🔧 MODO DEBUG ATIVO</strong></div>
+        <div>Carregar arquivo Excel para testes:</div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" />
+        <button class="btn" id="loadSampleBtn">📊 Usar Dados de Exemplo</button>
+      </div>
+
+      <div class="actions">
+        <a href="index.html" class="btn secondary">📋 Lista de Catecúmenos</a>
+        <a href="lista-catequistas.html" class="btn secondary">👥 Lista de Catequistas</a>
+        <a href="dashboard.html" class="btn secondary">📊 Dashboard</a>
+        <button class="btn birthday" id="refreshBtn">🔄 Atualizar</button>
+        <button class="btn secondary" id="exportAllBtn">📊 Exportar Tudo</button>
+        <button class="btn secondary" id="printPage">🖨️ Imprimir</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="dashboard-grid">
+
+      <!-- Aniversariantes de Hoje -->
+      <div class="dashboard-card birthday-highlight full">
+        <div class="card-header">
+          <h3>🎉 Aniversariantes de Hoje</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('todayCard', 'aniversariantes_hoje')">📊
+              XLSX</button>
+            <button class="btn small secondary" onclick="exportChartAsPNG('todayCard', 'aniversariantes_hoje')">🖼️
+              PNG</button>
+          </div>
+        </div>
+        <div id="todayCard">
+          <div class="table-controls">
+            <input type="text" id="todaySearch" class="search-input"
+              placeholder="🔍 Pesquisar por nome ou catequista...">
+            <select id="todayCatequistaFilter" class="filter-select">
+              <option value="">Todos os catequistas</option>
+            </select>
+            <select id="todayCenterFilter" class="filter-select">
+              <option value="">Todos os centros</option>
+            </select>
+          </div>
+          <div class="stat-number large" id="todayCount">0</div>
+          <div class="stat-label">Aniversariantes Hoje</div>
+          <div id="todayBirthdays" style="margin-top: 16px;"></div>
+        </div>
+      </div>
+
+      <!-- Estatísticas Rápidas -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <h3>📊 Estatísticas Rápidas</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+          <div style="text-align: center;">
+            <div class="stat-number medium" id="weekCount">0</div>
+            <div class="stat-label">Esta Semana</div>
+          </div>
+          <div style="text-align: center;">
+            <div class="stat-number medium" id="monthCount">0</div>
+            <div class="stat-label">Este Mês</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Próximos Aniversários -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <h3>📅 Próximos 7 Dias</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('upcomingCard', 'proximos_aniversarios')">📊
+              XLSX</button>
+            <button class="btn small secondary" onclick="exportChartAsPNG('upcomingCard', 'proximos_aniversarios')">🖼️
+              PNG</button>
+          </div>
+        </div>
+        <div id="upcomingCard">
+          <div class="table-controls">
+            <input type="text" id="upcomingSearch" class="search-input"
+              placeholder="🔍 Pesquisar por nome ou catequista...">
+            <select id="upcomingCatequistaFilter" class="filter-select">
+              <option value="">Todos os catequistas</option>
+            </select>
+            <select id="upcomingCenterFilter" class="filter-select">
+              <option value="">Todos os centros</option>
+            </select>
+          </div>
+          <div id="upcomingBirthdays"></div>
+        </div>
+      </div>
+
+      <!-- Seletor de Mês -->
+      <div class="dashboard-card full">
+        <div class="card-header">
+          <h3>📆 Aniversários por Mês</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('monthlyCard', 'aniversarios_mensais')">📊
+              XLSX</button>
+            <button class="btn small secondary" onclick="exportChartAsPNG('monthlyChart', 'grafico_mensal')">🖼️
+              PNG</button>
+          </div>
+        </div>
+        <div id="monthlyCard">
+          <div class="month-selector" id="monthSelector"></div>
+          <div class="chart-container small">
+            <canvas id="monthlyChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aniversários do Mês Selecionado -->
+      <div class="dashboard-card full">
+        <div class="card-header">
+          <h3 id="selectedMonthTitle">📋 Aniversários de Janeiro</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('monthDetailCard', 'detalhes_mes')">📊 XLSX</button>
+            <button class="btn small secondary" onclick="exportChartAsPNG('monthDetailCard', 'detalhes_mes')">🖼️
+              PNG</button>
+          </div>
+        </div>
+        <div id="monthDetailCard">
+          <div class="table-controls">
+            <input type="text" id="monthTableSearch" class="search-input"
+              placeholder="🔍 Pesquisar por nome ou catequista...">
+            <select id="monthCatequistaFilter" class="filter-select">
+              <option value="">Todos os catequistas</option>
+            </select>
+            <select id="monthCenterFilter" class="filter-select">
+              <option value="">Todos os centros</option>
+            </select>
+            <select id="monthStageFilter" class="filter-select">
+              <option value="">Todas as etapas</option>
+            </select>
+          </div>
+          <div class="table-container">
+            <table class="data-table" id="monthDetailTable">
+              <thead>
+                <tr>
+                  <th class="sortable" data-column="date">Data</th>
+                  <th class="sortable" data-column="name">Nome</th>
+                  <th class="sortable" data-column="birthdate">Nascimento</th>
+                  <th class="sortable" data-column="age">Idade</th>
+                  <th class="sortable" data-column="center">Centro</th>
+                  <th class="sortable" data-column="stage">Etapa</th>
+                  <th class="sortable" data-column="room">Sala</th>
+                  <th class="sortable" data-column="teachers">Catequistas</th>
+                </tr>
+              </thead>
+              <tbody id="monthDetailTableBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estatísticas por Centro -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <h3>🏢 Aniversários por Centro</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('centerCard', 'aniversarios_centro')">📊
+              XLSX</button>
+            <button class="btn small secondary" onclick="exportChartAsPNG('centerCard', 'aniversarios_centro')">🖼️
+              PNG</button>
+          </div>
+        </div>
+        <div id="centerCard">
+          <div id="centerStats"></div>
+        </div>
+      </div>
+
+      <!-- Estatísticas por Etapa -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <h3>📚 Aniversários por Etapa</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('stageCard', 'aniversarios_etapa')">📊 XLSX</button>
+            <button class="btn small secondary" onclick="exportChartAsPNG('stageCard', 'aniversarios_etapa')">🖼️
+              PNG</button>
+          </div>
+        </div>
+        <div id="stageCard">
+          <div id="stageStats"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div class="footer" id="footerText">© Paróquia de São Paulo de Luanda — Secretariado da Catequese</div>
+  <script>
+
+    // 🔧 DEBUG MODE: Altere para true para mostrar opção de upload de arquivo
+    const DEBUG_MODE = false;
+
+    let CONFIG = null;
+    let birthdayData = null;
+    let charts = {};
+    let selectedMonth = new Date().getMonth();
+    let currentTableData = [];
+    let currentSortColumn = null;
+    let currentSortDirection = 'asc';
+
+    // Dados de exemplo expandidos com datas de nascimento
+    const SAMPLE_DATA = [
+      {
+        nome: "João Silva Santos", nascimento: "15/03/2010", centro: "Centro Principal",
+        etapa: "1ª Etapa", sala: "101", horario: "Sábado Manhã",
+        catequistas: "Maria José|Pedro Costa", resultado: "Aprovado"
+      },
+      {
+        nome: "Ana Maria Fernandes", nascimento: "22/07/2009", centro: "Centro Norte",
+        etapa: "2ª Etapa", sala: "205", horario: "Domingo Tarde",
+        catequistas: "Carlos Silva", resultado: "Aprovado"
+      },
+      {
+        nome: "Miguel António Lopes", nascimento: "08/11/2011", centro: "Centro Sul",
+        etapa: "1ª Etapa", sala: "102", horario: "Sábado Tarde",
+        catequistas: "Isabel Santos|João Pereira", resultado: "Em Avaliação"
+      },
+      {
+        nome: "Beatriz Costa Rodrigues", nascimento: "14/05/2008", centro: "Centro Principal",
+        etapa: "3ª Etapa", sala: "301", horario: "Domingo Manhã",
+        catequistas: "António Silva", resultado: "Aprovado"
+      },
+      {
+        nome: "Francisco Manuel Sousa", nascimento: "30/09/2010", centro: "Centro Norte",
+        etapa: "2ª Etapa", sala: "203", horario: "Sábado Manhã",
+        catequistas: "Teresa Lopes|Manuel Costa", resultado: "Reprovado"
+      },
+      {
+        nome: "Luísa Pereira Gomes", nascimento: "12/01/2009", centro: "Centro Sul",
+        etapa: "2ª Etapa", sala: "204", horario: "Domingo Tarde",
+        catequistas: "Fernanda Lima", resultado: "Aprovado"
+      },
+      {
+        nome: "Carlos Eduardo Martins", nascimento: "03/08/2007", centro: "Centro Principal",
+        etapa: "4ª Etapa", sala: "401", horario: "Sábado Manhã",
+        catequistas: "Rosa Silva", resultado: "Aprovado"
+      },
+      {
+        nome: "Mariana Santos Oliveira", nascimento: "28/12/2012", centro: "Centro Norte",
+        etapa: "1ª Etapa", sala: "103", horario: "Domingo Manhã",
+        catequistas: "Paulo Mendes", resultado: "Aprovado"
+      },
+      {
+        nome: "Ricardo Pereira Lima", nascimento: "17/04/2009", centro: "Centro Sul",
+        etapa: "3ª Etapa", sala: "302", horario: "Sábado Tarde",
+        catequistas: "Lucia Costa|André Silva", resultado: "Reprovado"
+      },
+      {
+        nome: "Sofia Rodrigues Alves", nascimento: "09/06/2011", centro: "Centro Principal",
+        etapa: "2ª Etapa", sala: "202", horario: "Domingo Tarde",
+        catequistas: "Helena Santos", resultado: "Aprovado"
+      }
+    ];
+
+    // Nomes dos meses
+    const MONTH_NAMES = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+
+    // Utilitários
+    const norm = (s) => (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const formatNumber = (num) => new Intl.NumberFormat('pt-AO').format(num);
+    const nowStamp = () => {
+      const d = new Date();
+      return d.toLocaleString('pt-AO', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    };
+
+    // Função para calcular idade
+    function calculateAge(birthDate) {
+      if (!birthDate) return null;
+
+      let birth;
+      if (typeof birthDate === 'string' && birthDate.includes('/')) {
+        const [day, month, year] = birthDate.split('/');
+        birth = new Date(year, month - 1, day);
+      } else {
+        birth = new Date(birthDate);
+      }
+
+      if (isNaN(birth)) return null;
+
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const monthDiff = today.getMonth() - birth.getMonth();
+
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age--;
+      }
+
+      return age;
+    }
+
+    // Função para parsear data de nascimento
+    function parseBirthDate(birthDate) {
+      if (!birthDate) return null;
+
+      if (typeof birthDate === 'string' && birthDate.includes('/')) {
+        const [day, month, year] = birthDate.split('/');
+        return new Date(year, month - 1, day);
+      }
+
+      const date = new Date(birthDate);
+      return isNaN(date) ? null : date;
+    }
+
+    // Função para verificar se é aniversário hoje
+    function isBirthdayToday(birthDate) {
+      const birth = parseBirthDate(birthDate);
+      if (!birth) return false;
+
+      const today = new Date();
+      return birth.getDate() === today.getDate() && birth.getMonth() === today.getMonth();
+    }
+
+    // Função para verificar se é aniversário esta semana
+    function isBirthdayThisWeek(birthDate) {
+      const birth = parseBirthDate(birthDate);
+      if (!birth) return false;
+
+      const today = new Date();
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - today.getDay());
+
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+
+      // Criar data de aniversário para este ano
+      const thisYearBirthday = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
+
+      return thisYearBirthday >= weekStart && thisYearBirthday <= weekEnd;
+    }
+
+    // Função para verificar se é aniversário este mês
+    function isBirthdayThisMonth(birthDate) {
+      const birth = parseBirthDate(birthDate);
+      if (!birth) return false;
+
+      const today = new Date();
+      return birth.getMonth() === today.getMonth();
+    }
+
+    // Função para extrair catequistas únicos
+    function getUniqueCatequistas(data) {
+      const catequistas = new Set();
+      data.forEach(person => {
+        if (person.catequistas) {
+          person.catequistas.split('|').forEach(c => {
+            const catequista = c.trim();
+            if (catequista) catequistas.add(catequista);
+          });
+        }
+      });
+      return Array.from(catequistas).sort();
+    }
+
+    // Função para verificar se pessoa tem catequista específico
+    function hasCatequista(person, catequistaName) {
+      if (!person.catequistas || !catequistaName) return true;
+      return person.catequistas.split('|').some(c => c.trim() === catequistaName);
+    }
+
+    // Função para obter próximos aniversários (7 dias)
+    function getUpcomingBirthdays(data, days = 7) {
+      const today = new Date();
+      const upcoming = [];
+
+      for (let i = 1; i <= days; i++) {
+        const checkDate = new Date(today);
+        checkDate.setDate(today.getDate() + i);
+
+        data.forEach(person => {
+          const birth = parseBirthDate(person.nascimento);
+          if (birth && birth.getDate() === checkDate.getDate() && birth.getMonth() === checkDate.getMonth()) {
+            upcoming.push({
+              ...person,
+              daysUntil: i,
+              age: calculateAge(person.nascimento) + 1, // Idade que fará
+              birthDate: birth
+            });
+          }
+        });
+      }
+
+      return upcoming.sort((a, b) => a.daysUntil - b.daysUntil);
+    }
+
+    function mapHeaders(cols) {
+      const wanted = {
+        nome: ['nome', 'nomecompleto'],
+        nascimento: ['nascimento', 'datanascimento', 'data', 'dn'],
+        centro: ['centro', 'centrodecatequese', 'paroquia', 'comunidade'],
+        etapa: ['etapa', 'etapacatequese', 'nivel', 'ano', 'classe'],
+        sala: ['sala', 'numerosala', 'turma', 'salaaula'],
+        horario: ['horario', 'hora', 'turno', 'periodo', 'diaehora', 'diahora'],
+        catequistas: ['catequistas', 'catequista', 'responsaveis', 'responsavel'],
+        resultado: ['resultado', 'situacao', 'status']
+      };
+      const idx = {};
+      cols.forEach((c, i) => {
+        const k = norm(c).replace(/[^a-z0-9]/g, '');
+        for (const [t, aliases] of Object.entries(wanted)) {
+          if (aliases.includes(k)) idx[t] = i;
+        }
+      });
+      return idx;
+    }
+
+    // Carrega configurações
+    async function loadConfig() {
+      try {
+        const response = await fetch('config/settings.json?v=' + Date.now());
+        if (!response.ok) throw new Error('Erro ao carregar configurações: ' + response.status);
+        CONFIG = await response.json();
+
+        document.getElementById('logoImg').src = CONFIG.arquivos.logo;
+        document.getElementById('paroquiaNome').textContent = CONFIG.paroquia.nome;
+        document.getElementById('secretariado').textContent = CONFIG.paroquia.secretariado;
+        document.getElementById('anoCatequetico').textContent = CONFIG.paroquia.ano_catequetico;
+        document.getElementById('footerText').textContent = `© ${CONFIG.paroquia.nome} — ${CONFIG.paroquia.secretariado}`;
+
+        // Atualiza data de hoje
+        const today = new Date();
+        document.getElementById('dataHoje').textContent = today.toLocaleDateString('pt-AO', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        });
+
+        console.log('✅ Configurações carregadas:', CONFIG);
+        return CONFIG;
+
+      } catch (error) {
+        console.error('❌ Erro ao carregar configurações:', error);
+        CONFIG = {
+          paroquia: {
+            nome: "Paróquia de São Paulo de Luanda",
+            secretariado: "Secretariado da Catequese",
+            ano_catequetico: "2025/2026"
+          },
+          arquivos: {
+            dados_principais: "data/dados-catequese.xlsx",
+            logo: "assets/images/logo-paroquia.jpg"
+          },
+          validacao: {
+            campos_obrigatorios: ["nome", "centro", "etapa", "sala", "horario", "catequistas"]
+          }
+        };
+
+        document.getElementById('logoImg').src = CONFIG.arquivos.logo;
+        document.getElementById('paroquiaNome').textContent = CONFIG.paroquia.nome;
+        document.getElementById('secretariado').textContent = CONFIG.paroquia.secretariado;
+        document.getElementById('anoCatequetico').textContent = CONFIG.paroquia.ano_catequetico;
+        document.getElementById('footerText').textContent = `© ${CONFIG.paroquia.nome} — ${CONFIG.paroquia.secretariado}`;
+
+        // Atualiza data de hoje
+        const today = new Date();
+        document.getElementById('dataHoje').textContent = today.toLocaleDateString('pt-AO', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        });
+
+        return CONFIG;
+      }
+    }
+
+    // Carrega dados do Excel
+    async function loadExcelData() {
+      try {
+        if (!CONFIG) throw new Error('Configurações não carregadas');
+
+        const url = CONFIG.arquivos.dados_principais + '?v=' + Date.now();
+        console.log('🔄 Carregando Excel:', url);
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Erro ao carregar Excel: ' + response.status);
+
+        const buffer = await response.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array' });
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+        if (!json.length) throw new Error('Excel vazio');
+
+        const headers = json[0].map(String);
+        const idx = mapHeaders(headers);
+        const req = CONFIG.validacao?.campos_obrigatorios || ['nome', 'centro', 'etapa'];
+        const missing = req.filter(k => !(k in idx));
+        if (missing.length) throw new Error('Cabeçalhos ausentes: ' + missing.join(', '));
+
+        const rows = json.slice(1).filter(r => r.some(v => String(v).trim() !== ''));
+        birthdayData = rows.map(r => ({
+          nome: r[idx.nome] ?? '',
+          nascimento: r[idx.nascimento] ?? '',
+          centro: r[idx.centro] ?? '',
+          etapa: r[idx.etapa] ?? '',
+          sala: r[idx.sala] ?? '',
+          horario: r[idx.horario] ?? '',
+          catequistas: r[idx.catequistas] ?? '',
+          resultado: r[idx.resultado] ?? ''
+        })).filter(d => d.nascimento); // Só pessoas com data de nascimento
+
+        updateBirthdayDashboard();
+        console.log(`✅ Dashboard de aniversários atualizado com ${birthdayData.length} registos`);
+
+      } catch (error) {
+        console.error('❌ Erro ao carregar Excel:', error);
+        console.log('🔄 Usando dados de exemplo como fallback');
+
+        birthdayData = [...SAMPLE_DATA];
+        updateBirthdayDashboard();
+      }
+    }
+
+    // Função principal de atualização do dashboard
+    function updateBirthdayDashboard() {
+      if (!birthdayData) return;
+
+      updateTodayBirthdays();
+      updateQuickStats();
+      updateUpcomingBirthdays();
+      setupMonthSelector();
+      updateMonthlyChart();
+      updateMonthDetails();
+      updateCenterStats();
+      updateStageStats();
+
+      // Definir título do mês atual
+      document.getElementById('selectedMonthTitle').textContent = `📋 Aniversários de ${MONTH_NAMES[selectedMonth]}`;
+    }
+
+    // Aniversariantes de hoje
+    function updateTodayBirthdays() {
+      const todayBirthdays = birthdayData.filter(person => isBirthdayToday(person.nascimento));
+
+      // Popular filtros
+      const catequistaFilter = document.getElementById('todayCatequistaFilter');
+      const centerFilter = document.getElementById('todayCenterFilter');
+
+      const catequistas = getUniqueCatequistas(todayBirthdays);
+      const centers = [...new Set(todayBirthdays.map(p => p.centro).filter(Boolean))].sort();
+
+      catequistaFilter.innerHTML = '<option value="">Todos os catequistas</option>' +
+        catequistas.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+
+      centerFilter.innerHTML = '<option value="">Todos os centros</option>' +
+        centers.map(center => `<option value="${center}">${center}</option>`).join('');
+
+      // Event listeners para filtros
+      document.getElementById('todaySearch').addEventListener('input', filterTodayBirthdays);
+      document.getElementById('todayCatequistaFilter').addEventListener('change', filterTodayBirthdays);
+      document.getElementById('todayCenterFilter').addEventListener('change', filterTodayBirthdays);
+
+      renderTodayBirthdays(todayBirthdays);
+    }
+
+    function renderTodayBirthdays(birthdays) {
+      document.getElementById('todayCount').textContent = birthdays.length;
+
+      const container = document.getElementById('todayBirthdays');
+
+      if (birthdays.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">🎂</div>
+            <div>Nenhum aniversariante encontrado</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = birthdays.map(person => {
+        const age = calculateAge(person.nascimento) + 1; // Idade que está fazendo hoje
+        return `
+          <div class="birthday-person">
+            <div class="birthday-icon">🎉</div>
+            <div class="birthday-info">
+              <div class="birthday-name">${person.nome}</div>
+              <div class="birthday-details">
+                Nascimento: ${person.nascimento}<br>
+                ${person.centro} • ${person.etapa} • Sala ${person.sala}<br>
+                Catequistas: ${person.catequistas || 'Não informado'}
+              </div>
+            </div>
+            <div class="birthday-age">${age} anos</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterTodayBirthdays() {
+      const searchTerm = document.getElementById('todaySearch').value.toLowerCase();
+      const catequistaFilter = document.getElementById('todayCatequistaFilter').value;
+      const centerFilter = document.getElementById('todayCenterFilter').value;
+
+      let filtered = birthdayData.filter(person => isBirthdayToday(person.nascimento));
+
+      if (searchTerm) {
+        filtered = filtered.filter(person =>
+          person.nome.toLowerCase().includes(searchTerm) ||
+          person.centro.toLowerCase().includes(searchTerm) ||
+          person.etapa.toLowerCase().includes(searchTerm) ||
+          (person.catequistas && person.catequistas.toLowerCase().includes(searchTerm))
+        );
+      }
+
+      if (catequistaFilter) {
+        filtered = filtered.filter(person => hasCatequista(person, catequistaFilter));
+      }
+
+      if (centerFilter) {
+        filtered = filtered.filter(person => person.centro === centerFilter);
+      }
+
+      renderTodayBirthdays(filtered);
+    }
+
+    // Estatísticas rápidas
+    function updateQuickStats() {
+      const weekCount = birthdayData.filter(person => isBirthdayThisWeek(person.nascimento)).length;
+      const monthCount = birthdayData.filter(person => isBirthdayThisMonth(person.nascimento)).length;
+
+      document.getElementById('weekCount').textContent = weekCount;
+      document.getElementById('monthCount').textContent = monthCount;
+    }
+
+    // Próximos aniversários
+    function updateUpcomingBirthdays() {
+      const upcoming = getUpcomingBirthdays(birthdayData);
+
+      // Popular filtros
+      const catequistaFilter = document.getElementById('upcomingCatequistaFilter');
+      const centerFilter = document.getElementById('upcomingCenterFilter');
+
+      const catequistas = getUniqueCatequistas(upcoming);
+      const centers = [...new Set(upcoming.map(p => p.centro).filter(Boolean))].sort();
+
+      catequistaFilter.innerHTML = '<option value="">Todos os catequistas</option>' +
+        catequistas.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+
+      centerFilter.innerHTML = '<option value="">Todos os centros</option>' +
+        centers.map(center => `<option value="${center}">${center}</option>`).join('');
+
+      renderUpcomingBirthdays(upcoming);
+
+      // Event listeners para filtros
+      document.getElementById('upcomingSearch').addEventListener('input', filterUpcomingBirthdays);
+      document.getElementById('upcomingCatequistaFilter').addEventListener('change', filterUpcomingBirthdays);
+      document.getElementById('upcomingCenterFilter').addEventListener('change', filterUpcomingBirthdays);
+    }
+
+    function renderUpcomingBirthdays(upcoming) {
+      const container = document.getElementById('upcomingBirthdays');
+
+      if (upcoming.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">📅</div>
+            <div>Nenhum aniversário encontrado</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = upcoming.map(person => `
+        <div class="birthday-person">
+          <div class="birthday-icon">📅</div>
+          <div class="birthday-info">
+            <div class="birthday-name">${person.nome}</div>
+            <div class="birthday-details">
+              Nascimento: ${person.nascimento}<br>
+              Em ${person.daysUntil} dia${person.daysUntil > 1 ? 's' : ''} • ${person.centro} • ${person.etapa}<br>
+              Catequistas: ${person.catequistas || 'Não informado'}
+            </div>
+          </div>
+          <div class="birthday-age">${person.age} anos</div>
+        </div>
+      `).join('');
+    }
+
+    function filterUpcomingBirthdays() {
+      const searchTerm = document.getElementById('upcomingSearch').value.toLowerCase();
+      const catequistaFilter = document.getElementById('upcomingCatequistaFilter').value;
+      const centerFilter = document.getElementById('upcomingCenterFilter').value;
+
+      let filtered = getUpcomingBirthdays(birthdayData);
+
+      if (searchTerm) {
+        filtered = filtered.filter(person =>
+          person.nome.toLowerCase().includes(searchTerm) ||
+          person.centro.toLowerCase().includes(searchTerm) ||
+          person.etapa.toLowerCase().includes(searchTerm) ||
+          (person.catequistas && person.catequistas.toLowerCase().includes(searchTerm))
+        );
+      }
+
+      if (catequistaFilter) {
+        filtered = filtered.filter(person => hasCatequista(person, catequistaFilter));
+      }
+
+      if (centerFilter) {
+        filtered = filtered.filter(person => person.centro === centerFilter);
+      }
+
+      renderUpcomingBirthdays(filtered);
+    }
+
+    // Seletor de mês
+    function setupMonthSelector() {
+      const container = document.getElementById('monthSelector');
+
+      container.innerHTML = MONTH_NAMES.map((month, index) => `
+        <button class="month-btn ${index === selectedMonth ? 'active' : ''}" 
+                onclick="selectMonth(${index})">
+          ${month}
+        </button>
+      `).join('');
+    }
+
+    function selectMonth(monthIndex) {
+      selectedMonth = monthIndex;
+      setupMonthSelector();
+      updateMonthDetails();
+
+      document.getElementById('selectedMonthTitle').textContent = `📋 Aniversários de ${MONTH_NAMES[monthIndex]}`;
+    }
+
+    // Gráfico mensal
+    function updateMonthlyChart() {
+      const monthlyData = new Array(12).fill(0);
+
+      birthdayData.forEach(person => {
+        const birth = parseBirthDate(person.nascimento);
+        if (birth) {
+          monthlyData[birth.getMonth()]++;
+        }
+      });
+
+      const ctx = document.getElementById('monthlyChart').getContext('2d');
+      if (charts.monthly) charts.monthly.destroy();
+
+      charts.monthly = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: MONTH_NAMES,
+          datasets: [{
+            label: 'Aniversários',
+            data: monthlyData,
+            backgroundColor: '#d97706',
+            borderColor: '#b45309',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            datalabels: {
+              anchor: 'end',
+              align: 'top',
+              formatter: (value) => value > 0 ? value : '',
+              font: {
+                weight: 'bold'
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1
+              }
+            }
+          },
+          animation: {
+            onComplete: function () {
+              const ctx = this.chart.ctx;
+              ctx.font = '12px Arial';
+              ctx.fillStyle = '#1b1a17';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'bottom';
+
+              this.data.datasets.forEach((dataset, i) => {
+                const meta = this.getDatasetMeta(i);
+                meta.data.forEach((bar, index) => {
+                  const data = dataset.data[index];
+                  if (data > 0) {
+                    ctx.fillText(data, bar.x, bar.y - 5);
+                  }
+                });
+              });
+            }
+          }
+        }
+      });
+    }
+    // Detalhes do mês selecionado
+    function updateMonthDetails() {
+      const monthBirthdays = birthdayData.filter(person => {
+        const birth = parseBirthDate(person.nascimento);
+        return birth && birth.getMonth() === selectedMonth;
+      }).sort((a, b) => {
+        const birthA = parseBirthDate(a.nascimento);
+        const birthB = parseBirthDate(b.nascimento);
+        return birthA.getDate() - birthB.getDate();
+      });
+
+      currentTableData = monthBirthdays;
+
+      // Popular filtros
+      const catequistaFilter = document.getElementById('monthCatequistaFilter');
+      const centerFilter = document.getElementById('monthCenterFilter');
+      const stageFilter = document.getElementById('monthStageFilter');
+
+      const catequistas = getUniqueCatequistas(monthBirthdays);
+      const centers = [...new Set(monthBirthdays.map(p => p.centro).filter(Boolean))].sort();
+      const stages = [...new Set(monthBirthdays.map(p => p.etapa).filter(Boolean))].sort();
+
+      catequistaFilter.innerHTML = '<option value="">Todos os catequistas</option>' +
+        catequistas.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+
+      centerFilter.innerHTML = '<option value="">Todos os centros</option>' +
+        centers.map(center => `<option value="${center}">${center}</option>`).join('');
+
+      stageFilter.innerHTML = '<option value="">Todas as etapas</option>' +
+        stages.map(stage => `<option value="${stage}">${stage}</option>`).join('');
+
+      // Event listeners
+      document.getElementById('monthTableSearch').addEventListener('input', filterMonthTable);
+      document.getElementById('monthCatequistaFilter').addEventListener('change', filterMonthTable);
+      document.getElementById('monthCenterFilter').addEventListener('change', filterMonthTable);
+      document.getElementById('monthStageFilter').addEventListener('change', filterMonthTable);
+
+      // Adicionar event listeners para ordenação
+      document.querySelectorAll('#monthDetailTable th.sortable').forEach(th => {
+        th.addEventListener('click', () => sortTable(th.dataset.column));
+      });
+
+      renderMonthTable(monthBirthdays);
+    }
+
+    function renderMonthTable(data) {
+      const tbody = document.getElementById('monthDetailTableBody');
+
+      if (data.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 40px; color: var(--muted);">
+              Nenhum aniversário encontrado
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = data.map(person => {
+        const birth = parseBirthDate(person.nascimento);
+        const age = calculateAge(person.nascimento);
+        const day = birth.getDate();
+        const year = birth.getFullYear();
+
+        return `
+          <tr>
+            <td>${day}/${selectedMonth + 1}</td>
+            <td><strong>${person.nome}</strong></td>
+            <td>${day}/${selectedMonth + 1}/${year}</td>
+            <td>${age} anos</td>
+            <td>${person.centro}</td>
+            <td>${person.etapa}</td>
+            <td>${person.sala}</td>
+            <td>${person.catequistas || 'Não informado'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterMonthTable() {
+      const searchTerm = document.getElementById('monthTableSearch').value.toLowerCase();
+      const catequistaFilter = document.getElementById('monthCatequistaFilter').value;
+      const centerFilter = document.getElementById('monthCenterFilter').value;
+      const stageFilter = document.getElementById('monthStageFilter').value;
+
+      let filtered = [...currentTableData];
+
+      if (searchTerm) {
+        filtered = filtered.filter(person =>
+          person.nome.toLowerCase().includes(searchTerm) ||
+          person.centro.toLowerCase().includes(searchTerm) ||
+          person.etapa.toLowerCase().includes(searchTerm) ||
+          person.sala.toString().includes(searchTerm) ||
+          (person.catequistas && person.catequistas.toLowerCase().includes(searchTerm))
+        );
+      }
+
+      if (catequistaFilter) {
+        filtered = filtered.filter(person => hasCatequista(person, catequistaFilter));
+      }
+
+      if (centerFilter) {
+        filtered = filtered.filter(person => person.centro === centerFilter);
+      }
+
+      if (stageFilter) {
+        filtered = filtered.filter(person => person.etapa === stageFilter);
+      }
+
+      renderMonthTable(filtered);
+    }
+
+    function sortTable(column) {
+      // Atualizar indicadores visuais
+      document.querySelectorAll('#monthDetailTable th').forEach(th => {
+        th.classList.remove('sort-asc', 'sort-desc');
+      });
+
+      if (currentSortColumn === column) {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSortDirection = 'asc';
+        currentSortColumn = column;
+      }
+
+      const th = document.querySelector(`#monthDetailTable th[data-column="${column}"]`);
+      th.classList.add(currentSortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+
+      // Ordenar dados
+      let sortedData = [...currentTableData];
+
+      sortedData.sort((a, b) => {
+        let valueA, valueB;
+
+        switch (column) {
+          case 'date':
+            const birthA = parseBirthDate(a.nascimento);
+            const birthB = parseBirthDate(b.nascimento);
+            valueA = birthA.getDate();
+            valueB = birthB.getDate();
+            break;
+          case 'name':
+            valueA = a.nome.toLowerCase();
+            valueB = b.nome.toLowerCase();
+            break;
+          case 'birthdate':
+            valueA = parseBirthDate(a.nascimento);
+            valueB = parseBirthDate(b.nascimento);
+            break;
+          case 'age':
+            valueA = calculateAge(a.nascimento);
+            valueB = calculateAge(b.nascimento);
+            break;
+          case 'center':
+            valueA = a.centro.toLowerCase();
+            valueB = b.centro.toLowerCase();
+            break;
+          case 'stage':
+            valueA = a.etapa.toLowerCase();
+            valueB = b.etapa.toLowerCase();
+            break;
+          case 'room':
+            valueA = parseInt(a.sala) || 0;
+            valueB = parseInt(b.sala) || 0;
+            break;
+          case 'teachers':
+            valueA = (a.catequistas || '').toLowerCase();
+            valueB = (b.catequistas || '').toLowerCase();
+            break;
+          default:
+            return 0;
+        }
+
+        if (valueA < valueB) return currentSortDirection === 'asc' ? -1 : 1;
+        if (valueA > valueB) return currentSortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      renderMonthTable(sortedData);
+    }
+
+    // Estatísticas por centro
+    function updateCenterStats() {
+      const centerData = {};
+
+      birthdayData.forEach(person => {
+        if (person.centro) {
+          if (!centerData[person.centro]) {
+            centerData[person.centro] = 0;
+          }
+          centerData[person.centro]++;
+        }
+      });
+
+      const container = document.getElementById('centerStats');
+      const entries = Object.entries(centerData).sort(([, a], [, b]) => b - a);
+
+      if (entries.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div>Nenhum dado disponível</div></div>';
+        return;
+      }
+
+      container.innerHTML = entries.map(([center, count]) => {
+        const percentage = ((count / birthdayData.length) * 100).toFixed(1);
+        return `
+          <div style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span><strong>${center}</strong></span>
+              <span>${count} (${percentage}%)</span>
+            </div>
+            <div style="width: 100%; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
+              <div style="height: 100%; background: var(--birthday); width: ${percentage}%; transition: width 0.3s ease;"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Estatísticas por etapa
+    function updateStageStats() {
+      const stageData = {};
+
+      birthdayData.forEach(person => {
+        if (person.etapa) {
+          if (!stageData[person.etapa]) {
+            stageData[person.etapa] = 0;
+          }
+          stageData[person.etapa]++;
+        }
+      });
+
+      const container = document.getElementById('stageStats');
+      const entries = Object.entries(stageData).sort(([a], [b]) => a.localeCompare(b));
+
+      if (entries.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div>Nenhum dado disponível</div></div>';
+        return;
+      }
+
+      container.innerHTML = entries.map(([stage, count]) => {
+        const percentage = ((count / birthdayData.length) * 100).toFixed(1);
+        return `
+          <div style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span><strong>${stage}</strong></span>
+              <span>${count} (${percentage}%)</span>
+            </div>
+            <div style="width: 100%; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
+              <div style="height: 100%; background: var(--birthday); width: ${percentage}%; transition: width 0.3s ease;"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    // Funções de exportação
+    function exportCard(cardId, filename) {
+      try {
+        const data = extractCardData(cardId);
+        if (!data || data.length === 0) {
+          alert('Nenhum dado encontrado para exportar');
+          return;
+        }
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, ws, 'Dados');
+        XLSX.writeFile(wb, `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+        alert('Dados exportados com sucesso!');
+      } catch (error) {
+        alert('Erro ao exportar: ' + error.message);
+      }
+    }
+
+    function exportChartAsPNG(elementId, filename) {
+      try {
+        const element = document.getElementById(elementId);
+        if (!element) {
+          alert('Elemento não encontrado para exportação');
+          return;
+        }
+
+        html2canvas(element, {
+          backgroundColor: '#ffffff',
+          scale: 2
+        }).then(canvas => {
+          const link = document.createElement('a');
+          link.download = `${filename}_${new Date().toISOString().split('T')[0]}.png`;
+          link.href = canvas.toDataURL();
+          link.click();
+          alert('Gráfico exportado como PNG!');
+        }).catch(error => {
+          alert('Erro ao exportar gráfico: ' + error.message);
+        });
+      } catch (error) {
+        alert('Erro ao exportar: ' + error.message);
+      }
+    }
+
+    function extractCardData(cardId) {
+      switch (cardId) {
+        case 'todayCard':
+          // Aplicar os mesmos filtros da interface
+          const searchTerm = document.getElementById('todaySearch')?.value.toLowerCase() || '';
+          const catequistaFilter = document.getElementById('todayCatequistaFilter')?.value || '';
+          const centerFilter = document.getElementById('todayCenterFilter')?.value || '';
+
+          let todayBirthdays = birthdayData.filter(person => isBirthdayToday(person.nascimento));
+
+          if (searchTerm) {
+            todayBirthdays = todayBirthdays.filter(person =>
+              person.nome.toLowerCase().includes(searchTerm) ||
+              person.centro.toLowerCase().includes(searchTerm) ||
+              person.etapa.toLowerCase().includes(searchTerm) ||
+              (person.catequistas && person.catequistas.toLowerCase().includes(searchTerm))
+            );
+          }
+
+          if (catequistaFilter) {
+            todayBirthdays = todayBirthdays.filter(person => hasCatequista(person, catequistaFilter));
+          }
+
+          if (centerFilter) {
+            todayBirthdays = todayBirthdays.filter(person => person.centro === centerFilter);
+          }
+
+          return [
+            ['Nome', 'Idade', 'Centro', 'Etapa', 'Sala', 'Catequistas', 'Nascimento'],
+            ...todayBirthdays.map(person => [
+              person.nome,
+              calculateAge(person.nascimento) + 1,
+              person.centro,
+              person.etapa,
+              person.sala,
+              person.catequistas || 'Não informado',
+              person.nascimento
+            ])
+          ];
+
+        case 'upcomingCard':
+          // Aplicar os mesmos filtros da interface
+          const upcomingSearchTerm = document.getElementById('upcomingSearch')?.value.toLowerCase() || '';
+          const upcomingCatequistaFilter = document.getElementById('upcomingCatequistaFilter')?.value || '';
+          const upcomingCenterFilter = document.getElementById('upcomingCenterFilter')?.value || '';
+
+          let upcoming = getUpcomingBirthdays(birthdayData);
+
+          if (upcomingSearchTerm) {
+            upcoming = upcoming.filter(person =>
+              person.nome.toLowerCase().includes(upcomingSearchTerm) ||
+              person.centro.toLowerCase().includes(upcomingSearchTerm) ||
+              person.etapa.toLowerCase().includes(upcomingSearchTerm) ||
+              (person.catequistas && person.catequistas.toLowerCase().includes(upcomingSearchTerm))
+            );
+          }
+
+          if (upcomingCatequistaFilter) {
+            upcoming = upcoming.filter(person => hasCatequista(person, upcomingCatequistaFilter));
+          }
+
+          if (upcomingCenterFilter) {
+            upcoming = upcoming.filter(person => person.centro === upcomingCenterFilter);
+          }
+
+          return [
+            ['Nome', 'Dias até aniversário', 'Idade que fará', 'Centro', 'Etapa', 'Catequistas', 'Nascimento'],
+            ...upcoming.map(person => [
+              person.nome,
+              person.daysUntil,
+              person.age,
+              person.centro,
+              person.etapa,
+              person.catequistas || 'Não informado',
+              person.nascimento
+            ])
+          ];
+
+        case 'monthlyCard':
+          const monthlyData = new Array(12).fill(0);
+          birthdayData.forEach(person => {
+            const birth = parseBirthDate(person.nascimento);
+            if (birth) monthlyData[birth.getMonth()]++;
+          });
+
+          return [
+            ['Mês', 'Quantidade de Aniversários'],
+            ...MONTH_NAMES.map((month, index) => [month, monthlyData[index]])
+          ];
+
+        case 'monthDetailCard':
+          const monthBirthdays = birthdayData.filter(person => {
+            const birth = parseBirthDate(person.nascimento);
+            return birth && birth.getMonth() === selectedMonth;
+          });
+
+          return [
+            ['Data', 'Nome', 'Idade', 'Centro', 'Etapa', 'Sala', 'Catequistas'],
+            ...monthBirthdays.map(person => {
+              const birth = parseBirthDate(person.nascimento);
+              return [
+                `${birth.getDate()}/${selectedMonth + 1}`,
+                person.nome,
+                calculateAge(person.nascimento),
+                person.centro,
+                person.etapa,
+                person.sala,
+                person.catequistas || 'Não informado'
+              ];
+            })
+          ];
+
+        default:
+          return [['Dados não disponíveis para este card']];
+      }
+    }
+
+    // Funções de carregamento de dados
+    function loadSampleData() {
+      birthdayData = [...SAMPLE_DATA];
+      updateBirthdayDashboard();
+      console.log('✅ Dados de exemplo carregados');
+    }
+
+    function loadExcelFile(file) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+          if (!json.length) throw new Error('Excel vazio');
+
+          const headers = json[0].map(String);
+          const idx = mapHeaders(headers);
+          const rows = json.slice(1).filter(r => r.some(v => String(v).trim() !== ''));
+
+          birthdayData = rows.map(r => ({
+            nome: r[idx.nome] ?? '',
+            nascimento: r[idx.nascimento] ?? '',
+            centro: r[idx.centro] ?? '',
+            etapa: r[idx.etapa] ?? '',
+            sala: r[idx.sala] ?? '',
+            horario: r[idx.horario] ?? '',
+            catequistas: r[idx.catequistas] ?? '',
+            resultado: r[idx.resultado] ?? ''
+          })).filter(d => d.nascimento);
+
+          updateBirthdayDashboard();
+          console.log(`✅ Dashboard atualizado com ${birthdayData.length} registos`);
+
+        } catch (error) {
+          console.error('❌ Erro ao carregar dados:', error);
+          alert('Erro ao carregar dados: ' + error.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+    // Event listeners
+    if (DEBUG_MODE) {
+      document.getElementById('debugUpload').style.display = 'block';
+
+      document.getElementById('fileInput').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) loadExcelFile(file);
+      });
+
+      document.getElementById('loadSampleBtn').addEventListener('click', loadSampleData);
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      if (birthdayData) {
+        updateBirthdayDashboard();
+        alert('Página de aniversários atualizada!');
+      } else {
+        alert('Carregue dados primeiro');
+      }
+    });
+
+    document.getElementById('exportAllBtn').addEventListener('click', () => {
+      if (!birthdayData) {
+        alert('Nenhum dado carregado para exportar');
+        return;
+      }
+
+      try {
+        const wb = XLSX.utils.book_new();
+
+        // Dados principais
+        const ws1 = XLSX.utils.json_to_sheet(birthdayData);
+        XLSX.utils.book_append_sheet(wb, ws1, 'Todos os Aniversários');
+
+        // Aniversariantes de hoje
+        const todayBirthdays = birthdayData.filter(person => isBirthdayToday(person.nascimento));
+        if (todayBirthdays.length > 0) {
+          const ws2 = XLSX.utils.json_to_sheet(todayBirthdays);
+          XLSX.utils.book_append_sheet(wb, ws2, 'Aniversários Hoje');
+        }
+
+        // Próximos aniversários
+        const upcoming = getUpcomingBirthdays(birthdayData);
+        if (upcoming.length > 0) {
+          const ws3 = XLSX.utils.json_to_sheet(upcoming);
+          XLSX.utils.book_append_sheet(wb, ws3, 'Próximos 7 Dias');
+        }
+
+        // Estatísticas mensais
+        const monthlyData = new Array(12).fill(0);
+        birthdayData.forEach(person => {
+          const birth = parseBirthDate(person.nascimento);
+          if (birth) monthlyData[birth.getMonth()]++;
+        });
+
+        const monthlyStats = MONTH_NAMES.map((month, index) => ({
+          Mês: month,
+          Quantidade: monthlyData[index]
+        }));
+
+        const ws4 = XLSX.utils.aoa_to_sheet([
+          ['Mês', 'Quantidade'],
+          ...monthlyStats.map(stat => [stat.Mês, stat.Quantidade])
+        ]);
+        XLSX.utils.book_append_sheet(wb, ws4, 'Estatísticas Mensais');
+
+        XLSX.writeFile(wb, `aniversarios_completo_${new Date().toISOString().split('T')[0]}.xlsx`);
+        alert('Relatório completo de aniversários exportado!');
+      } catch (error) {
+        alert('Erro ao exportar: ' + error.message);
+      }
+    });
+
+    document.getElementById('printPage').addEventListener('click', () => {
+      window.print();
+    });
+
+    // Inicialização
+    async function init() {
+      try {
+        await loadConfig();
+        await loadExcelData();
+      } catch (error) {
+        console.error('❌ Erro na inicialização:', error);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+
+</html>
