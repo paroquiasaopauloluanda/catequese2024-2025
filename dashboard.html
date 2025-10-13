@@ -561,6 +561,148 @@
         grid-template-columns: repeat(2, 1fr);
       }
     }
+
+    /* Estilos para modais */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal-content {
+      background-color: var(--card);
+      margin: 5% auto;
+      padding: 0;
+      border-radius: var(--radius);
+      width: 90%;
+      max-width: 800px;
+      max-height: 80vh;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      animation: slideIn 0.3s ease;
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+      margin: 0;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .modal-close:hover {
+      background: var(--border-light);
+      color: var(--ink);
+    }
+
+    .modal-body {
+      padding: 20px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    .modal-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .modal-table thead {
+      position: sticky;
+      top: 0;
+      background: var(--card);
+      z-index: 10;
+    }
+
+    .modal-table th {
+      background: #faf7ee;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .modal-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-light);
+      vertical-align: middle;
+    }
+
+    .modal-table tr:hover {
+      background: #fffbf0;
+    }
+
+    .result-cell {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 12px;
+      text-align: center;
+      color: white;
+      text-transform: uppercase;
+    }
+
+    .clickable-number {
+      color: var(--accent);
+      cursor: pointer;
+      text-decoration: underline;
+      font-weight: 600;
+    }
+
+    .clickable-number:hover {
+      color: var(--accent-2);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-50px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
   </style>
 </head><b ody>
   <header class="card">
@@ -834,6 +976,50 @@
   </main>
 
   <div class="footer" id="footerText">© Paróquia de São Paulo de Luanda — Secretariado da Catequese</div>
+
+  <!-- Modal para Catequistas -->
+  <div id="catequistasModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="catequistasModalTitle">Catequistas</h3>
+        <button class="modal-close" onclick="closeModal('catequistasModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Nome do Catequista</th>
+            </tr>
+          </thead>
+          <tbody id="catequistasModalBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Catecúmenos -->
+  <div id="catecumenosModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="catecumenosModalTitle">Catecúmenos</h3>
+        <button class="modal-close" onclick="closeModal('catecumenosModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Data de Nascimento</th>
+              <th>Resultado</th>
+            </tr>
+          </thead>
+          <tbody id="catecumenosModalBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
   <script>
     // 🔧 DEBUG MODE: Altere para true para mostrar opção de upload de arquivo
     const DEBUG_MODE = false;
@@ -1086,36 +1272,24 @@
     function updateApprovalStats() {
       const totalWithResult = dashboardData.filter(d => d.resultado && d.resultado.trim()).length;
 
-      // Contar todos os tipos de resultado
-      const resultados = {
-        aprovado: 0,
-        reprovado: 0,
-        desistente: 0,
-        transferido: 0,
-        em_avaliacao: 0,
-        outros: 0
-      };
+      // Contar todos os tipos de resultado existentes nos dados
+      const resultados = {};
+      const resultadosUnicos = new Set();
 
       dashboardData.forEach(d => {
         if (d.resultado && d.resultado.trim()) {
-          const resultado = norm(d.resultado);
-          if (resultado.includes('aprovado')) {
-            resultados.aprovado++;
-          } else if (resultado.includes('reprovado')) {
-            resultados.reprovado++;
-          } else if (resultado.includes('desistente') || resultado.includes('desistiu')) {
-            resultados.desistente++;
-          } else if (resultado.includes('transferido')) {
-            resultados.transferido++;
-          } else if (resultado.includes('avaliacao') || resultado.includes('avaliação')) {
-            resultados.em_avaliacao++;
-          } else {
-            resultados.outros++;
-          }
+          const resultado = d.resultado.trim();
+          resultadosUnicos.add(resultado);
+          resultados[resultado] = (resultados[resultado] || 0) + 1;
         }
       });
 
-      const approvalRate = totalWithResult > 0 ? (resultados.aprovado / totalWithResult * 100) : 0;
+      // Contar aprovados para taxa de aprovação
+      const aprovados = dashboardData.filter(d =>
+        d.resultado && norm(d.resultado).includes('aprovado')
+      ).length;
+
+      const approvalRate = totalWithResult > 0 ? (aprovados / totalWithResult * 100) : 0;
 
       document.getElementById('approvalRate').textContent = approvalRate.toFixed(1) + '%';
 
@@ -1128,26 +1302,34 @@
         indicator.className = 'approval-indicator low';
       }
 
+      // Função para obter cor do resultado
+      function getResultColor(resultado) {
+        const resultadoNorm = norm(resultado);
+        if (resultadoNorm.includes('aprovado')) return { bg: '#dcfce7', color: '#166534' };
+        if (resultadoNorm.includes('reprovado')) return { bg: '#fef2f2', color: '#dc2626' };
+        if (resultadoNorm.includes('desistente') || resultadoNorm.includes('desistiu')) return { bg: '#f3f4f6', color: '#6b7280' };
+        if (resultadoNorm.includes('transferido')) return { bg: '#dbeafe', color: '#2563eb' };
+        if (resultadoNorm.includes('avaliacao') || resultadoNorm.includes('avaliação')) return { bg: '#fef3c7', color: '#f59e0b' };
+        return { bg: '#f9fafb', color: '#374151' }; // cor padrão
+      }
+
       const details = document.getElementById('approvalDetails');
+      const resultadosCards = Object.entries(resultados)
+        .sort(([, a], [, b]) => b - a) // Ordenar por quantidade (maior primeiro)
+        .map(([resultado, count]) => {
+          const colors = getResultColor(resultado);
+          return `
+            <div style="text-align: center; padding: 8px; background: ${colors.bg}; border-radius: 6px;">
+              <div style="font-weight: bold; color: ${colors.color};">${count}</div>
+              <div style="font-size: 12px; color: ${colors.color};">${resultado}</div>
+            </div>
+          `;
+        }).join('');
+
       details.innerHTML = `
         <div style="margin-top: 12px; font-size: 14px;">
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 8px;">
-            <div style="text-align: center; padding: 8px; background: #dcfce7; border-radius: 6px;">
-              <div style="font-weight: bold; color: #166534;">${resultados.aprovado}</div>
-              <div style="font-size: 12px; color: #166534;">Aprovados</div>
-            </div>
-            <div style="text-align: center; padding: 8px; background: #fef2f2; border-radius: 6px;">
-              <div style="font-weight: bold; color: #dc2626;">${resultados.reprovado}</div>
-              <div style="font-size: 12px; color: #dc2626;">Reprovados</div>
-            </div>
-            <div style="text-align: center; padding: 8px; background: #f3f4f6; border-radius: 6px;">
-              <div style="font-weight: bold; color: #6b7280;">${resultados.desistente}</div>
-              <div style="font-size: 12px; color: #6b7280;">Desistentes</div>
-            </div>
-            <div style="text-align: center; padding: 8px; background: #fef3c7; border-radius: 6px;">
-              <div style="font-weight: bold; color: #f59e0b;">${resultados.em_avaliacao}</div>
-              <div style="font-size: 12px; color: #f59e0b;">Em Avaliação</div>
-            </div>
+            ${resultadosCards}
           </div>
           <div style="margin-top: 8px; text-align: center; color: var(--muted);">
             Total avaliados: <strong>${totalWithResult}</strong> de <strong>${dashboardData.length}</strong>
@@ -1530,8 +1712,16 @@
           <td>${turma.etapa}</td>
           <td>${turma.sala}</td>
           <td>${turma.horario}</td>
-          <td>${turma.numCatequistas}</td>
-          <td><strong>${turma.numCatecumenos}</strong></td>
+          <td>
+            <span class="clickable-number" onclick="showCatequistasModal('${turma.centro.replace(/'/g, "\\'")}', '${turma.etapa.replace(/'/g, "\\'")}', '${turma.sala.replace(/'/g, "\\'")}', '${turma.horario.replace(/'/g, "\\'")}')">
+              ${turma.numCatequistas}
+            </span>
+          </td>
+          <td>
+            <span class="clickable-number" onclick="showCatecumenosModal('${turma.centro.replace(/'/g, "\\'")}', '${turma.etapa.replace(/'/g, "\\'")}', '${turma.sala.replace(/'/g, "\\'")}', '${turma.horario.replace(/'/g, "\\'")}')">
+              <strong>${turma.numCatecumenos}</strong>
+            </span>
+          </td>
           <td>
             <div class="approval-rate">
               <div class="approval-indicator ${turma.taxaAprovacao >= 80 ? 'high' : turma.taxaAprovacao >= 60 ? 'medium' : 'low'}"></div>
@@ -1925,6 +2115,93 @@
     document.getElementById('printDashboard').addEventListener('click', () => {
       window.print();
     });
+
+    // Funções para modais
+    function showCatequistasModal(centro, etapa, sala, horario) {
+      const turmaKey = `${centro}|${etapa}|${sala}|${horario}`;
+      const catequistas = new Set();
+
+      dashboardData.forEach(d => {
+        if (d.centro === centro && d.etapa === etapa && d.sala === sala && d.horario === horario) {
+          if (d.catequistas) {
+            d.catequistas.split('|').forEach(c => {
+              catequistas.add(c.trim());
+            });
+          }
+        }
+      });
+
+      const modalTitle = document.getElementById('catequistasModalTitle');
+      const modalBody = document.getElementById('catequistasModalBody');
+
+      modalTitle.textContent = `Catequistas - ${centro} • ${etapa} • Sala ${sala} • ${horario}`;
+
+      modalBody.innerHTML = Array.from(catequistas)
+        .sort()
+        .map(catequista => `
+          <tr>
+            <td>${catequista}</td>
+          </tr>
+        `).join('');
+
+      document.getElementById('catequistasModal').style.display = 'block';
+    }
+
+    function showCatecumenosModal(centro, etapa, sala, horario) {
+      const catecumenos = dashboardData.filter(d =>
+        d.centro === centro && d.etapa === etapa && d.sala === sala && d.horario === horario
+      );
+
+      const modalTitle = document.getElementById('catecumenosModalTitle');
+      const modalBody = document.getElementById('catecumenosModalBody');
+
+      modalTitle.textContent = `Catecúmenos - ${centro} • ${etapa} • Sala ${sala} • ${horario}`;
+
+      // Função para obter cor de fundo do resultado
+      function getResultBackgroundColor(resultado) {
+        if (!resultado) return '#f9fafb';
+        const resultadoNorm = norm(resultado);
+        if (resultadoNorm.includes('aprovado')) return '#16a34a';
+        if (resultadoNorm.includes('reprovado')) return '#dc2626';
+        if (resultadoNorm.includes('desistente') || resultadoNorm.includes('desistiu')) return '#6b7280';
+        if (resultadoNorm.includes('transferido')) return '#2563eb';
+        if (resultadoNorm.includes('avaliacao') || resultadoNorm.includes('avaliação')) return '#f59e0b';
+        return '#374151';
+      }
+
+      modalBody.innerHTML = catecumenos
+        .sort((a, b) => a.nome.localeCompare(b.nome))
+        .map(catecumeno => `
+          <tr>
+            <td>${catecumeno.nome}</td>
+            <td>${catecumeno.nascimento || '-'}</td>
+            <td>
+              <div class="result-cell" style="background-color: ${getResultBackgroundColor(catecumeno.resultado)};">
+                ${catecumeno.resultado || 'Sem resultado'}
+              </div>
+            </td>
+          </tr>
+        `).join('');
+
+      document.getElementById('catecumenosModal').style.display = 'block';
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).style.display = 'none';
+    }
+
+    // Fechar modal clicando fora dele
+    window.onclick = function (event) {
+      const catequistasModal = document.getElementById('catequistasModal');
+      const catecumenosModal = document.getElementById('catecumenosModal');
+
+      if (event.target === catequistasModal) {
+        catequistasModal.style.display = 'none';
+      }
+      if (event.target === catecumenosModal) {
+        catecumenosModal.style.display = 'none';
+      }
+    }
 
     // Inicialização
     async function init() {
