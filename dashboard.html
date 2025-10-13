@@ -748,20 +748,20 @@
 
       <div class="dashboard-card">
         <div class="stat-grid">
-          <div class="stat-item">
-            <div class="stat-number medium" id="totalCatequistas">-</div>
+          <div class="stat-item" onclick="showAllCatequistasModal()" style="cursor: pointer;">
+            <div class="stat-number medium clickable-number" id="totalCatequistas">-</div>
             <div class="stat-label">Catequistas</div>
           </div>
-          <div class="stat-item">
-            <div class="stat-number medium" id="totalTurmas">-</div>
+          <div class="stat-item" onclick="showAllTurmasModal()" style="cursor: pointer;">
+            <div class="stat-number medium clickable-number" id="totalTurmas">-</div>
             <div class="stat-label">Turmas</div>
           </div>
-          <div class="stat-item">
-            <div class="stat-number medium" id="totalCentros">-</div>
+          <div class="stat-item" onclick="showAllCentrosModal()" style="cursor: pointer;">
+            <div class="stat-number medium clickable-number" id="totalCentros">-</div>
             <div class="stat-label">Centros</div>
           </div>
-          <div class="stat-item">
-            <div class="stat-number medium" id="totalHorarios">-</div>
+          <div class="stat-item" onclick="showAllHorariosModal()" style="cursor: pointer;">
+            <div class="stat-number medium clickable-number" id="totalHorarios">-</div>
             <div class="stat-label">Horários</div>
           </div>
         </div>
@@ -1020,6 +1020,139 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal para Resultado Específico -->
+  <div id="resultadoModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="resultadoModalTitle">Catecúmenos por Resultado</h3>
+        <button class="modal-close" onclick="closeModal('resultadoModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom: 12px;">
+          <input type="text" id="resultadoSearch" placeholder="🔍 Pesquisar catecúmenos..."
+            style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+        </div>
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Centro</th>
+              <th>Etapa</th>
+              <th>Sala</th>
+              <th>Data de Nascimento</th>
+            </tr>
+          </thead>
+          <tbody id="resultadoModalBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Todos os Catequistas -->
+  <div id="allCatequistasModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Todos os Catequistas</h3>
+        <button class="modal-close" onclick="closeModal('allCatequistasModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom: 12px;">
+          <input type="text" id="allCatequistasSearch" placeholder="🔍 Pesquisar catequistas..."
+            style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+        </div>
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Nome do Catequista</th>
+              <th>Centros</th>
+              <th>Turmas</th>
+            </tr>
+          </thead>
+          <tbody id="allCatequistasModalBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Todas as Turmas -->
+  <div id="allTurmasModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Todas as Turmas</h3>
+        <button class="modal-close" onclick="closeModal('allTurmasModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom: 12px;">
+          <input type="text" id="allTurmasSearch" placeholder="🔍 Pesquisar turmas..."
+            style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+        </div>
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Centro</th>
+              <th>Etapa</th>
+              <th>Sala</th>
+              <th>Horário</th>
+              <th>Catecúmenos</th>
+            </tr>
+          </thead>
+          <tbody id="allTurmasModalBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Todos os Centros -->
+  <div id="allCentrosModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Todos os Centros</h3>
+        <button class="modal-close" onclick="closeModal('allCentrosModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Centro</th>
+              <th>Catecúmenos</th>
+              <th>Turmas</th>
+              <th>Catequistas</th>
+            </tr>
+          </thead>
+          <tbody id="allCentrosModalBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Todos os Horários -->
+  <div id="allHorariosModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Todos os Horários</h3>
+        <button class="modal-close" onclick="closeModal('allHorariosModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Horário</th>
+              <th>Catecúmenos</th>
+              <th>Turmas</th>
+              <th>Centros</th>
+            </tr>
+          </thead>
+          <tbody id="allHorariosModalBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
   <script>
     // 🔧 DEBUG MODE: Altere para true para mostrar opção de upload de arquivo
     const DEBUG_MODE = false;
@@ -1097,9 +1230,22 @@
       if (!birthDate) return null;
 
       let birth;
-      if (typeof birthDate === 'string' && birthDate.includes('/')) {
-        const [day, month, year] = birthDate.split('/');
-        birth = new Date(year, month - 1, day);
+
+      // Se for um número (serial do Excel), converter para data
+      if (typeof birthDate === 'number') {
+        // Excel serial date: 1 = 1 de Janeiro de 1900
+        birth = new Date((birthDate - 25569) * 86400 * 1000);
+      } else if (typeof birthDate === 'string') {
+        if (birthDate.includes('/')) {
+          const [day, month, year] = birthDate.split('/');
+          birth = new Date(year, month - 1, day);
+        } else if (birthDate.includes('-')) {
+          // Formato ISO ou similar
+          birth = new Date(birthDate);
+        } else {
+          // Tentar converter diretamente
+          birth = new Date(birthDate);
+        }
       } else {
         birth = new Date(birthDate);
       }
@@ -1115,6 +1261,37 @@
       }
 
       return age;
+    }
+
+    // Função para formatar data
+    function formatDate(birthDate) {
+      if (!birthDate) return '-';
+
+      let birth;
+
+      // Se for um número (serial do Excel), converter para data
+      if (typeof birthDate === 'number') {
+        birth = new Date((birthDate - 25569) * 86400 * 1000);
+      } else if (typeof birthDate === 'string') {
+        if (birthDate.includes('/')) {
+          return birthDate; // Já está formatado
+        } else if (birthDate.includes('-')) {
+          birth = new Date(birthDate);
+        } else {
+          birth = new Date(birthDate);
+        }
+      } else {
+        birth = new Date(birthDate);
+      }
+
+      if (isNaN(birth)) return birthDate.toString();
+
+      // Formatar como DD/MM/YYYY
+      const day = birth.getDate().toString().padStart(2, '0');
+      const month = (birth.getMonth() + 1).toString().padStart(2, '0');
+      const year = birth.getFullYear();
+
+      return `${day}/${month}/${year}`;
     }
 
     function mapHeaders(cols) {
@@ -1319,7 +1496,10 @@
         .map(([resultado, count]) => {
           const colors = getResultColor(resultado);
           return `
-            <div style="text-align: center; padding: 8px; background: ${colors.bg}; border-radius: 6px;">
+            <div onclick="showResultadoModal('${resultado.replace(/'/g, "\\'")}', ${count})" 
+                 style="text-align: center; padding: 8px; background: ${colors.bg}; border-radius: 6px; cursor: pointer; transition: transform 0.2s ease;" 
+                 onmouseover="this.style.transform='scale(1.05)'" 
+                 onmouseout="this.style.transform='scale(1)'">
               <div style="font-weight: bold; color: ${colors.color};">${count}</div>
               <div style="font-size: 12px; color: ${colors.color};">${resultado}</div>
             </div>
@@ -2174,7 +2354,7 @@
         .map(catecumeno => `
           <tr>
             <td>${catecumeno.nome}</td>
-            <td>${catecumeno.nascimento || '-'}</td>
+            <td>${formatDate(catecumeno.nascimento)}</td>
             <td>
               <div class="result-cell" style="background-color: ${getResultBackgroundColor(catecumeno.resultado)};">
                 ${catecumeno.resultado || 'Sem resultado'}
@@ -2190,17 +2370,272 @@
       document.getElementById(modalId).style.display = 'none';
     }
 
+    // Modal para resultado específico
+    function showResultadoModal(resultado, count) {
+      const catecumenos = dashboardData.filter(d => d.resultado === resultado);
+
+      const modalTitle = document.getElementById('resultadoModalTitle');
+      const modalBody = document.getElementById('resultadoModalBody');
+
+      modalTitle.textContent = `${count} Catecúmenos com resultado: ${resultado}`;
+
+      function renderResultadoTable(filteredData = null) {
+        const data = filteredData || catecumenos;
+        modalBody.innerHTML = data
+          .sort((a, b) => a.nome.localeCompare(b.nome))
+          .map(catecumeno => `
+            <tr>
+              <td>${catecumeno.nome}</td>
+              <td>${catecumeno.centro}</td>
+              <td>${catecumeno.etapa}</td>
+              <td>${catecumeno.sala}</td>
+              <td>${formatDate(catecumeno.nascimento)}</td>
+            </tr>
+          `).join('');
+      }
+
+      renderResultadoTable();
+
+      // Adicionar pesquisa
+      const searchInput = document.getElementById('resultadoSearch');
+      searchInput.value = '';
+      searchInput.oninput = function () {
+        const searchTerm = this.value.toLowerCase();
+        if (!searchTerm) {
+          renderResultadoTable();
+          return;
+        }
+
+        const filtered = catecumenos.filter(c =>
+          c.nome.toLowerCase().includes(searchTerm) ||
+          c.centro.toLowerCase().includes(searchTerm) ||
+          c.etapa.toLowerCase().includes(searchTerm) ||
+          c.sala.toLowerCase().includes(searchTerm)
+        );
+
+        renderResultadoTable(filtered);
+      };
+
+      document.getElementById('resultadoModal').style.display = 'block';
+    }
+
+    // Modal para todos os catequistas
+    function showAllCatequistasModal() {
+      const catequistasData = new Map();
+
+      dashboardData.forEach(d => {
+        if (d.catequistas) {
+          d.catequistas.split('|').forEach(c => {
+            const catequista = c.trim();
+            if (!catequistasData.has(catequista)) {
+              catequistasData.set(catequista, {
+                centros: new Set(),
+                turmas: new Set()
+              });
+            }
+
+            const data = catequistasData.get(catequista);
+            data.centros.add(d.centro);
+            data.turmas.add(`${d.centro} - ${d.etapa} - Sala ${d.sala}`);
+          });
+        }
+      });
+
+      const modalBody = document.getElementById('allCatequistasModalBody');
+
+      function renderCatequistasTable(filteredData = null) {
+        const entries = filteredData || Array.from(catequistasData.entries());
+        modalBody.innerHTML = entries
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([catequista, data]) => `
+            <tr>
+              <td>${catequista}</td>
+              <td>${Array.from(data.centros).join(', ')}</td>
+              <td>${data.turmas.size}</td>
+            </tr>
+          `).join('');
+      }
+
+      renderCatequistasTable();
+
+      // Adicionar pesquisa
+      const searchInput = document.getElementById('allCatequistasSearch');
+      searchInput.value = '';
+      searchInput.oninput = function () {
+        const searchTerm = this.value.toLowerCase();
+        if (!searchTerm) {
+          renderCatequistasTable();
+          return;
+        }
+
+        const filtered = Array.from(catequistasData.entries()).filter(([catequista]) =>
+          catequista.toLowerCase().includes(searchTerm)
+        );
+
+        renderCatequistasTable(filtered);
+      };
+
+      document.getElementById('allCatequistasModal').style.display = 'block';
+    }
+
+    // Modal para todas as turmas
+    function showAllTurmasModal() {
+      const turmas = new Map();
+
+      dashboardData.forEach(d => {
+        if (d.centro && d.etapa && d.sala && d.horario) {
+          const key = `${d.centro}|${d.etapa}|${d.sala}|${d.horario}`;
+          if (!turmas.has(key)) {
+            turmas.set(key, {
+              centro: d.centro,
+              etapa: d.etapa,
+              sala: d.sala,
+              horario: d.horario,
+              catecumenos: 0
+            });
+          }
+          turmas.get(key).catecumenos++;
+        }
+      });
+
+      const modalBody = document.getElementById('allTurmasModalBody');
+
+      function renderTurmasTable(filteredData = null) {
+        const data = filteredData || Array.from(turmas.values());
+        modalBody.innerHTML = data
+          .sort((a, b) => a.centro.localeCompare(b.centro) || a.etapa.localeCompare(b.etapa))
+          .map(turma => `
+            <tr>
+              <td>${turma.centro}</td>
+              <td>${turma.etapa}</td>
+              <td>${turma.sala}</td>
+              <td>${turma.horario}</td>
+              <td><strong>${turma.catecumenos}</strong></td>
+            </tr>
+          `).join('');
+      }
+
+      renderTurmasTable();
+
+      // Adicionar pesquisa
+      const searchInput = document.getElementById('allTurmasSearch');
+      searchInput.value = '';
+      searchInput.oninput = function () {
+        const searchTerm = this.value.toLowerCase();
+        if (!searchTerm) {
+          renderTurmasTable();
+          return;
+        }
+
+        const filtered = Array.from(turmas.values()).filter(turma =>
+          turma.centro.toLowerCase().includes(searchTerm) ||
+          turma.etapa.toLowerCase().includes(searchTerm) ||
+          turma.sala.toLowerCase().includes(searchTerm) ||
+          turma.horario.toLowerCase().includes(searchTerm)
+        );
+
+        renderTurmasTable(filtered);
+      };
+
+      document.getElementById('allTurmasModal').style.display = 'block';
+    }
+
+    // Modal para todos os centros
+    function showAllCentrosModal() {
+      const centros = new Map();
+
+      dashboardData.forEach(d => {
+        if (d.centro) {
+          if (!centros.has(d.centro)) {
+            centros.set(d.centro, {
+              catecumenos: 0,
+              turmas: new Set(),
+              catequistas: new Set()
+            });
+          }
+
+          const data = centros.get(d.centro);
+          data.catecumenos++;
+
+          if (d.etapa && d.sala && d.horario) {
+            data.turmas.add(`${d.etapa}-${d.sala}-${d.horario}`);
+          }
+
+          if (d.catequistas) {
+            d.catequistas.split('|').forEach(c => {
+              data.catequistas.add(c.trim());
+            });
+          }
+        }
+      });
+
+      const modalBody = document.getElementById('allCentrosModalBody');
+      modalBody.innerHTML = Array.from(centros.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([centro, data]) => `
+          <tr>
+            <td><strong>${centro}</strong></td>
+            <td>${data.catecumenos}</td>
+            <td>${data.turmas.size}</td>
+            <td>${data.catequistas.size}</td>
+          </tr>
+        `).join('');
+
+      document.getElementById('allCentrosModal').style.display = 'block';
+    }
+
+    // Modal para todos os horários
+    function showAllHorariosModal() {
+      const horarios = new Map();
+
+      dashboardData.forEach(d => {
+        if (d.horario) {
+          if (!horarios.has(d.horario)) {
+            horarios.set(d.horario, {
+              catecumenos: 0,
+              turmas: new Set(),
+              centros: new Set()
+            });
+          }
+
+          const data = horarios.get(d.horario);
+          data.catecumenos++;
+
+          if (d.centro && d.etapa && d.sala) {
+            data.turmas.add(`${d.centro}-${d.etapa}-${d.sala}`);
+            data.centros.add(d.centro);
+          }
+        }
+      });
+
+      const modalBody = document.getElementById('allHorariosModalBody');
+      modalBody.innerHTML = Array.from(horarios.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([horario, data]) => `
+          <tr>
+            <td><strong>${horario}</strong></td>
+            <td>${data.catecumenos}</td>
+            <td>${data.turmas.size}</td>
+            <td>${data.centros.size}</td>
+          </tr>
+        `).join('');
+
+      document.getElementById('allHorariosModal').style.display = 'block';
+    }
+
     // Fechar modal clicando fora dele
     window.onclick = function (event) {
-      const catequistasModal = document.getElementById('catequistasModal');
-      const catecumenosModal = document.getElementById('catecumenosModal');
+      const modals = [
+        'catequistasModal', 'catecumenosModal', 'resultadoModal',
+        'allCatequistasModal', 'allTurmasModal', 'allCentrosModal', 'allHorariosModal'
+      ];
 
-      if (event.target === catequistasModal) {
-        catequistasModal.style.display = 'none';
-      }
-      if (event.target === catecumenosModal) {
-        catecumenosModal.style.display = 'none';
-      }
+      modals.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (event.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
     }
 
     // Inicialização
