@@ -1366,15 +1366,41 @@
         const url = CONFIG.arquivos.dados_principais + '?v=' + Date.now();
         console.log('🔄 Carregando Excel:', url);
 
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Erro ao carregar Excel: ' + response.status);
+        // Timeout para evitar travamentos
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos
+        
+        const response = await fetch(url, { 
+          signal: controller.signal,
+          cache: 'no-cache',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
+        }
 
         const buffer = await response.arrayBuffer();
+        
+        if (buffer.byteLength === 0) {
+          throw new Error('Arquivo Excel vazio ou corrompido');
+        }
+        
         const workbook = XLSX.read(buffer, { type: 'array' });
+        
+        if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+          throw new Error('Excel não contém planilhas');
+        }
+        
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
 
-        if (!json.length) throw new Error('Excel vazio');
+        if (!json.length) throw new Error('Planilha vazia');
 
         const headers = json[0].map(String);
         const idx = mapHeaders(headers);
@@ -1383,6 +1409,11 @@
         if (missing.length) throw new Error('Cabeçalhos ausentes: ' + missing.join(', '));
 
         const rows = json.slice(1).filter(r => r.some(v => String(v).trim() !== ''));
+        
+        if (rows.length === 0) {
+          throw new Error('Nenhum dado válido encontrado no Excel');
+        }
+        
         dashboardData = rows.map(r => ({
           nome: r[idx.nome] ?? '',
           nascimento: r[idx.nascimento] ?? '',
@@ -1394,6 +1425,9 @@
           resultado: r[idx.resultado] ?? ''
         }));
 
+        // Limpar gráficos existentes antes de atualizar
+        clearExistingCharts();
+
         updateDashboard();
         console.log(`✅ Dashboard atualizado com ${dashboardData.length} registos do Excel`);
 
@@ -1401,8 +1435,33 @@
         console.error('❌ Erro ao carregar Excel:', error);
         console.log('🔄 Usando dados de exemplo como fallback');
 
+        // Limpar gráficos existentes antes de usar dados de exemplo
+        clearExistingCharts();
+        
         dashboardData = [...SAMPLE_DATA];
         updateDashboard();
+        
+        // Mostrar aviso de que está usando dados de exemplo
+        const lastUpdateElement = document.getElementById('lastUpdate');
+        if (lastUpdateElement) {
+          lastUpdateElement.innerHTML = `<span style="color: #dc2626; font-weight: bold;">⚠️ Usando dados de exemplo - ${nowStamp()}</span>`;
+        }
+      }
+    }
+
+    // Função para limpar gráficos existentes
+    function clearExistingCharts() {
+      try {
+        Object.keys(charts).forEach(key => {
+          if (charts[key] && typeof charts[key].destroy === 'function') {
+            charts[key].destroy();
+            charts[key] = null;
+          }
+        });
+        charts = {};
+      } catch (error) {
+        console.warn('Erro ao limpar gráficos:', error);
+        charts = {};
       }
     }
 
@@ -1410,14 +1469,18 @@
     function updateDashboard() {
       if (!dashboardData) return;
 
-      updateBasicStats();
-      updateApprovalStats();
-      updateAgeStats();
-      updateDistributionCharts();
-      updateRankingTable();
-      updateApprovalByCategory();
+      try {
+        updateBasicStats();
+        updateApprovalStats();
+        updateAgeStats();
+        updateDistributionCharts();
+        updateRankingTable();
+        updateApprovalByCategory();
 
-      document.getElementById('lastUpdate').textContent = nowStamp();
+        document.getElementById('lastUpdate').textContent = nowStamp();
+      } catch (error) {
+        console.error('❌ Erro ao atualizar dashboard:', error);
+      }
     }
 
     // Estatísticas básicas
@@ -1605,10 +1668,16 @@
       const centroEntries = Object.entries(centros).sort(([, a], [, b]) => b - a);
 
       // Gráfico de Centro
-      const centroCtx = document.getElementById('centroChart').getContext('2d');
-      if (charts.centro) charts.centro.destroy();
+      try {
+        const centroCanvas = document.getElementById('centroChart');
+        if (centroCanvas) {
+          const centroCtx = centroCanvas.getContext('2d');
+          if (charts.centro) {
+            charts.centro.destroy();
+            charts.centro = null;
+          }
 
-      charts.centro = new Chart(centroCtx, {
+          charts.centro = new Chart(centroCtx, {
         type: 'doughnut',
         data: {
           labels: centroEntries.map(([centro]) => centro),
@@ -1627,7 +1696,11 @@
             legend: { position: 'bottom' }
           }
         }
-      });
+          });
+        }
+      } catch (error) {
+        console.warn('Erro ao criar gráfico de centro:', error);
+      }
 
       // Estatísticas de Centro
       const centroStatsHtml = centroEntries.map(([centro, count]) => {
@@ -1658,10 +1731,16 @@
       const etapaEntries = Object.entries(etapas).sort(([a], [b]) => a.localeCompare(b));
 
       // Gráfico de Etapa
-      const etapaCtx = document.getElementById('etapaChart').getContext('2d');
-      if (charts.etapa) charts.etapa.destroy();
+      try {
+        const etapaCanvas = document.getElementById('etapaChart');
+        if (etapaCanvas) {
+          const etapaCtx = etapaCanvas.getContext('2d');
+          if (charts.etapa) {
+            charts.etapa.destroy();
+            charts.etapa = null;
+          }
 
-      charts.etapa = new Chart(etapaCtx, {
+          charts.etapa = new Chart(etapaCtx, {
         type: 'bar',
         data: {
           labels: etapaEntries.map(([etapa]) => etapa),
@@ -1687,25 +1766,37 @@
           },
           animation: {
             onComplete: function () {
-              const ctx = this.chart.ctx;
-              ctx.font = '12px Arial';
-              ctx.fillStyle = '#1b1a17';
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'bottom';
+              try {
+                if (this.chart && this.chart.ctx) {
+                  const ctx = this.chart.ctx;
+                  ctx.font = '12px Arial';
+                  ctx.fillStyle = '#1b1a17';
+                  ctx.textAlign = 'center';
+                  ctx.textBaseline = 'bottom';
 
-              this.data.datasets.forEach((dataset, i) => {
-                const meta = this.getDatasetMeta(i);
-                meta.data.forEach((bar, index) => {
-                  const data = dataset.data[index];
-                  if (data > 0) {
-                    ctx.fillText(data, bar.x, bar.y - 5);
-                  }
-                });
-              });
+                  this.data.datasets.forEach((dataset, i) => {
+                    const meta = this.getDatasetMeta(i);
+                    if (meta && meta.data) {
+                      meta.data.forEach((bar, index) => {
+                        const data = dataset.data[index];
+                        if (data > 0 && bar && bar.x !== undefined && bar.y !== undefined) {
+                          ctx.fillText(data, bar.x, bar.y - 5);
+                        }
+                      });
+                    }
+                  });
+                }
+              } catch (error) {
+                console.warn('Erro na animação do gráfico:', error);
+              }
             }
           }
         }
-      });
+          });
+        }
+      } catch (error) {
+        console.warn('Erro ao criar gráfico de etapa:', error);
+      }
 
       // Estatísticas de Etapa
       const etapaStatsHtml = etapaEntries.map(([etapa, count]) => {
@@ -2197,6 +2288,7 @@
     }
     // Funções de carregamento de dados
     function loadSampleData() {
+      clearExistingCharts();
       dashboardData = [...SAMPLE_DATA];
       updateDashboard();
       console.log('✅ Dados de exemplo carregados no dashboard');
