@@ -625,8 +625,16 @@
 
     .modal-body {
       padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .modal-table-container {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
       max-height: 60vh;
-      overflow-y: auto;
     }
 
     .modal-table {
@@ -638,7 +646,7 @@
     .modal-table thead {
       position: sticky;
       top: 0;
-      background: var(--card);
+      background: #faf7ee;
       z-index: 10;
     }
 
@@ -651,6 +659,11 @@
       white-space: nowrap;
     }
 
+    .modal-table-body {
+      max-height: calc(60vh - 60px);
+      overflow-y: auto;
+    }
+
     .modal-table td {
       padding: 10px 12px;
       border-bottom: 1px solid var(--border-light);
@@ -658,6 +671,10 @@
     }
 
     .modal-table tr:hover {
+      background: #fffbf0;
+    }
+
+    .modal-table tr:nth-child(odd) {
       background: #fffbf0;
     }
 
@@ -802,6 +819,24 @@
           <div id="oldestStudent"></div>
         </div>
       </div>
+
+      <!-- Distribuição por Faixa Etária -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <h3>👥 Distribuição por Faixa Etária</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('faixaEtariaCard', 'faixa_etaria')">📊 XLSX</button>
+            <button class="btn small secondary" onclick="exportChartAsPNG('faixaEtariaChart', 'faixa_etaria_grafico')">🖼️ PNG</button>
+          </div>
+        </div>
+        <div id="faixaEtariaCard">
+          <div class="chart-container small">
+            <canvas id="faixaEtariaChart"></canvas>
+          </div>
+          <div id="faixaEtariaStats"></div>
+        </div>
+      </div>
+
       <!-- Distribuição por Centro -->
       <div class="dashboard-card wide">
         <div class="card-header">
@@ -900,7 +935,7 @@
         </div>
         <div id="rankingCard">
           <div style="margin-bottom: 12px;">
-            <input type="text" id="rankingSearch" placeholder="🔍 Pesquisar turmas..."
+            <input type="text" id="rankingSearch" placeholder="🔍 Pesquisar por turma, catequista ou catecúmeno..."
               style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
           </div>
           <div class="table-container">
@@ -985,15 +1020,21 @@
         <button class="modal-close" onclick="closeModal('catequistasModal')">&times;</button>
       </div>
       <div class="modal-body">
-        <table class="modal-table">
-          <thead>
-            <tr>
-              <th>Nome do Catequista</th>
-            </tr>
-          </thead>
-          <tbody id="catequistasModalBody">
-          </tbody>
-        </table>
+        <div class="modal-table-container">
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Nome do Catequista</th>
+              </tr>
+            </thead>
+          </table>
+          <div class="modal-table-body">
+            <table class="modal-table">
+              <tbody id="catequistasModalBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1006,17 +1047,23 @@
         <button class="modal-close" onclick="closeModal('catecumenosModal')">&times;</button>
       </div>
       <div class="modal-body">
-        <table class="modal-table">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Data de Nascimento</th>
-              <th>Resultado</th>
-            </tr>
-          </thead>
-          <tbody id="catecumenosModalBody">
-          </tbody>
-        </table>
+        <div class="modal-table-container">
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Data de Nascimento</th>
+                <th>Resultado</th>
+              </tr>
+            </thead>
+          </table>
+          <div class="modal-table-body">
+            <table class="modal-table">
+              <tbody id="catecumenosModalBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1033,19 +1080,25 @@
           <input type="text" id="resultadoSearch" placeholder="🔍 Pesquisar catecúmenos..."
             style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
         </div>
-        <table class="modal-table">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Centro</th>
-              <th>Etapa</th>
-              <th>Sala</th>
-              <th>Data de Nascimento</th>
-            </tr>
-          </thead>
-          <tbody id="resultadoModalBody">
-          </tbody>
-        </table>
+        <div class="modal-table-container">
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Centro</th>
+                <th>Etapa</th>
+                <th>Sala</th>
+                <th>Data de Nascimento</th>
+              </tr>
+            </thead>
+          </table>
+          <div class="modal-table-body">
+            <table class="modal-table">
+              <tbody id="resultadoModalBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1062,17 +1115,23 @@
           <input type="text" id="allCatequistasSearch" placeholder="🔍 Pesquisar catequistas..."
             style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
         </div>
-        <table class="modal-table">
-          <thead>
-            <tr>
-              <th>Nome do Catequista</th>
-              <th>Centros</th>
-              <th>Turmas</th>
-            </tr>
-          </thead>
-          <tbody id="allCatequistasModalBody">
-          </tbody>
-        </table>
+        <div class="modal-table-container">
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Nome do Catequista</th>
+                <th>Centros</th>
+                <th>Turmas</th>
+              </tr>
+            </thead>
+          </table>
+          <div class="modal-table-body">
+            <table class="modal-table">
+              <tbody id="allCatequistasModalBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1089,19 +1148,25 @@
           <input type="text" id="allTurmasSearch" placeholder="🔍 Pesquisar turmas..."
             style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
         </div>
-        <table class="modal-table">
-          <thead>
-            <tr>
-              <th>Centro</th>
-              <th>Etapa</th>
-              <th>Sala</th>
-              <th>Horário</th>
-              <th>Catecúmenos</th>
-            </tr>
-          </thead>
-          <tbody id="allTurmasModalBody">
-          </tbody>
-        </table>
+        <div class="modal-table-container">
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Centro</th>
+                <th>Etapa</th>
+                <th>Sala</th>
+                <th>Horário</th>
+                <th>Catecúmenos</th>
+              </tr>
+            </thead>
+          </table>
+          <div class="modal-table-body">
+            <table class="modal-table">
+              <tbody id="allTurmasModalBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1114,18 +1179,24 @@
         <button class="modal-close" onclick="closeModal('allCentrosModal')">&times;</button>
       </div>
       <div class="modal-body">
-        <table class="modal-table">
-          <thead>
-            <tr>
-              <th>Centro</th>
-              <th>Catecúmenos</th>
-              <th>Turmas</th>
-              <th>Catequistas</th>
-            </tr>
-          </thead>
-          <tbody id="allCentrosModalBody">
-          </tbody>
-        </table>
+        <div class="modal-table-container">
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Centro</th>
+                <th>Catecúmenos</th>
+                <th>Turmas</th>
+                <th>Catequistas</th>
+              </tr>
+            </thead>
+          </table>
+          <div class="modal-table-body">
+            <table class="modal-table">
+              <tbody id="allCentrosModalBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1138,18 +1209,24 @@
         <button class="modal-close" onclick="closeModal('allHorariosModal')">&times;</button>
       </div>
       <div class="modal-body">
-        <table class="modal-table">
-          <thead>
-            <tr>
-              <th>Horário</th>
-              <th>Catecúmenos</th>
-              <th>Turmas</th>
-              <th>Centros</th>
-            </tr>
-          </thead>
-          <tbody id="allHorariosModalBody">
-          </tbody>
-        </table>
+        <div class="modal-table-container">
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Horário</th>
+                <th>Catecúmenos</th>
+                <th>Turmas</th>
+                <th>Centros</th>
+              </tr>
+            </thead>
+          </table>
+          <div class="modal-table-body">
+            <table class="modal-table">
+              <tbody id="allHorariosModalBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1469,18 +1546,15 @@
     function updateDashboard() {
       if (!dashboardData) return;
 
-      try {
-        updateBasicStats();
-        updateApprovalStats();
-        updateAgeStats();
-        updateDistributionCharts();
-        updateRankingTable();
-        updateApprovalByCategory();
+      updateBasicStats();
+      updateApprovalStats();
+      updateAgeStats();
+      updateFaixaEtariaStats();
+      updateDistributionCharts();
+      updateRankingTable();
+      updateApprovalByCategory();
 
-        document.getElementById('lastUpdate').textContent = nowStamp();
-      } catch (error) {
-        console.error('❌ Erro ao atualizar dashboard:', error);
-      }
+      document.getElementById('lastUpdate').textContent = nowStamp();
     }
 
     // Estatísticas básicas
@@ -1655,20 +1729,115 @@
       }
     }
 
-    // Gráficos de distribuição
-    function updateDistributionCharts() {
-      // Distribuição por Centro
-      const centros = {};
-      dashboardData.forEach(d => {
-        if (d.centro) {
-          centros[d.centro] = (centros[d.centro] || 0) + 1;
-        }
+    // Estatísticas por Faixa Etária
+    function updateFaixaEtariaStats() {
+      const studentsWithAge = dashboardData
+        .map(d => ({ ...d, age: calculateAge(d.nascimento) }))
+        .filter(d => d.age !== null);
+
+      if (studentsWithAge.length === 0) {
+        document.getElementById('faixaEtariaStats').innerHTML = '<div>Dados de idade não disponíveis</div>';
+        return;
+      }
+
+      // Definir faixas etárias
+      const faixas = {
+        'Crianças (7-13 anos)': { min: 7, max: 13, count: 0, color: '#28a745' },
+        'Adolescentes (14-17 anos)': { min: 14, max: 17, count: 0, color: '#17a2b8' },
+        'Jovens (18-40 anos)': { min: 18, max: 40, count: 0, color: '#ffc107' },
+        'Adultos (40+ anos)': { min: 41, max: 999, count: 0, color: '#dc3545' }
+      };
+
+      // Contar por faixa etária
+      studentsWithAge.forEach(student => {
+        Object.keys(faixas).forEach(faixa => {
+          const { min, max } = faixas[faixa];
+          if (student.age >= min && student.age <= max) {
+            faixas[faixa].count++;
+          }
+        });
       });
 
-      const centroEntries = Object.entries(centros).sort(([, a], [, b]) => b - a);
+      const total = studentsWithAge.length;
 
-      // Gráfico de Centro
+      // Renderizar gráfico
       try {
+        const faixaCanvas = document.getElementById('faixaEtariaChart');
+        if (faixaCanvas) {
+          const ctx = faixaCanvas.getContext('2d');
+          
+          if (charts.faixaEtaria) {
+            charts.faixaEtaria.destroy();
+            charts.faixaEtaria = null;
+          }
+
+          charts.faixaEtaria = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: Object.keys(faixas),
+            datasets: [{
+              data: Object.values(faixas).map(f => f.count),
+              backgroundColor: Object.values(faixas).map(f => f.color),
+              borderWidth: 2,
+              borderColor: '#fff'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  padding: 15,
+                  usePointStyle: true
+                }
+              }
+            }
+          }
+        });
+        }
+      } catch (error) {
+        console.warn('Erro ao criar gráfico de faixa etária:', error);
+      }
+
+      // Renderizar estatísticas
+      const statsHtml = Object.entries(faixas)
+        .sort(([,a], [,b]) => b.count - a.count)
+        .map(([nome, dados]) => {
+          const percentual = total > 0 ? ((dados.count / total) * 100).toFixed(1) : 0;
+          return `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 8px; background: #f8f9fa; border-radius: 6px;">
+              <div>
+                <strong style="color: ${dados.color};">${nome}</strong>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-weight: 600;">${dados.count}</span>
+                <br>
+                <small style="color: var(--muted);">${percentual}%</small>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      document.getElementById('faixaEtariaStats').innerHTML = statsHtml;
+    }
+
+    // Gráficos de distribuição
+    function updateDistributionCharts() {
+        
+        // Distribuição por Centro
+        const centros = {};
+        dashboardData.forEach(d => {
+          if (d.centro) {
+            centros[d.centro] = (centros[d.centro] || 0) + 1;
+          }
+        });
+
+        const centroEntries = Object.entries(centros).sort(([, a], [, b]) => b - a);
+
+        // Gráfico de Centro
+        
         const centroCanvas = document.getElementById('centroChart');
         if (centroCanvas) {
           const centroCtx = centroCanvas.getContext('2d');
@@ -1698,12 +1867,9 @@
             }
           });
         }
-      } catch (error) {
-        console.warn('Erro ao criar gráfico de centro:', error);
-      }
 
-      // Estatísticas de Centro
-      const centroStatsHtml = centroEntries.map(([centro, count]) => {
+        // Estatísticas de Centro
+        const centroStatsHtml = centroEntries.map(([centro, count]) => {
         const percentage = ((count / dashboardData.length) * 100).toFixed(1);
         return `
           <div style="margin-bottom: 8px;">
@@ -1716,11 +1882,11 @@
             </div>
           </div>
         `;
-      }).join('');
+        }).join('');
 
-      document.getElementById('centroStats').innerHTML = centroStatsHtml;
+        document.getElementById('centroStats').innerHTML = centroStatsHtml;
 
-      // Distribuição por Etapa
+        // Distribuição por Etapa
       const etapas = {};
       dashboardData.forEach(d => {
         if (d.etapa) {
@@ -1843,11 +2009,13 @@
 
       document.getElementById('horarioStats').innerHTML = horarioStatsHtml;
 
-      // Catequistas por Centro
-      updateCatequistasByCenter();
+        // Catequistas por Centro
+        updateCatequistasByCenter();
 
-      // Turmas por Centro
-      updateClassesByCenter();
+        // Turmas por Centro
+        updateClassesByCenter();
+        
+
     }
     // Catequistas por Centro
     function updateCatequistasByCenter() {
@@ -1958,7 +2126,9 @@
           numCatequistas: turma.catequistas.size,
           numCatecumenos: turma.catecumenos.length,
           taxaAprovacao: turma.catecumenos.length > 0 ?
-            (turma.aprovados / turma.catecumenos.length * 100) : 0
+            (turma.aprovados / turma.catecumenos.length * 100) : 0,
+          catequistas: Array.from(turma.catequistas),
+          catecumenos: turma.catecumenos
         }))
         // Ordenar por taxa de aprovação (melhores primeiro)
         .sort((a, b) => b.taxaAprovacao - a.taxaAprovacao || b.numCatecumenos - a.numCatecumenos);
@@ -1996,7 +2166,7 @@
           <td>
             <div class="approval-rate">
               <div class="approval-indicator ${turma.taxaAprovacao >= 80 ? 'high' : turma.taxaAprovacao >= 60 ? 'medium' : 'low'}"></div>
-              ${turma.taxaAprovacao.toFixed(1)}%
+              ${turma.taxaAprovacao.toFixed(1)}% (${turma.aprovados}/${turma.numCatecumenos})
             </div>
           </td>
         </tr>
@@ -2010,12 +2180,25 @@
         return;
       }
 
-      const filtered = rankingData.filter(turma =>
-        turma.centro.toLowerCase().includes(searchTerm) ||
-        turma.etapa.toLowerCase().includes(searchTerm) ||
-        turma.sala.toLowerCase().includes(searchTerm) ||
-        turma.horario.toLowerCase().includes(searchTerm)
-      );
+      const filtered = rankingData.filter(turma => {
+        // Pesquisa básica por campos da turma
+        const basicMatch = turma.centro.toLowerCase().includes(searchTerm) ||
+          turma.etapa.toLowerCase().includes(searchTerm) ||
+          turma.sala.toLowerCase().includes(searchTerm) ||
+          turma.horario.toLowerCase().includes(searchTerm);
+
+        // Pesquisa por catequistas
+        const catequistaMatch = turma.catequistas && turma.catequistas.some(cat => 
+          cat.toLowerCase().includes(searchTerm)
+        );
+
+        // Pesquisa por catecúmenos
+        const catecumenoMatch = turma.catecumenos && turma.catecumenos.some(cat => 
+          cat.nome.toLowerCase().includes(searchTerm)
+        );
+
+        return basicMatch || catequistaMatch || catecumenoMatch;
+      });
 
       renderRankingTable(filtered);
     }
