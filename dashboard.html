@@ -1369,8 +1369,8 @@
         // Timeout para evitar travamentos
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos
-        
-        const response = await fetch(url, { 
+
+        const response = await fetch(url, {
           signal: controller.signal,
           cache: 'no-cache',
           headers: {
@@ -1378,25 +1378,25 @@
             'Pragma': 'no-cache'
           }
         });
-        
+
         clearTimeout(timeoutId);
-        
+
         if (!response.ok) {
           throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
         }
 
         const buffer = await response.arrayBuffer();
-        
+
         if (buffer.byteLength === 0) {
           throw new Error('Arquivo Excel vazio ou corrompido');
         }
-        
+
         const workbook = XLSX.read(buffer, { type: 'array' });
-        
+
         if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
           throw new Error('Excel não contém planilhas');
         }
-        
+
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
 
@@ -1409,11 +1409,11 @@
         if (missing.length) throw new Error('Cabeçalhos ausentes: ' + missing.join(', '));
 
         const rows = json.slice(1).filter(r => r.some(v => String(v).trim() !== ''));
-        
+
         if (rows.length === 0) {
           throw new Error('Nenhum dado válido encontrado no Excel');
         }
-        
+
         dashboardData = rows.map(r => ({
           nome: r[idx.nome] ?? '',
           nascimento: r[idx.nascimento] ?? '',
@@ -1437,10 +1437,10 @@
 
         // Limpar gráficos existentes antes de usar dados de exemplo
         clearExistingCharts();
-        
+
         dashboardData = [...SAMPLE_DATA];
         updateDashboard();
-        
+
         // Mostrar aviso de que está usando dados de exemplo
         const lastUpdateElement = document.getElementById('lastUpdate');
         if (lastUpdateElement) {
@@ -1678,24 +1678,24 @@
           }
 
           charts.centro = new Chart(centroCtx, {
-        type: 'doughnut',
-        data: {
-          labels: centroEntries.map(([centro]) => centro),
-          datasets: [{
-            data: centroEntries.map(([, count]) => count),
-            backgroundColor: [
-              '#c28402', '#d39f21', '#16a34a', '#2563eb', '#dc2626',
-              '#7c3aed', '#ea580c', '#0891b2', '#be185d'
-            ]
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'bottom' }
-          }
-        }
+            type: 'doughnut',
+            data: {
+              labels: centroEntries.map(([centro]) => centro),
+              datasets: [{
+                data: centroEntries.map(([, count]) => count),
+                backgroundColor: [
+                  '#c28402', '#d39f21', '#16a34a', '#2563eb', '#dc2626',
+                  '#7c3aed', '#ea580c', '#0891b2', '#be185d'
+                ]
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { position: 'bottom' }
+              }
+            }
           });
         }
       } catch (error) {
@@ -1741,57 +1741,57 @@
           }
 
           charts.etapa = new Chart(etapaCtx, {
-        type: 'bar',
-        data: {
-          labels: etapaEntries.map(([etapa]) => etapa),
-          datasets: [{
-            label: 'Catecúmenos',
-            data: etapaEntries.map(([, count]) => count),
-            backgroundColor: '#c28402'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                stepSize: 1
-              }
-            }
-          },
-          animation: {
-            onComplete: function () {
-              try {
-                if (this.chart && this.chart.ctx) {
-                  const ctx = this.chart.ctx;
-                  ctx.font = '12px Arial';
-                  ctx.fillStyle = '#1b1a17';
-                  ctx.textAlign = 'center';
-                  ctx.textBaseline = 'bottom';
+            type: 'bar',
+            data: {
+              labels: etapaEntries.map(([etapa]) => etapa),
+              datasets: [{
+                label: 'Catecúmenos',
+                data: etapaEntries.map(([, count]) => count),
+                backgroundColor: '#c28402'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    stepSize: 1
+                  }
+                }
+              },
+              animation: {
+                onComplete: function () {
+                  try {
+                    if (this.chart && this.chart.ctx) {
+                      const ctx = this.chart.ctx;
+                      ctx.font = '12px Arial';
+                      ctx.fillStyle = '#1b1a17';
+                      ctx.textAlign = 'center';
+                      ctx.textBaseline = 'bottom';
 
-                  this.data.datasets.forEach((dataset, i) => {
-                    const meta = this.getDatasetMeta(i);
-                    if (meta && meta.data) {
-                      meta.data.forEach((bar, index) => {
-                        const data = dataset.data[index];
-                        if (data > 0 && bar && bar.x !== undefined && bar.y !== undefined) {
-                          ctx.fillText(data, bar.x, bar.y - 5);
+                      this.data.datasets.forEach((dataset, i) => {
+                        const meta = this.getDatasetMeta(i);
+                        if (meta && meta.data) {
+                          meta.data.forEach((bar, index) => {
+                            const data = dataset.data[index];
+                            if (data > 0 && bar && bar.x !== undefined && bar.y !== undefined) {
+                              ctx.fillText(data, bar.x, bar.y - 5);
+                            }
+                          });
                         }
                       });
                     }
-                  });
+                  } catch (error) {
+                    console.warn('Erro na animação do gráfico:', error);
+                  }
                 }
-              } catch (error) {
-                console.warn('Erro na animação do gráfico:', error);
               }
             }
-          }
-        }
           });
         }
       } catch (error) {
@@ -2742,6 +2742,9 @@
 
     window.addEventListener('DOMContentLoaded', init);
   </script>
+
+  <!-- Script de rastreamento -->
+  <script src="assets/js/tracking.js"></script>
   </body>
 
 </html>
