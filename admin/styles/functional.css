@@ -1,0 +1,463 @@
+/* Functional Admin Panel Styles */
+
+/* Status Messages */
+.status-message {
+    padding: 12px;
+    border-radius: 6px;
+    margin: 10px 0;
+    font-weight: 500;
+}
+
+.status-message.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-message.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.status-message.warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+/* Form Sections */
+.form-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.form-section h4 {
+    margin: 0 0 15px 0;
+    color: #2d3748;
+    font-size: 1.2em;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #4a5568;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #007cba;
+    box-shadow: 0 0 0 2px rgba(0, 124, 186, 0.2);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: auto;
+}
+
+/* Upload Areas */
+.upload-sections {
+    display: grid;
+    gap: 20px;
+}
+
+.upload-section {
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.upload-area {
+    border: 2px dashed #cbd5e0;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    margin: 15px 0;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.upload-area:hover {
+    border-color: #007cba;
+}
+
+.upload-placeholder {
+    color: #718096;
+}
+
+.upload-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.upload-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.upload-status {
+    margin-top: 15px;
+}
+
+.status-success {
+    color: #38a169;
+    background: #f0fff4;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #9ae6b4;
+}
+
+.status-error {
+    color: #e53e3e;
+    background: #fff5f5;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #feb2b2;
+}
+
+.status-loading {
+    color: #3182ce;
+    background: #ebf8ff;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #90cdf4;
+}
+
+/* File Items */
+.file-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.file-icon {
+    font-size: 20px;
+}
+
+.file-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.file-status {
+    color: #38a169;
+    font-size: 14px;
+}
+
+/* Data Management */
+.data-overview {
+    margin-bottom: 30px;
+}
+
+.data-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-card h4 {
+    margin: 0 0 10px 0;
+    color: #4a5568;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.stat-number {
+    font-size: 32px;
+    font-weight: bold;
+    color: #007cba;
+}
+
+.data-actions {
+    display: grid;
+    gap: 20px;
+}
+
+.action-section {
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.action-section h4 {
+    margin: 0 0 10px 0;
+    color: #2d3748;
+}
+
+.action-section p {
+    margin: 0 0 15px 0;
+    color: #718096;
+}
+
+/* Logs */
+.logs-interface {
+    background: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.logs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: #f7fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.logs-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.logs-filters {
+    padding: 15px 20px;
+    background: #f7fafc;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    gap: 15px;
+}
+
+.logs-filters select,
+.logs-filters input {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+}
+
+.logs-display {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.log-entry {
+    display: flex;
+    gap: 15px;
+    padding: 10px;
+    border-bottom: 1px solid #f1f5f9;
+    font-family: monospace;
+    font-size: 13px;
+}
+
+.log-entry.info {
+    background: #f8fafc;
+}
+
+.log-entry.warning {
+    background: #fffbeb;
+}
+
+.log-entry.error {
+    background: #fef2f2;
+}
+
+.log-time {
+    color: #64748b;
+    min-width: 150px;
+}
+
+.log-level {
+    font-weight: bold;
+    min-width: 80px;
+}
+
+.log-level.INFO {
+    color: #0ea5e9;
+}
+
+.log-level.WARNING {
+    color: #f59e0b;
+}
+
+.log-level.ERROR {
+    color: #ef4444;
+}
+
+.log-message {
+    flex: 1;
+    color: #1e293b;
+}
+
+/* Backup Interface */
+.backup-sections {
+    display: grid;
+    gap: 20px;
+}
+
+.backup-section {
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.backup-section h4 {
+    margin: 0 0 10px 0;
+    color: #2d3748;
+}
+
+.backup-options {
+    margin: 15px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.backup-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.backup-status {
+    margin-top: 15px;
+}
+
+.file-drop-area {
+    border: 2px dashed #cbd5e0;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.file-drop-area:hover {
+    border-color: #007cba;
+}
+
+.drop-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.backup-history {
+    margin-top: 15px;
+}
+
+.backup-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.backup-date {
+    font-weight: 500;
+    min-width: 120px;
+}
+
+.backup-type {
+    flex: 1;
+    color: #718096;
+}
+
+.backup-size {
+    color: #4a5568;
+    min-width: 80px;
+}
+
+.backup-item-actions {
+    display: flex;
+    gap: 5px;
+}
+
+/* Section Errors */
+.section-error {
+    text-align: center;
+    padding: 40px 20px;
+    color: #718096;
+}
+
+.error-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+}
+
+.section-error h3 {
+    margin: 0 0 10px 0;
+    color: #2d3748;
+}
+
+.section-error details {
+    margin: 20px 0;
+    text-align: left;
+}
+
+.section-error pre {
+    background: #f7fafc;
+    padding: 15px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .data-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .upload-actions,
+    .backup-actions,
+    .logs-actions {
+        flex-direction: column;
+    }
+    
+    .logs-filters {
+        flex-direction: column;
+    }
+    
+    .backup-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .backup-item-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}

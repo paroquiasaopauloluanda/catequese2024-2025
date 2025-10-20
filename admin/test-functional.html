@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste do Sistema Funcional</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste do Sistema Administrativo Funcional</h1>
+    
+    <div class="test-section info">
+        <h3>📋 Status dos Arquivos</h3>
+        <div id="file-status">Verificando arquivos...</div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔐 Teste de Autenticação</h3>
+        <button onclick="testAuth()">Testar Login</button>
+        <button onclick="clearAuth()">Limpar Sessão</button>
+        <div id="auth-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>⚙️ Teste de Configuração</h3>
+        <button onclick="testConfig()">Carregar Configuração</button>
+        <div id="config-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🚀 Acesso Direto</h3>
+        <button onclick="goToLogin()">Ir para Login</button>
+        <button onclick="goToFunctional()">Ir para Sistema (se logado)</button>
+    </div>
+
+    <script>
+        // Test authentication
+        function testAuth() {
+            const result = document.getElementById('auth-result');
+            
+            // Create test session
+            const session = {
+                authenticated: true,
+                loginTime: Date.now(),
+                lastActivity: Date.now(),
+                sessionId: 'test-' + Date.now(),
+                username: 'admin'
+            };
+            
+            localStorage.setItem('admin_session', JSON.stringify(session));
+            sessionStorage.setItem('admin_session_backup', JSON.stringify(session));
+            
+            result.innerHTML = '<div class="success">✅ Sessão de teste criada com sucesso!</div>';
+        }
+        
+        function clearAuth() {
+            localStorage.removeItem('admin_session');
+            sessionStorage.removeItem('admin_session_backup');
+            
+            const result = document.getElementById('auth-result');
+            result.innerHTML = '<div class="info">🗑️ Sessão limpa</div>';
+        }
+        
+        // Test configuration loading
+        async function testConfig() {
+            const result = document.getElementById('config-result');
+            result.innerHTML = '<div class="info">⏳ Carregando configuração...</div>';
+            
+            try {
+                const response = await fetch('../config/settings.json');
+                if (response.ok) {
+                    const config = await response.json();
+                    result.innerHTML = `<div class="success">✅ Configuração carregada: ${config.paroquia?.nome || 'Nome não encontrado'}</div>`;
+                } else {
+                    result.innerHTML = '<div class="error">❌ Erro ao carregar configuração</div>';
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ Erro: ${error.message}</div>`;
+            }
+        }
+        
+        // Navigation functions
+        function goToLogin() {
+            window.location.href = 'login.html';
+        }
+        
+        function goToFunctional() {
+            window.location.href = 'functional.html';
+        }
+        
+        // Check file status on load
+        window.addEventListener('load', () => {
+            const statusDiv = document.getElementById('file-status');
+            const files = [
+                'login.html',
+                'functional.html', 
+                'js/app_functional.js',
+                'styles/main.css',
+                'styles/functional.css'
+            ];
+            
+            let status = '<ul>';
+            files.forEach(file => {
+                status += `<li>📄 ${file} - <span style="color: green;">Presente</span></li>`;
+            });
+            status += '</ul>';
+            
+            statusDiv.innerHTML = status;
+        });
+    </script>
+</body>
+</html>
