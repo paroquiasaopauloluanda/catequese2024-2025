@@ -224,18 +224,18 @@ class AuthManager {
 
         try {
             const session = JSON.parse(stored);
-            const validation = window.TypeValidators.validateSessionData(session);
-
-            if (!validation.isValid) {
-                console.warn('Invalid session data:', validation.errors);
-                this.logout();
+            
+            // Validação simplificada para evitar loops
+            if (session && typeof session === 'object' && session.authenticated) {
+                return session;
+            } else {
+                console.warn('Invalid session format, clearing...');
+                localStorage.removeItem(this.sessionKey);
                 return null;
             }
-
-            return session;
         } catch (error) {
             console.error('Error parsing session data:', error);
-            this.logout();
+            localStorage.removeItem(this.sessionKey);
             return null;
         }
     }

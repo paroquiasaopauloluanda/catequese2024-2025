@@ -1315,6 +1315,95 @@ class AdminPanelApp {
     }
 
     /**
+     * Save GitHub token configuration
+     */
+    async saveGitHubToken() {
+        const tokenInput = document.getElementById('github-token');
+        const statusDiv = document.getElementById('github-status');
+        const saveButton = document.getElementById('save-github-token');
+        
+        if (!tokenInput || !statusDiv) return;
+        
+        const token = tokenInput.value.trim();
+        
+        if (!token) {
+            this.showGitHubStatus('error', 'Por favor, insira um token válido');
+            return;
+        }
+        
+        // Validate token format
+        if (!token.startsWith('ghp_') && !token.startsWith('github_pat_')) {
+            this.showGitHubStatus('warning', 'Formato de token inválido. Deve começar com "ghp_" ou "github_pat_"');
+            return;
+        }
+        
+        try {
+            saveButton.disabled = true;
+            saveButton.textContent = '⏳ Salvando...';
+            
+            // Configure GitHub manager
+            await this.githubManager.setToken(token);
+            
+            // Test connection
+            const isConfigured = this.githubManager.isConfigured();
+            
+            if (isConfigured) {
+                this.showGitHubStatus('success', '✅ Token configurado com sucesso! GitHub conectado.');
+                tokenInput.value = ''; // Clear for security
+                
+                // Reload configuration to reflect changes
+                if (this.configManager) {
+                    await this.configManager.loadSettings();
+                }
+            } else {
+                this.showGitHubStatus('error', '❌ Falha ao configurar token. Verifique se o token é válido.');
+            }
+            
+        } catch (error) {
+            console.error('Error saving GitHub token:', error);
+            this.showGitHubStatus('error', `❌ Erro ao salvar token: ${error.message}`);
+        } finally {
+            saveButton.disabled = false;
+            saveButton.textContent = '💾 Salvar Token';
+        }
+    }
+    
+    /**
+     * Show GitHub configuration status
+     */
+    showGitHubStatus(type, message) {
+        const statusDiv = document.getElementById('github-status');
+        if (!statusDiv) return;
+        
+        const colors = {
+            success: '#d4edda',
+            error: '#f8d7da',
+            warning: '#fff3cd',
+            info: '#d1ecf1'
+        };
+        
+        const textColors = {
+            success: '#155724',
+            error: '#721c24',
+            warning: '#856404',
+            info: '#0c5460'
+        };
+        
+        statusDiv.style.display = 'block';
+        statusDiv.style.backgroundColor = colors[type] || colors.info;
+        statusDiv.style.color = textColors[type] || textColors.info;
+        statusDiv.style.border = `1px solid ${colors[type] || colors.info}`;
+        statusDiv.textContent = message;
+        
+        // Auto-hide after 5 seconds for success messages
+        if (type === 'success') {
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    /**
      * Cleanup when logging out
      */
     cleanup() {
