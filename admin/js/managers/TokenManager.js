@@ -348,8 +348,8 @@ class TokenManager {
             return false;
         }
         
-        // Check if token is too old (older than 1 year)
-        const maxAge = 365 * 24 * 60 * 60 * 1000; // 1 year
+        // Check if token is too old (older than 6 months, extended from 1 year)
+        const maxAge = 6 * 30 * 24 * 60 * 60 * 1000; // 6 months
         if (Date.now() - metadata.storedAt > maxAge) {
             console.warn('Token is too old, clearing...');
             this.clearToken();
@@ -466,8 +466,8 @@ class TokenManager {
             return true;
         }
         
-        // Refresh validation every 24 hours
-        const refreshInterval = 24 * 60 * 60 * 1000;
+        // Refresh validation every 7 days (extended from 24 hours)
+        const refreshInterval = 7 * 24 * 60 * 60 * 1000;
         return Date.now() - metadata.lastValidated > refreshInterval;
     }
 

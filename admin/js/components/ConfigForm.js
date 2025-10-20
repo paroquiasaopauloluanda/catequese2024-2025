@@ -109,6 +109,9 @@ class ConfigForm {
             console.error('Error loading configuration:', error);
             this.hideLoading();
             this.showError('Erro ao carregar configurações: ' + error.message);
+            
+            // Try to show a basic form with default values
+            this.showBasicForm();
         }
     }
 
@@ -1052,6 +1055,41 @@ class ConfigForm {
         } else {
             console.log('Success:', message);
         }
+    }
+
+    /**
+     * Show basic form when configuration loading fails
+     */
+    showBasicForm() {
+        console.log('Showing basic form');
+        const formContent = document.getElementById('form-content');
+        if (!formContent) return;
+
+        const basicConfig = {
+            paroquia: {
+                nome: "Paróquia de São Paulo",
+                secretariado: "Secretariado da Catequese",
+                ano_catequetico: "2024/2025",
+                data_inicio: "2024-10-01",
+                data_inicio_formatada: "1 de Outubro de 2024"
+            },
+            arquivos: {
+                dados_principais: "data/dados-catequese.xlsx",
+                template_export: "data/template-export.xlsx",
+                logo: "assets/images/logo-paroquia.jpg"
+            },
+            interface: {
+                tema: "claro",
+                idioma: "pt",
+                items_por_pagina: 50,
+                auto_backup: true,
+                backup_intervalo_horas: 24
+            }
+        };
+
+        this.currentConfig = basicConfig;
+        this.originalConfig = JSON.parse(JSON.stringify(basicConfig));
+        this.buildForm(basicConfig);
     }
 
     /**

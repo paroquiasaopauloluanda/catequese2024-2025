@@ -77,9 +77,15 @@ class AdminPanelApp {
             this.initializeHelpSystem();
             
             // Check if user is already authenticated
-            if (this.authManager.isAuthenticated()) {
+            console.log('Checking authentication status...');
+            const isAuth = this.authManager.isAuthenticated();
+            console.log('Is authenticated:', isAuth);
+            
+            if (isAuth) {
+                console.log('User is authenticated, showing admin panel');
                 await this.showAdminPanel();
             } else {
+                console.log('User not authenticated, showing login screen');
                 this.showLoginScreen();
             }
             
@@ -1333,15 +1339,25 @@ class AdminPanelApp {
         
         if (loginScreen) {
             loginScreen.classList.add('active');
+            console.log('Login screen activated');
+        } else {
+            console.error('Login screen element not found');
         }
+        
         if (adminPanel) {
             adminPanel.classList.remove('active');
+            console.log('Admin panel deactivated');
         }
         
         // Focus on username field
         const usernameField = document.getElementById('username');
         if (usernameField) {
-            setTimeout(() => usernameField.focus(), 100);
+            setTimeout(() => {
+                usernameField.focus();
+                console.log('Username field focused');
+            }, 100);
+        } else {
+            console.error('Username field not found');
         }
     }
 
@@ -2486,4 +2502,49 @@ window.debugFileUpload = async function() {
     } catch (error) {
         output.textContent += 'ERRO: ' + error.message + '\n' + error.stack;
     }
+};
+
+// Additional debug functions
+window.debugAuth = function() {
+    const output = document.getElementById('debug-output');
+    output.textContent = 'Testando autenticação...\n';
+    
+    try {
+        output.textContent += 'Verificando AuthManager...\n';
+        if (window.adminApp.authManager) {
+            output.textContent += 'AuthManager existe\n';
+            const isAuth = window.adminApp.authManager.isAuthenticated();
+            output.textContent += 'Está autenticado: ' + isAuth + '\n';
+            
+            const session = window.adminApp.authManager.getSession();
+            output.textContent += 'Sessão: ' + (session ? 'Existe' : 'Não existe') + '\n';
+            
+            if (session) {
+                output.textContent += 'Dados da sessão: ' + JSON.stringify(session, null, 2) + '\n';
+            }
+        } else {
+            output.textContent += 'AuthManager não existe!\n';
+        }
+        
+        // Check login screen visibility
+        const loginScreen = document.getElementById('login-screen');
+        const adminPanel = document.getElementById('admin-panel');
+        
+        output.textContent += '\nEstado das telas:\n';
+        output.textContent += 'Login screen: ' + (loginScreen ? (loginScreen.classList.contains('active') ? 'Ativo' : 'Inativo') : 'Não encontrado') + '\n';
+        output.textContent += 'Admin panel: ' + (adminPanel ? (adminPanel.classList.contains('active') ? 'Ativo' : 'Inativo') : 'Não encontrado') + '\n';
+        
+    } catch (error) {
+        output.textContent += 'ERRO: ' + error.message + '\n' + error.stack;
+    }
+};
+
+window.forceLogin = function() {
+    console.log('Forçando exibição do login');
+    window.adminApp.showLoginScreen();
+};
+
+window.forceLogout = function() {
+    console.log('Forçando logout');
+    window.adminApp.authManager.logout();
 };

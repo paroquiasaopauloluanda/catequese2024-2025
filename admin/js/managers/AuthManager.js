@@ -7,7 +7,7 @@ class AuthManager {
         this.sessionKey = 'admin_session';
         this.maxLoginAttempts = 5;
         this.lockoutDuration = 15 * 60 * 1000; // 15 minutes
-        this.sessionTimeout = 30 * 60 * 1000; // 30 minutes
+        this.sessionTimeout = 8 * 60 * 60 * 1000; // 8 hours (extended session)
 
         // Initialize login attempts with safe fallback
         this.loginAttempts = null; // Will be loaded lazily when needed
@@ -337,6 +337,9 @@ class AuthManager {
         console.log('Creating session:', session);
         localStorage.setItem(this.sessionKey, JSON.stringify(session));
 
+        // Also store in sessionStorage for additional persistence
+        sessionStorage.setItem(this.sessionKey + '_backup', JSON.stringify(session));
+
         // Notify managers of session change
         if (this.tokenManager && typeof this.tokenManager.onSessionChange === 'function') {
             this.tokenManager.onSessionChange(session);
@@ -463,29 +466,50 @@ class AuthManager {
      * @returns {SessionData|null} Session data or null if not authenticated
      */
     getSession() {
-        const stored = localStorage.getItem(this.sessionKey);
+        // Try localStorage first
+        let stored = localStorage.getItem(this.sessionKey);
+        
+        // If not found, try sessionStorage backup
+        if (!stored) {
+            stored = sessionStorage.getItem(this.sessionKey + '_backup');
+            if (stored) {
+                // Restore to localStorage
+                localStorage.setItem(this.sessionKey, stored);
+            }
+        }
+        
         if (!stored) return null;
 
         try {
             const session = JSON.parse(stored);
 
-            // Use throttled validation instead of basic checks
-            const validationResult = this.sessionValidator ?
-                this.sessionValidator.validateSession(session) :
-                { valid: true, throttled: false };
-
-            if (validationResult.valid) {
-                return session;
+            // Basic validation - check if session has required fields
+            if (!session || typeof session !== 'object' || !session.authenticated) {
+                this.silentCleanup();
+                return null;
             }
 
-            // If validation is throttled, return session if it exists and has basic structure
-            if (validationResult.throttled && session && session.authenticated === true) {
-                return session;
+            // Use throttled validation if available
+            if (this.sessionValidator) {
+                const validationResult = this.sessionValidator.validateSession(session);
+                
+                if (validationResult.valid) {
+                    return session;
+                }
+
+                // If validation is throttled, return session if it has basic structure
+                if (validationResult.throttled && session.authenticated === true) {
+                    return session;
+                }
+
+                // Session validation failed
+                this.silentCleanup();
+                return null;
             }
 
-            // Session is invalid, clean up silently
-            this.silentCleanup();
-            return null;
+            // If no validator, just return the session
+            return session;
+            
         } catch (error) {
             // Parse error, clean up silently
             this.silentCleanup();

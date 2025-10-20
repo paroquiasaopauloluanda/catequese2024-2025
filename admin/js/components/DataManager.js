@@ -199,9 +199,36 @@ class DataManager {
             if (data) {
                 this.processExcelData(data);
                 this.refreshCurrentView();
+            } else {
+                // Show empty state
+                this.showEmptyState();
             }
         } catch (error) {
             console.log('No existing data found, starting fresh');
+            this.showEmptyState();
+        }
+    }
+
+    /**
+     * Show empty state when no data is available
+     */
+    showEmptyState() {
+        this.updateStats();
+        this.refreshCurrentView();
+        
+        // Show helpful message
+        const overviewContainer = document.getElementById('classes-overview');
+        if (overviewContainer) {
+            overviewContainer.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <h3>Nenhum dado carregado</h3>
+                    <p>Carregue um arquivo Excel para começar a gerenciar os dados da catequese.</p>
+                    <button class="btn btn-primary" onclick="dataManager.loadExcelFile()">
+                        📊 Carregar Arquivo Excel
+                    </button>
+                </div>
+            `;
         }
     }
 
