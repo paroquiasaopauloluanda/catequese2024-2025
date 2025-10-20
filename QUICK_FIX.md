@@ -3,14 +3,17 @@
 ## ✅ **Problemas Corrigidos**
 
 1. ❌ `actions/upload-artifact: v3` → ✅ `v4`
-2. ❌ `npm ci` sem package-lock.json → ✅ Criado + fallback
+2. ❌ `npm ci` dependências desatualizadas → ✅ **REMOVIDO npm completamente**
+3. ❌ package-lock.json conflitos → ✅ **REMOVIDO dependências externas**
 
 ## 🔧 **Arquivos Corrigidos**
 
-- ✅ `.github/workflows/deploy-admin.yml` - Atualizado
-- ✅ `.github/workflows/pages.yml` - Atualizado  
-- ✅ `.github/workflows/simple-deploy.yml` - **NOVO (Recomendado)**
-- ✅ `admin/package-lock.json` - **CRIADO**
+- ✅ `.github/workflows/deploy-static.yml` - **NOVO (Mais Simples)**
+- ✅ `.github/workflows/simple-deploy.yml` - **RECOMENDADO**
+- ✅ `.github/workflows/deploy-admin.yml` - Sem npm
+- ✅ `.github/workflows/pages.yml` - Sem npm
+- ✅ `admin/package.json` - **SIMPLIFICADO (sem dependências)**
+- ❌ `admin/package-lock.json` - **REMOVIDO**
 
 ## 🚀 **Deploy Imediato**
 

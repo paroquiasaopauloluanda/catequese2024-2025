@@ -9,13 +9,13 @@ class AuthManager {
         this.lockoutDuration = 15 * 60 * 1000; // 15 minutes
         this.sessionTimeout = 30 * 60 * 1000; // 30 minutes
         this.loginAttempts = this.getLoginAttempts();
-        
+
         // Valid credentials (in production, this should be more secure)
         this.validCredentials = {
             username: 'admin',
-            passwordHash: this.hashPassword('nilknarfnessa')
+            passwordHash: this.hashPassword('nilknarf')
         };
-        
+
         // Initialize token manager and security manager
         this.tokenManager = new TokenManager();
         this.securityManager = new SecurityManager();
@@ -119,13 +119,13 @@ class AuthManager {
 
         // Validate credentials
         const passwordHash = this.hashPassword(password);
-        const isValid = username === this.validCredentials.username && 
-                       passwordHash === this.validCredentials.passwordHash;
+        const isValid = username === this.validCredentials.username &&
+            passwordHash === this.validCredentials.passwordHash;
 
         if (!isValid) {
             // Increment failed attempts
             const newCount = this.loginAttempts.count + 1;
-            
+
             if (newCount >= this.maxLoginAttempts) {
                 // Lock account
                 const lockedUntil = Date.now() + this.lockoutDuration;
@@ -146,7 +146,7 @@ class AuthManager {
 
         // Successful login
         this.clearLoginAttempts();
-        
+
         const session = {
             authenticated: true,
             loginTime: Date.now(),
@@ -155,11 +155,11 @@ class AuthManager {
         };
 
         localStorage.setItem(this.sessionKey, JSON.stringify(session));
-        
+
         // Notify managers of session change
         this.tokenManager.onSessionChange(session);
         this.securityManager.initializeForSession(session);
-        
+
         return {
             success: true,
             message: 'Login realizado com sucesso!',
@@ -174,7 +174,7 @@ class AuthManager {
         // Notify managers of session end
         this.tokenManager.onSessionChange(null);
         this.securityManager.initializeForSession(null);
-        
+
         localStorage.removeItem(this.sessionKey);
         // Redirect to login or refresh page
         window.location.reload();
@@ -198,7 +198,7 @@ class AuthManager {
         // Check session timeout
         const now = Date.now();
         const timeSinceActivity = now - session.lastActivity;
-        
+
         if (timeSinceActivity > this.sessionTimeout) {
             this.logout();
             return false;
@@ -207,10 +207,10 @@ class AuthManager {
         // Update last activity
         session.lastActivity = now;
         localStorage.setItem(this.sessionKey, JSON.stringify(session));
-        
+
         // Ensure managers have current session
         this.tokenManager.onSessionChange(session);
-        
+
         return session.authenticated;
     }
 
@@ -225,13 +225,13 @@ class AuthManager {
         try {
             const session = JSON.parse(stored);
             const validation = window.TypeValidators.validateSessionData(session);
-            
+
             if (!validation.isValid) {
                 console.warn('Invalid session data:', validation.errors);
                 this.logout();
                 return null;
             }
-            
+
             return session;
         } catch (error) {
             console.error('Error parsing session data:', error);
@@ -258,10 +258,10 @@ class AuthManager {
     getSessionTimeRemaining() {
         const session = this.getSession();
         if (!session) return 0;
-        
+
         const elapsed = Date.now() - session.lastActivity;
         const remaining = this.sessionTimeout - elapsed;
-        
+
         return Math.max(0, Math.ceil(remaining / (60 * 1000)));
     }
 
@@ -293,7 +293,7 @@ class AuthManager {
 
         // Set up activity monitoring
         const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
-        
+
         activityEvents.forEach(event => {
             document.addEventListener(event, () => {
                 if (this.isAuthenticated()) {
@@ -305,7 +305,7 @@ class AuthManager {
         // Set up security event listeners
         window.addEventListener('security-threat', (event) => {
             console.warn('Security threat detected:', event.detail);
-            
+
             // Log security event
             if (window.logManager) {
                 window.logManager.log('security', `Security threat: ${event.detail.type}`, 'warning');

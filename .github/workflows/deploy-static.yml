@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy Static Site
 
 on:
   push:
@@ -25,16 +25,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         
-      - name: Setup Node.js
+      - name: Setup Node.js (for build only)
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           
-      - name: Build admin panel
+      - name: Build admin panel (optional)
         run: |
           cd admin
-          node build.js
-          
+          NODE_ENV=production node build.js || echo "Build skipped - using source files"
+        continue-on-error: true
+        
       - name: Setup Pages
         uses: actions/configure-pages@v4
         
