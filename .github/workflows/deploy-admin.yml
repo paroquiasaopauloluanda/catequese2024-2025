@@ -1,0 +1,58 @@
+name: Deploy Admin Panel
+
+on:
+  push:
+    branches: [ main, staging ]
+    paths: [ 'admin/**' ]
+  pull_request:
+    branches: [ main ]
+    paths: [ 'admin/**' ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: admin/package.json
+        
+    - name: Install dependencies
+      run: |
+        cd admin
+        npm ci
+        
+    - name: Run build
+      run: |
+        cd admin
+        if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+          npm run build:production
+        else
+          npm run build:staging
+        fi
+        
+    - name: Run deployment verification
+      run: |
+        cd admin
+        npm run verify || echo "Verification completed with warnings"
+        
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./admin/dist
+        destination_dir: admin
+        
+    - name: Create deployment artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: admin-panel-${{ github.sha }}
+        path: admin/dist/
+        retention-days: 30

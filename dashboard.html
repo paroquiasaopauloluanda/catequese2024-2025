@@ -15,19 +15,27 @@
 
   <style>
     :root {
-      --bg: #fffdf6;
+      --bg: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
       --card: #ffffff;
-      --ink: #1b1a17;
-      --muted: #6b7280;
-      --accent: #c28402;
-      --accent-2: #d39f21;
-      --ok: #16a34a;
-      --warn: #b45309;
-      --border: #ecd39a;
-      --border-light: #f0e1b6;
+      --ink: #2d3748;
+      --muted: #718096;
+      --accent: #667eea;
+      --accent-2: #764ba2;
+      --accent-3: #f093fb;
+      --accent-4: #f5576c;
+      --ok: #48bb78;
+      --warn: #ed8936;
+      --border: #e2e8f0;
+      --border-light: #f7fafc;
       --radius: 16px;
-      --error: #dc2626;
-      --info: #2563eb;
+      --error: #f56565;
+      --info: #4299e1;
+      --success: #38b2ac;
+      --purple: #9f7aea;
+      --pink: #ed64a6;
+      --orange: #ff9500;
+      --teal: #319795;
+      --indigo: #5a67d8;
     }
 
     * {
@@ -38,7 +46,8 @@
     body {
       margin: 0;
       padding: 0;
-      background: var(--bg);
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
       color: var(--ink);
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     }
@@ -54,9 +63,11 @@
       width: 100%;
       background: var(--card);
       border-radius: var(--radius);
-      box-shadow: -1px 9px 8px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
       margin-bottom: 16px;
       position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
     }
 
     .hero-brand {
@@ -107,7 +118,7 @@
     }
 
     .btn {
-      background: var(--accent);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
       color: #fff;
       border: 0;
       padding: 8px 12px;
@@ -119,6 +130,8 @@
       align-items: center;
       gap: 4px;
       font-size: 14px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      transition: all 0.3s ease;
     }
 
     .btn.secondary {
@@ -133,8 +146,9 @@
     }
 
     .btn:hover {
-      background: var(--accent-2);
-      transform: translateY(-1px);
+      background: linear-gradient(135deg, var(--accent-2), var(--accent-3));
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
     }
 
     .btn.secondary:hover {
@@ -168,9 +182,16 @@
       background: var(--card);
       border-radius: var(--radius);
       padding: 16px;
-      box-shadow: -1px 9px 8px rgba(0, 0, 0, 0.08);
-      border: 1px solid var(--border);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
       position: relative;
+      backdrop-filter: blur(10px);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .dashboard-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
     }
 
     .dashboard-card.wide {
@@ -301,14 +322,26 @@
     }
 
     .data-table tr:hover {
-      background: #fffbf0;
+      background: linear-gradient(90deg, rgba(102, 126, 234, 0.1), rgba(240, 147, 251, 0.1));
+      transform: scale(1.01);
+      transition: all 0.2s ease;
+    }
+
+    .data-table tr:nth-child(even) {
+      background: rgba(102, 126, 234, 0.05);
+    }
+
+    .data-table tr:nth-child(odd) {
+      background: rgba(240, 147, 251, 0.05);
     }
 
     .highlight-card {
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
       color: white;
       text-align: center;
       padding: 20px;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+      border: none;
     }
 
     .highlight-card .stat-number {
@@ -351,15 +384,18 @@
     }
 
     .approval-indicator.high {
-      background: var(--ok);
+      background: linear-gradient(45deg, #53f3c0, #48bb78);
+      box-shadow: 0 2px 8px rgba(83, 243, 192, 0.3);
     }
 
     .approval-indicator.medium {
-      background: var(--warn);
+      background: linear-gradient(45deg, #fce38a, #ed8936);
+      box-shadow: 0 2px 8px rgba(252, 227, 138, 0.3);
     }
 
     .approval-indicator.low {
-      background: var(--error);
+      background: linear-gradient(45deg, #f38ba8, #f56565);
+      box-shadow: 0 2px 8px rgba(243, 139, 168, 0.3);
     }
 
     .footer {
@@ -826,7 +862,8 @@
           <h3>👥 Distribuição por Faixa Etária</h3>
           <div class="card-actions">
             <button class="btn small secondary" onclick="exportCard('faixaEtariaCard', 'faixa_etaria')">📊 XLSX</button>
-            <button class="btn small secondary" onclick="exportChartAsPNG('faixaEtariaChart', 'faixa_etaria_grafico')">🖼️ PNG</button>
+            <button class="btn small secondary"
+              onclick="exportChartAsPNG('faixaEtariaChart', 'faixa_etaria_grafico')">🖼️ PNG</button>
           </div>
         </div>
         <div id="faixaEtariaCard">
@@ -853,6 +890,22 @@
             <canvas id="centroChart"></canvas>
           </div>
           <div id="centroStats"></div>
+        </div>
+      </div>
+
+      <!-- Turmas por Centro -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <h3>🏫 Turmas por Centro</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('turmasCentroCard', 'turmas_centro')">📊
+              XLSX</button>
+            <button class="btn small secondary" onclick="exportChartAsPNG('turmasCentroCard', 'turmas_centro')">🖼️
+              PNG</button>
+          </div>
+        </div>
+        <div id="turmasCentroCard">
+          <div id="turmasCentroStats"></div>
         </div>
       </div>
 
@@ -904,22 +957,6 @@
         </div>
         <div id="catequistasCentroCard">
           <div id="catequistasCentroStats"></div>
-        </div>
-      </div>
-
-      <!-- Turmas por Centro -->
-      <div class="dashboard-card">
-        <div class="card-header">
-          <h3>🏫 Turmas por Centro</h3>
-          <div class="card-actions">
-            <button class="btn small secondary" onclick="exportCard('turmasCentroCard', 'turmas_centro')">📊
-              XLSX</button>
-            <button class="btn small secondary" onclick="exportChartAsPNG('turmasCentroCard', 'turmas_centro')">🖼️
-              PNG</button>
-          </div>
-        </div>
-        <div id="turmasCentroCard">
-          <div id="turmasCentroStats"></div>
         </div>
       </div>
 
@@ -1742,10 +1779,10 @@
 
       // Definir faixas etárias
       const faixas = {
-        'Crianças (7-13 anos)': { min: 7, max: 13, count: 0, color: '#28a745' },
-        'Adolescentes (14-17 anos)': { min: 14, max: 17, count: 0, color: '#17a2b8' },
-        'Jovens (18-40 anos)': { min: 18, max: 40, count: 0, color: '#ffc107' },
-        'Adultos (40+ anos)': { min: 41, max: 999, count: 0, color: '#dc3545' }
+        'Crianças (7-13 anos)': { min: 7, max: 13, count: 0, color: '#53f3c0' },
+        'Adolescentes (14-17 anos)': { min: 14, max: 17, count: 0, color: '#667eea' },
+        'Jovens (18-40 anos)': { min: 18, max: 40, count: 0, color: '#f093fb' },
+        'Adultos (40+ anos)': { min: 41, max: 999, count: 0, color: '#fce38a' }
       };
 
       // Contar por faixa etária
@@ -1765,37 +1802,37 @@
         const faixaCanvas = document.getElementById('faixaEtariaChart');
         if (faixaCanvas) {
           const ctx = faixaCanvas.getContext('2d');
-          
+
           if (charts.faixaEtaria) {
             charts.faixaEtaria.destroy();
             charts.faixaEtaria = null;
           }
 
           charts.faixaEtaria = new Chart(ctx, {
-          type: 'doughnut',
-          data: {
-            labels: Object.keys(faixas),
-            datasets: [{
-              data: Object.values(faixas).map(f => f.count),
-              backgroundColor: Object.values(faixas).map(f => f.color),
-              borderWidth: 2,
-              borderColor: '#fff'
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                position: 'bottom',
-                labels: {
-                  padding: 15,
-                  usePointStyle: true
+            type: 'doughnut',
+            data: {
+              labels: Object.keys(faixas),
+              datasets: [{
+                data: Object.values(faixas).map(f => f.count),
+                backgroundColor: Object.values(faixas).map(f => f.color),
+                borderWidth: 2,
+                borderColor: '#fff'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  labels: {
+                    padding: 15,
+                    usePointStyle: true
+                  }
                 }
               }
             }
-          }
-        });
+          });
         }
       } catch (error) {
         console.warn('Erro ao criar gráfico de faixa etária:', error);
@@ -1803,7 +1840,7 @@
 
       // Renderizar estatísticas
       const statsHtml = Object.entries(faixas)
-        .sort(([,a], [,b]) => b.count - a.count)
+        .sort(([, a], [, b]) => b.count - a.count)
         .map(([nome, dados]) => {
           const percentual = total > 0 ? ((dados.count / total) * 100).toFixed(1) : 0;
           return `
@@ -1825,51 +1862,51 @@
 
     // Gráficos de distribuição
     function updateDistributionCharts() {
-        
-        // Distribuição por Centro
-        const centros = {};
-        dashboardData.forEach(d => {
-          if (d.centro) {
-            centros[d.centro] = (centros[d.centro] || 0) + 1;
-          }
-        });
 
-        const centroEntries = Object.entries(centros).sort(([, a], [, b]) => b - a);
+      // Distribuição por Centro
+      const centros = {};
+      dashboardData.forEach(d => {
+        if (d.centro) {
+          centros[d.centro] = (centros[d.centro] || 0) + 1;
+        }
+      });
 
-        // Gráfico de Centro
-        
-        const centroCanvas = document.getElementById('centroChart');
-        if (centroCanvas) {
-          const centroCtx = centroCanvas.getContext('2d');
-          if (charts.centro) {
-            charts.centro.destroy();
-            charts.centro = null;
-          }
+      const centroEntries = Object.entries(centros).sort(([, a], [, b]) => b - a);
 
-          charts.centro = new Chart(centroCtx, {
-            type: 'doughnut',
-            data: {
-              labels: centroEntries.map(([centro]) => centro),
-              datasets: [{
-                data: centroEntries.map(([, count]) => count),
-                backgroundColor: [
-                  '#c28402', '#d39f21', '#16a34a', '#2563eb', '#dc2626',
-                  '#7c3aed', '#ea580c', '#0891b2', '#be185d'
-                ]
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: { position: 'bottom' }
-              }
-            }
-          });
+      // Gráfico de Centro
+
+      const centroCanvas = document.getElementById('centroChart');
+      if (centroCanvas) {
+        const centroCtx = centroCanvas.getContext('2d');
+        if (charts.centro) {
+          charts.centro.destroy();
+          charts.centro = null;
         }
 
-        // Estatísticas de Centro
-        const centroStatsHtml = centroEntries.map(([centro, count]) => {
+        charts.centro = new Chart(centroCtx, {
+          type: 'doughnut',
+          data: {
+            labels: centroEntries.map(([centro]) => centro),
+            datasets: [{
+              data: centroEntries.map(([, count]) => count),
+              backgroundColor: [
+                '#667eea', '#f093fb', '#53f3c0', '#fce38a', '#f38ba8',
+                '#a8edea', '#fed6e3', '#d299c2', '#ffeaa7', '#74b9ff'
+              ]
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom' }
+            }
+          }
+        });
+      }
+
+      // Estatísticas de Centro
+      const centroStatsHtml = centroEntries.map(([centro, count]) => {
         const percentage = ((count / dashboardData.length) * 100).toFixed(1);
         return `
           <div style="margin-bottom: 8px;">
@@ -1882,11 +1919,11 @@
             </div>
           </div>
         `;
-        }).join('');
+      }).join('');
 
-        document.getElementById('centroStats').innerHTML = centroStatsHtml;
+      document.getElementById('centroStats').innerHTML = centroStatsHtml;
 
-        // Distribuição por Etapa
+      // Distribuição por Etapa
       const etapas = {};
       dashboardData.forEach(d => {
         if (d.etapa) {
@@ -1913,7 +1950,7 @@
               datasets: [{
                 label: 'Catecúmenos',
                 data: etapaEntries.map(([, count]) => count),
-                backgroundColor: '#c28402'
+                backgroundColor: 'rgba(102, 126, 234, 0.8)'
               }]
             },
             options: {
@@ -2009,12 +2046,12 @@
 
       document.getElementById('horarioStats').innerHTML = horarioStatsHtml;
 
-        // Catequistas por Centro
-        updateCatequistasByCenter();
+      // Catequistas por Centro
+      updateCatequistasByCenter();
 
-        // Turmas por Centro
-        updateClassesByCenter();
-        
+      // Turmas por Centro
+      updateClassesByCenter();
+
 
     }
     // Catequistas por Centro
@@ -2188,12 +2225,12 @@
           turma.horario.toLowerCase().includes(searchTerm);
 
         // Pesquisa por catequistas
-        const catequistaMatch = turma.catequistas && turma.catequistas.some(cat => 
+        const catequistaMatch = turma.catequistas && turma.catequistas.some(cat =>
           cat.toLowerCase().includes(searchTerm)
         );
 
         // Pesquisa por catecúmenos
-        const catecumenoMatch = turma.catecumenos && turma.catecumenos.some(cat => 
+        const catecumenoMatch = turma.catecumenos && turma.catecumenos.some(cat =>
           cat.nome.toLowerCase().includes(searchTerm)
         );
 

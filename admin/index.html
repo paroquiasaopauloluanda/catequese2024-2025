@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo - Paróquia</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/responsive.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Skip Links for Accessibility -->
+        <a href="#main-content" class="skip-link">Pular para o conteúdo principal</a>
+        <a href="#navigation" class="skip-link">Pular para a navegação</a>
+        
+        <!-- Login Screen -->
+        <div id="login-screen" class="screen active">
+            <div class="login-container">
+                <div class="login-header">
+                    <h1>Painel Administrativo</h1>
+                    <p>Sistema de Gerenciamento da Paróquia</p>
+                </div>
+                <form id="login-form" class="login-form">
+                    <div class="form-group">
+                        <label for="username">Usuário</label>
+                        <input type="text" id="username" name="username" required 
+                               data-help="Digite 'admin' para acessar o sistema"
+                               data-help-position="bottom">
+                        <span class="error-message" id="username-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Senha</label>
+                        <input type="password" id="password" name="password" required
+                               data-help="Digite a senha configurada para o sistema"
+                               data-help-position="bottom">
+                        <span class="error-message" id="password-error"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="login-btn">
+                        <span class="btn-text">Entrar</span>
+                        <span class="btn-loading hidden">Entrando...</span>
+                    </button>
+                    <div class="login-error" id="login-error"></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="admin-panel" class="screen">
+            <header class="admin-header" role="banner">
+                <div class="header-content">
+                    <div class="header-left">
+                        <h1>Painel Administrativo</h1>
+                        <div class="system-status">
+                            <span id="connection-status" class="status-indicator" title="Status da conexão">
+                                <span class="status-dot"></span>
+                                <span class="status-text">Conectado</span>
+                            </span>
+                            <span id="github-status" class="status-indicator" title="Status do GitHub">
+                                <span class="status-dot"></span>
+                                <span class="status-text">GitHub OK</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <div class="header-info">
+                            <span id="last-sync" class="sync-info" title="Última sincronização">
+                                Última sync: --
+                            </span>
+                            <span id="user-info" class="user-info">Administrador</span>
+                        </div>
+                        <button id="logout-btn" class="btn btn-secondary">
+                            <span class="btn-icon">🚪</span>
+                            Sair
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <nav class="admin-nav" role="navigation" id="navigation" aria-label="Navegação principal">
+                <ul class="nav-menu" role="menubar">
+                    <li role="none">
+                        <a href="#config" class="nav-link active" data-section="config" role="menuitem" aria-current="page">
+                            <span class="nav-icon" aria-hidden="true">⚙️</span>
+                            <span class="nav-text">Configurações</span>
+                            <span class="nav-badge" id="config-badge" aria-label="Notificações de configuração"></span>
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="#files" class="nav-link" data-section="files" role="menuitem">
+                            <span class="nav-icon" aria-hidden="true">📁</span>
+                            <span class="nav-text">Arquivos</span>
+                            <span class="nav-badge" id="files-badge" aria-label="Notificações de arquivos"></span>
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="#logs" class="nav-link" data-section="logs" role="menuitem">
+                            <span class="nav-icon" aria-hidden="true">📋</span>
+                            <span class="nav-text">Logs</span>
+                            <span class="nav-badge" id="logs-badge" aria-label="Notificações de logs"></span>
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="#backup" class="nav-link" data-section="backup" role="menuitem">
+                            <span class="nav-icon" aria-hidden="true">💾</span>
+                            <span class="nav-text">Backup</span>
+                            <span class="nav-badge" id="backup-badge" aria-label="Notificações de backup"></span>
+                        </a>
+                    </li>
+                </ul>
+                <div class="nav-actions">
+                    <button id="refresh-all" class="btn btn-icon" title="Atualizar todos os dados">
+                        <span class="btn-icon">🔄</span>
+                    </button>
+                    <button id="toggle-notifications" class="btn btn-icon" title="Alternar notificações">
+                        <span class="btn-icon">🔔</span>
+                    </button>
+                </div>
+            </nav>
+
+            <main class="admin-content" role="main" id="main-content">
+                <!-- Dashboard Overview (shown when no specific section is active) -->
+                <section id="dashboard-section" class="content-section">
+                    <div class="dashboard-header">
+                        <h2>Painel de Controle</h2>
+                        <p class="dashboard-subtitle">Visão geral do sistema administrativo</p>
+                    </div>
+                    
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card" data-section="config">
+                            <div class="card-header">
+                                <span class="card-icon">⚙️</span>
+                                <h3>Configurações</h3>
+                            </div>
+                            <div class="card-content">
+                                <p>Gerencie as configurações da paróquia</p>
+                                <div class="card-stats">
+                                    <span id="config-status" class="stat-item">Status: OK</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-primary btn-sm" onclick="adminApp.showSection('config')">
+                                    Acessar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card" data-section="files">
+                            <div class="card-header">
+                                <span class="card-icon">📁</span>
+                                <h3>Arquivos</h3>
+                            </div>
+                            <div class="card-content">
+                                <p>Upload e gerenciamento de arquivos</p>
+                                <div class="card-stats">
+                                    <span id="files-count" class="stat-item">Arquivos: --</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-primary btn-sm" onclick="adminApp.showSection('files')">
+                                    Acessar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card" data-section="logs">
+                            <div class="card-header">
+                                <span class="card-icon">📋</span>
+                                <h3>Logs</h3>
+                            </div>
+                            <div class="card-content">
+                                <p>Visualize logs e histórico do sistema</p>
+                                <div class="card-stats">
+                                    <span id="logs-count" class="stat-item">Entradas: --</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-primary btn-sm" onclick="adminApp.showSection('logs')">
+                                    Acessar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card" data-section="backup">
+                            <div class="card-header">
+                                <span class="card-icon">💾</span>
+                                <h3>Backup</h3>
+                            </div>
+                            <div class="card-content">
+                                <p>Backup e restauração de dados</p>
+                                <div class="card-stats">
+                                    <span id="backup-count" class="stat-item">Backups: --</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-primary btn-sm" onclick="adminApp.showSection('backup')">
+                                    Acessar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="recent-activity">
+                        <h3>Atividade Recente</h3>
+                        <div id="recent-logs" class="activity-list">
+                            <!-- Recent activity will be loaded here -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Configuration Section -->
+                <section id="config-section" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <h2>Configurações da Paróquia</h2>
+                            <p class="section-subtitle">Gerencie as configurações do sistema</p>
+                        </div>
+                        <div class="section-actions">
+                            <button id="back-to-dashboard" class="btn btn-secondary btn-sm">
+                                ← Voltar ao Dashboard
+                            </button>
+                        </div>
+                    </div>
+                    <div id="config-form-container">
+                        <!-- Configuration form will be dynamically generated -->
+                    </div>
+                </section>
+
+                <!-- Files Section -->
+                <section id="files-section" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <h2>Gerenciamento de Arquivos</h2>
+                            <p class="section-subtitle">Upload e gerenciamento de arquivos do sistema</p>
+                        </div>
+                        <div class="section-actions">
+                            <button id="back-to-dashboard-files" class="btn btn-secondary btn-sm">
+                                ← Voltar ao Dashboard
+                            </button>
+                        </div>
+                    </div>
+                    <div id="file-upload-container">
+                        <!-- File upload areas will be dynamically generated -->
+                    </div>
+                </section>
+
+                <!-- Logs Section -->
+                <section id="logs-section" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <h2>Logs do Sistema</h2>
+                            <p class="section-subtitle">Visualize o histórico de operações</p>
+                        </div>
+                        <div class="section-actions">
+                            <button id="back-to-dashboard-logs" class="btn btn-secondary btn-sm">
+                                ← Voltar ao Dashboard
+                            </button>
+                        </div>
+                    </div>
+                    <div id="logs-container">
+                        <!-- Logs will be dynamically loaded -->
+                    </div>
+                </section>
+
+                <!-- Backup Section -->
+                <section id="backup-section" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <h2>Backup e Restauração</h2>
+                            <p class="section-subtitle">Gerencie backups das configurações</p>
+                        </div>
+                        <div class="section-actions">
+                            <button id="back-to-dashboard-backup" class="btn btn-secondary btn-sm">
+                                ← Voltar ao Dashboard
+                            </button>
+                        </div>
+                    </div>
+                    <div id="backup-container">
+                        <!-- Backup interface will be dynamically generated -->
+                    </div>
+                </section>
+            </main>
+
+            <!-- Progress Overlay -->
+            <div id="progress-overlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="progress-title">
+                <div class="progress-container">
+                    <h3 id="progress-title">Processando...</h3>
+                    <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                    <p id="progress-message" aria-live="polite">Iniciando operação...</p>
+                    <button id="cancel-operation" class="btn btn-secondary">Cancelar</button>
+                </div>
+            </div>
+
+            <!-- Notification Container -->
+            <div id="notification-container" class="notification-container" role="region" aria-label="Notificações" aria-live="polite"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/interfaces/types.js"></script>
+    <script src="js/utils/FileOptimizer.js"></script>
+    <script src="js/utils/GitHubOptimizer.js"></script>
+    <script src="js/utils/DeploymentVerifier.js"></script>
+    <script src="js/managers/DeploymentManager.js"></script>
+    <script src="js/managers/TokenManager.js"></script>
+    <script src="js/managers/SecurityManager.js"></script>
+    <script src="js/managers/AuthManager.js"></script>
+    <script src="js/managers/ConfigManager.js"></script>
+    <script src="js/managers/FileManager.js"></script>
+    <script src="js/managers/GitHubManager.js"></script>
+    <script src="js/managers/ProgressTracker.js"></script>
+    <script src="js/managers/LogManager.js"></script>
+    <script src="js/utils/validation.js"></script>
+    <script src="js/utils/helpers.js"></script>
+    <script src="js/utils/CustomErrors.js"></script>
+    <script src="js/utils/ErrorHandler.js"></script>
+    <script src="js/utils/NotificationManager.js"></script>
+    <script src="js/utils/DialogManager.js"></script>
+    <script src="js/utils/ErrorWrapper.js"></script>
+    <script src="js/components/ProgressBar.js"></script>
+    <script src="js/components/ConfigForm.js"></script>
+    <script src="js/components/BackupManager.js"></script>
+    <script src="js/components/FileUpload.js"></script>
+    <script src="js/components/LogDisplay.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -9,8 +9,38 @@ class Analytics {
 
     init() {
         this.setupEventListeners();
+        this.syncStorageData();
         this.loadData();
         this.updateDisplay();
+    }
+
+    // Sincroniza dados entre localStorage e sessionStorage
+    syncStorageData() {
+        try {
+            const localData = localStorage.getItem(this.storageKey);
+            const sessionData = sessionStorage.getItem(this.storageKey);
+            
+            if (localData && !sessionData) {
+                sessionStorage.setItem(this.storageKey, localData);
+            } else if (sessionData && !localData) {
+                localStorage.setItem(this.storageKey, sessionData);
+            } else if (localData && sessionData) {
+                // Se ambos existem, usa o mais recente
+                const localParsed = JSON.parse(localData);
+                const sessionParsed = JSON.parse(sessionData);
+                
+                const localDates = Object.keys(localParsed.daily || {});
+                const sessionDates = Object.keys(sessionParsed.daily || {});
+                
+                if (sessionDates.length > localDates.length) {
+                    localStorage.setItem(this.storageKey, sessionData);
+                } else if (localDates.length > sessionDates.length) {
+                    sessionStorage.setItem(this.storageKey, localData);
+                }
+            }
+        } catch (e) {
+            console.warn('Erro ao sincronizar dados:', e);
+        }
     }
 
     setupEventListeners() {
@@ -76,7 +106,23 @@ class Analytics {
     }
 
     getData() {
-        const stored = localStorage.getItem(this.storageKey);
+        // Tenta obter dados de múltiplas fontes
+        let stored = null;
+        
+        try {
+            stored = localStorage.getItem(this.storageKey);
+            if (!stored) {
+                stored = sessionStorage.getItem(this.storageKey);
+            }
+        } catch (e) {
+            console.warn('Erro ao acessar storage:', e);
+            try {
+                stored = sessionStorage.getItem(this.storageKey);
+            } catch (e2) {
+                console.warn('Erro ao acessar sessionStorage:', e2);
+            }
+        }
+        
         if (!stored) {
             return {
                 daily: {},
@@ -85,14 +131,25 @@ class Analytics {
             };
         }
 
-        const data = JSON.parse(stored);
-        
-        // Converte Arrays de volta para Sets
-        Object.keys(data.daily).forEach(date => {
-            data.daily[date].visitors = new Set(data.daily[date].visitors);
-        });
+        try {
+            const data = JSON.parse(stored);
+            
+            // Converte Arrays de volta para Sets
+            Object.keys(data.daily || {}).forEach(date => {
+                if (data.daily[date] && data.daily[date].visitors) {
+                    data.daily[date].visitors = new Set(data.daily[date].visitors);
+                }
+            });
 
-        return data;
+            return data;
+        } catch (e) {
+            console.warn('Erro ao parsear dados de analytics:', e);
+            return {
+                daily: {},
+                totalVisitors: new Set(),
+                totalVisits: 0
+            };
+        }
     }
 
     getFilteredData() {
@@ -118,6 +175,39 @@ class Analytics {
         this.updateChart(data);
         this.updateTopPages(data);
         this.updateDetailsTable(data);
+        this.updateStorageInfo();
+    }
+
+    updateStorageInfo() {
+        const storageInfo = document.getElementById('storageInfo');
+        if (!storageInfo) return;
+
+        let info = [];
+        
+        // Verifica se está em modo privado
+        try {
+            localStorage.setItem('test', 'test');
+            localStorage.removeItem('test');
+            info.push('Modo Normal');
+        } catch (e) {
+            info.push('Modo Privado/Anônimo');
+        }
+
+        // Verifica qual storage está sendo usado
+        const hasLocal = localStorage.getItem(this.storageKey) !== null;
+        const hasSession = sessionStorage.getItem(this.storageKey) !== null;
+        
+        if (hasLocal && hasSession) {
+            info.push('Dados sincronizados');
+        } else if (hasLocal) {
+            info.push('Usando localStorage');
+        } else if (hasSession) {
+            info.push('Usando sessionStorage');
+        } else {
+            info.push('Sem dados armazenados');
+        }
+
+        storageInfo.textContent = info.join(' • ');
     }
 
     updateStats(data) {
@@ -313,8 +403,20 @@ class Analytics {
 
     // Método para limpar dados (útil para testes)
     clearData() {
-        localStorage.removeItem(this.storageKey);
-        localStorage.removeItem('visitorId');
+        try {
+            localStorage.removeItem(this.storageKey);
+            localStorage.removeItem('visitorId');
+        } catch (e) {
+            console.warn('Erro ao limpar localStorage:', e);
+        }
+        
+        try {
+            sessionStorage.removeItem(this.storageKey);
+            sessionStorage.removeItem('visitorId');
+        } catch (e) {
+            console.warn('Erro ao limpar sessionStorage:', e);
+        }
+        
         this.updateDisplay();
     }
 

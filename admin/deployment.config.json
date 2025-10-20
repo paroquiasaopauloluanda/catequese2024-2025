@@ -1,0 +1,119 @@
+{
+  "version": "1.0.0",
+  "environments": {
+    "development": {
+      "name": "Desenvolvimento",
+      "baseUrl": "http://localhost:3000",
+      "githubPages": false,
+      "features": {
+        "debugging": true,
+        "analytics": false,
+        "errorReporting": false,
+        "performanceMonitoring": false
+      },
+      "security": {
+        "httpsOnly": false,
+        "contentSecurityPolicy": false,
+        "secureHeaders": false
+      }
+    },
+    "staging": {
+      "name": "Homologação",
+      "baseUrl": "https://paroquiasaopauloluanda.github.io/repo-name/staging",
+      "githubPages": true,
+      "features": {
+        "debugging": true,
+        "analytics": false,
+        "errorReporting": true,
+        "performanceMonitoring": true
+      },
+      "security": {
+        "httpsOnly": true,
+        "contentSecurityPolicy": true,
+        "secureHeaders": true
+      }
+    },
+    "production": {
+      "name": "Produção",
+      "baseUrl": "https://paroquiasaopauloluanda.github.io/catequese2024-2025",
+      "githubPages": true,
+      "features": {
+        "debugging": false,
+        "analytics": true,
+        "errorReporting": true,
+        "performanceMonitoring": true
+      },
+      "security": {
+        "httpsOnly": true,
+        "contentSecurityPolicy": true,
+        "secureHeaders": true
+      }
+    }
+  },
+  "github": {
+    "repository": "paroquiasaopauloluanda/catequese2024-2025",
+    "branches": {
+      "development": "dev",
+      "staging": "staging", 
+      "production": "main"
+    },
+    "pages": {
+      "enabled": true,
+      "customDomain": null,
+      "source": "root"
+    }
+  },
+  "build": {
+    "production": {
+      "minify": true,
+      "sourceMaps": false,
+      "optimization": true,
+      "compression": true
+    },
+    "staging": {
+      "minify": false,
+      "sourceMaps": true,
+      "optimization": false,
+      "compression": false
+    },
+    "development": {
+      "minify": false,
+      "sourceMaps": true,
+      "optimization": false,
+      "compression": false
+    }
+  },
+  "monitoring": {
+    "healthCheck": {
+      "enabled": true,
+      "interval": 300000,
+      "endpoints": [
+        "/admin/index.html",
+        "/config/settings.json"
+      ]
+    },
+    "performance": {
+      "enabled": true,
+      "thresholds": {
+        "loadTime": 3000,
+        "memoryUsage": 52428800
+      }
+    }
+  },
+  "deployment": {
+    "verification": {
+      "enabled": true,
+      "tests": [
+        "authentication",
+        "configuration", 
+        "fileUpload",
+        "githubIntegration",
+        "security"
+      ]
+    },
+    "rollback": {
+      "enabled": true,
+      "maxVersions": 5
+    }
+  }
+}

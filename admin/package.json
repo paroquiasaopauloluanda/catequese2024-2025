@@ -1,0 +1,53 @@
+{
+  "name": "admin-panel-paroquia",
+  "version": "1.0.0",
+  "description": "Painel administrativo para sistema de catequese da paróquia",
+  "main": "js/app.js",
+  "scripts": {
+    "build": "node build.js",
+    "build:production": "NODE_ENV=production node build.js",
+    "build:staging": "NODE_ENV=staging node build.js",
+    "build:development": "NODE_ENV=development node build.js",
+    "serve": "python -m http.server 8000",
+    "serve:dist": "cd dist && python -m http.server 8000",
+    "test": "echo \"No tests specified\" && exit 0",
+    "lint": "echo \"No linting configured\" && exit 0",
+    "deploy:staging": "npm run build:staging && echo \"Deploy to staging branch\"",
+    "deploy:production": "npm run build:production && echo \"Deploy to main branch\"",
+    "verify": "node -e \"const DeploymentVerifier = require('./js/utils/DeploymentVerifier.js'); new DeploymentVerifier().runFullVerification().then(console.log);\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paroquia/sistema-catequese.git"
+  },
+  "keywords": [
+    "admin-panel",
+    "paroquia",
+    "catequese",
+    "github-pages"
+  ],
+  "author": "Paróquia",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "files": [
+    "js/",
+    "styles/",
+    "index.html",
+    "deployment.config.json",
+    "build.js"
+  ],
+  "homepage": "https://paroquia.github.io/sistema-catequese/admin",
+  "bugs": {
+    "url": "https://github.com/paroquia/sistema-catequese/issues"
+  }
+}

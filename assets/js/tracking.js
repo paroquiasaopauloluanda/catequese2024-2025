@@ -9,22 +9,56 @@
         const now = new Date();
         const today = now.toISOString().split('T')[0];
         
-        // Gera um ID único para o visitante
+        // Gera um ID único para o visitante baseado em múltiplos fatores
         let visitorId = localStorage.getItem('visitorId');
         if (!visitorId) {
-            visitorId = 'visitor_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('visitorId', visitorId);
+            // Cria um ID mais robusto baseado em características do navegador
+            const fingerprint = [
+                navigator.userAgent,
+                navigator.language,
+                screen.width + 'x' + screen.height,
+                new Date().getTimezoneOffset(),
+                navigator.platform
+            ].join('|');
+            
+            const hash = btoa(fingerprint).replace(/[^a-zA-Z0-9]/g, '').substring(0, 16);
+            visitorId = 'visitor_' + hash + '_' + Date.now().toString(36);
+            
+            try {
+                localStorage.setItem('visitorId', visitorId);
+            } catch (e) {
+                // Se localStorage não estiver disponível (modo privado), usa sessionStorage
+                try {
+                    sessionStorage.setItem('visitorId', visitorId);
+                } catch (e2) {
+                    // Se nenhum storage estiver disponível, usa apenas o hash
+                    visitorId = 'visitor_' + hash;
+                }
+            }
         }
         
-        // Obtém dados existentes
+        // Obtém dados existentes (tenta localStorage primeiro, depois sessionStorage)
         let data = {};
         try {
-            const stored = localStorage.getItem(storageKey);
+            let stored = localStorage.getItem(storageKey);
+            if (!stored) {
+                // Se não encontrar no localStorage, tenta sessionStorage
+                stored = sessionStorage.getItem(storageKey);
+            }
             if (stored) {
                 data = JSON.parse(stored);
             }
         } catch (e) {
             console.warn('Erro ao carregar dados de analytics:', e);
+            // Tenta recuperar de sessionStorage como fallback
+            try {
+                const sessionStored = sessionStorage.getItem(storageKey);
+                if (sessionStored) {
+                    data = JSON.parse(sessionStored);
+                }
+            } catch (e2) {
+                console.warn('Erro ao carregar dados de sessionStorage:', e2);
+            }
         }
         
         // Inicializa estrutura se necessário
@@ -64,11 +98,19 @@
             referrer: document.referrer || 'direct'
         });
         
-        // Salva dados
+        // Salva dados (tenta localStorage primeiro, depois sessionStorage)
         try {
             localStorage.setItem(storageKey, JSON.stringify(data));
+            // Também salva no sessionStorage como backup
+            sessionStorage.setItem(storageKey, JSON.stringify(data));
         } catch (e) {
-            console.warn('Erro ao salvar dados de analytics:', e);
+            console.warn('Erro ao salvar no localStorage:', e);
+            // Se localStorage falhar, usa apenas sessionStorage
+            try {
+                sessionStorage.setItem(storageKey, JSON.stringify(data));
+            } catch (e2) {
+                console.warn('Erro ao salvar dados de analytics:', e2);
+            }
         }
     }
     
