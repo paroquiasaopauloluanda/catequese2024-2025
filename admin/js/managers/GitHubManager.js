@@ -20,6 +20,14 @@ class GitHubManager {
     }
 
     /**
+     * Check if GitHub manager is properly configured
+     * @returns {boolean} True if configured with token and repository
+     */
+    isConfigured() {
+        return !!(this.token && this.repository);
+    }
+
+    /**
      * Initialize GitHub manager with configuration
      * @param {GitHubConfig} config - GitHub configuration
      */

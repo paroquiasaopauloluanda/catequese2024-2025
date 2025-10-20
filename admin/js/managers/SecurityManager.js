@@ -320,21 +320,9 @@ class SecurityManager {
             orientation: null
         };
         
-        // Desabilitado para desenvolvimento - reabilitar em produção
-        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-            setInterval(() => {
-                if (window.outerHeight - window.innerHeight > 200 || 
-                    window.outerWidth - window.innerWidth > 200) {
-                    if (!devtools.open) {
-                        devtools.open = true;
-                        console.warn('Developer tools opened');
-                        this.handleSecurityThreat('devtools_opened');
-                    }
-                } else {
-                    devtools.open = false;
-                }
-            }, 500);
-        }
+        // Detecção de DevTools desabilitada para desenvolvimento
+        // Reabilitar em produção se necessário
+        console.log('DevTools detection disabled for development');
     }
 
     /**

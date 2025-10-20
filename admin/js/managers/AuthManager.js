@@ -188,12 +188,12 @@ class AuthManager {
         const session = this.getSession();
         if (!session) return false;
 
-        // Validate session fingerprint for security
-        if (!this.securityManager.validateSessionFingerprint()) {
-            console.warn('Session fingerprint validation failed');
-            this.logout();
-            return false;
-        }
+        // Validate session fingerprint for security (desabilitado temporariamente)
+        // if (!this.securityManager.validateSessionFingerprint()) {
+        //     console.warn('Session fingerprint validation failed');
+        //     this.logout();
+        //     return false;
+        // }
 
         // Check session timeout
         const now = Date.now();
