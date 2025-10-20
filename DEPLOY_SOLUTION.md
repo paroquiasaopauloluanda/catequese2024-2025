@@ -52,11 +52,19 @@ git push origin main
    - ✅ Build condicional
    - ✅ Verificações
 
-## 🎯 **Configuração GitHub Pages**
+## 🎯 **Configuração GitHub Pages (OBRIGATÓRIA)**
 
-1. **Repository** → **Settings** → **Pages**
-2. **Source**: "GitHub Actions"
-3. **Aguardar 2-5 minutos**
+### **1. Habilitar GitHub Pages**
+- **Repository** → **Settings** → **Pages**
+- **Source**: "**GitHub Actions**" (NÃO "Deploy from branch")
+
+### **2. Configurar Permissões**
+- **Settings** → **Actions** → **General**
+- **Workflow permissions**: "**Read and write permissions**"
+- ✅ Marcar "**Allow GitHub Actions to create and approve pull requests**"
+
+### **3. Aguardar Deploy**
+- 2-5 minutos após push
 
 ## 🔍 **Verificar Funcionamento**
 
