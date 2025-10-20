@@ -54,24 +54,24 @@ class ErrorHandler {
         try {
             // Normalize error object
             const normalizedError = this.normalizeError(error);
-            
+
             // Classify error
             const classification = this.classifyError(normalizedError, context);
-            
+
             // Generate user-friendly message
             const userMessage = this.generateUserMessage(normalizedError, classification);
-            
+
             // Generate recovery suggestions
             const recoverySuggestions = this.generateRecoverySuggestions(normalizedError, classification);
-            
+
             // Log error
             this.logError(normalizedError, classification, context);
-            
+
             // Show user notification if appropriate
             if (classification.showToUser) {
                 this.showUserNotification(userMessage, classification, recoverySuggestions);
             }
-            
+
             // Return handling result
             return {
                 error: normalizedError,
@@ -81,16 +81,16 @@ class ErrorHandler {
                 canRetry: this.canRetry(normalizedError, classification),
                 shouldReload: classification.severity === this.severityLevels.CRITICAL
             };
-            
+
         } catch (handlingError) {
             console.error('Error in error handler:', handlingError);
-            
+
             // Fallback error handling
             const fallbackMessage = 'Ocorreu um erro inesperado. Tente recarregar a página.';
             if (this.notificationManager) {
                 this.notificationManager.showNotification(fallbackMessage, 'error');
             }
-            
+
             return {
                 error: error,
                 classification: { type: this.errorTypes.SYSTEM, severity: this.severityLevels.HIGH },
@@ -246,7 +246,7 @@ class ErrorHandler {
         };
 
         const typeMessages = messageTemplates[classification.type] || messageTemplates[this.errorTypes.SYSTEM];
-        
+
         // Try to find specific message based on error content
         for (const [key, message] of Object.entries(typeMessages)) {
             if (key !== 'default' && error.message.toLowerCase().includes(key.replace('_', ' '))) {
@@ -370,14 +370,14 @@ class ErrorHandler {
         if (!this.notificationManager) return;
 
         const notificationType = this.getNotificationType(classification.severity);
-        
+
         // Show main error message
         this.notificationManager.showNotification(message, notificationType);
 
         // Show suggestions for high severity errors
-        if (classification.severity === this.severityLevels.HIGH || 
+        if (classification.severity === this.severityLevels.HIGH ||
             classification.severity === this.severityLevels.CRITICAL) {
-            
+
             setTimeout(() => {
                 const suggestionText = `Sugestões: ${suggestions.slice(0, 2).join('; ')}`;
                 this.notificationManager.showNotification(suggestionText, 'info', 8000);
@@ -415,15 +415,15 @@ class ErrorHandler {
         }
 
         // Don't retry authentication errors (except session expired)
-        if (classification.type === this.errorTypes.AUTHENTICATION && 
+        if (classification.type === this.errorTypes.AUTHENTICATION &&
             !error.message.includes('sessão')) {
             return false;
         }
 
         // Check if error type is retryable
-        return this.retryableErrors.has(error.name) || 
-               classification.type === this.errorTypes.NETWORK ||
-               classification.type === this.errorTypes.GITHUB_API;
+        return this.retryableErrors.has(error.name) ||
+            classification.type === this.errorTypes.NETWORK ||
+            classification.type === this.errorTypes.GITHUB_API;
     }
 
     /**
@@ -438,12 +438,12 @@ class ErrorHandler {
                 return await fn.apply(this, args);
             } catch (error) {
                 const result = this.handleError(error, context);
-                
+
                 // Re-throw if critical error
                 if (result.shouldReload) {
                     throw error;
                 }
-                
+
                 return result;
             }
         };
@@ -460,9 +460,9 @@ class ErrorHandler {
             try {
                 return await componentFn(container, ...args);
             } catch (error) {
-                const result = this.handleError(error, { 
+                const result = this.handleError(error, {
                     operation: 'component_render',
-                    component: componentFn.name 
+                    component: componentFn.name
                 });
 
                 // Show fallback UI
@@ -489,13 +489,13 @@ class ErrorHandler {
             customActions = []
         } = config;
 
-        const suggestions = showSuggestions ? 
+        const suggestions = showSuggestions ?
             errorResult.recoverySuggestions.slice(0, 3).map(s => `<li>${s}</li>`).join('') : '';
 
-        const retryButton = showRetry && errorResult.canRetry ? 
+        const retryButton = showRetry && errorResult.canRetry ?
             '<button class="btn btn-primary" onclick="location.reload()">Tentar Novamente</button>' : '';
 
-        const customActionButtons = customActions.map(action => 
+        const customActionButtons = customActions.map(action =>
             `<button class="btn btn-secondary" onclick="${action.onclick}">${action.label}</button>`
         ).join('');
 

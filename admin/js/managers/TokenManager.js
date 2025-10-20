@@ -7,7 +7,7 @@ class TokenManager {
         this.tokenKey = 'github_token_encrypted';
         this.tokenMetaKey = 'github_token_meta';
         this.encryptionKey = null;
-        this.requiredScopes = ['repo', 'pages:write'];
+        this.requiredScopes = ['repo', 'workflow'];
         this.minTokenLength = 40; // GitHub tokens are typically 40+ characters
         
         // Initialize encryption key from session
