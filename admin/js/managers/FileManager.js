@@ -19,6 +19,17 @@ class FileManager {
         // Initialize optimizers
         this.fileOptimizer = new FileOptimizer();
         this.githubOptimizer = new GitHubOptimizer();
+        
+        // Progress tracker
+        this.progressTracker = null;
+    }
+
+    /**
+     * Set progress tracker instance
+     * @param {ProgressTracker} progressTracker - Progress tracker instance
+     */
+    setProgressTracker(progressTracker) {
+        this.progressTracker = progressTracker;
     }
 
     /**

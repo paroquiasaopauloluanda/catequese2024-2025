@@ -12,6 +12,17 @@ class ConfigManager {
         // Initialize file optimizer for caching
         this.fileOptimizer = new FileOptimizer();
         this.configCacheKey = 'settings_config';
+        
+        // Log manager
+        this.logManager = null;
+    }
+
+    /**
+     * Set log manager instance
+     * @param {LogManager} logManager - Log manager instance
+     */
+    setLogManager(logManager) {
+        this.logManager = logManager;
     }
 
     /**
