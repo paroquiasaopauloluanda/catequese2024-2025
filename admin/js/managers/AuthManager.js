@@ -10,12 +10,7 @@ class AuthManager {
         this.sessionTimeout = 30 * 60 * 1000; // 30 minutes
 
         // Initialize login attempts with safe fallback
-        try {
-            this.loginAttempts = this.getLoginAttempts();
-        } catch (error) {
-            console.warn('Error initializing login attempts:', error);
-            this.loginAttempts = { count: 0, lockedUntil: null };
-        }
+        this.loginAttempts = null; // Will be loaded lazily when needed
 
         // Valid credentials (in production, this should be more secure)
         this.validCredentials = {
@@ -85,6 +80,16 @@ class AuthManager {
     }
 
     /**
+     * Ensure login attempts are initialized
+     * @private
+     */
+    ensureLoginAttemptsInitialized() {
+        if (this.loginAttempts === null) {
+            this.loginAttempts = this.getLoginAttempts();
+        }
+    }
+
+    /**
      * Get login attempts from localStorage
      * @returns {Object} Login attempts data
      */
@@ -96,8 +101,10 @@ class AuthManager {
 
                 // Validate data structure
                 if (typeof data !== 'object' || data === null) {
-                    this.clearLoginAttempts();
-                    return { count: 0, lockedUntil: null };
+                    const defaultData = { count: 0, lockedUntil: null };
+                    this.loginAttempts = defaultData;
+                    localStorage.removeItem('login_attempts');
+                    return defaultData;
                 }
 
                 // Ensure count is a number
@@ -112,15 +119,20 @@ class AuthManager {
 
                 // Reset if lockout period has expired
                 if (data.lockedUntil && Date.now() > data.lockedUntil) {
-                    this.clearLoginAttempts();
-                    return { count: 0, lockedUntil: null };
+                    const defaultData = { count: 0, lockedUntil: null };
+                    this.loginAttempts = defaultData;
+                    localStorage.removeItem('login_attempts');
+                    return defaultData;
                 }
 
                 return data;
             }
         } catch (error) {
             // If there's any error parsing, clear the data
-            this.clearLoginAttempts();
+            const defaultData = { count: 0, lockedUntil: null };
+            this.loginAttempts = defaultData;
+            localStorage.removeItem('login_attempts');
+            return defaultData;
         }
 
         return { count: 0, lockedUntil: null };
@@ -210,14 +222,19 @@ class AuthManager {
      * @returns {boolean} True if locked
      */
     isAccountLocked() {
-        // Ensure loginAttempts is properly initialized
-        if (!this.loginAttempts || typeof this.loginAttempts !== 'object') {
-            this.loginAttempts = this.getLoginAttempts();
-        }
+        console.log('isAccountLocked called, current loginAttempts:', this.loginAttempts);
 
-        return this.loginAttempts.lockedUntil &&
+        // Ensure loginAttempts is properly initialized
+        this.ensureLoginAttemptsInitialized();
+
+        console.log('After initialization, loginAttempts:', this.loginAttempts);
+
+        const isLocked = this.loginAttempts.lockedUntil &&
             typeof this.loginAttempts.lockedUntil === 'number' &&
             Date.now() < this.loginAttempts.lockedUntil;
+
+        console.log('Account lock status:', isLocked);
+        return isLocked;
     }
 
     /**
@@ -225,15 +242,30 @@ class AuthManager {
      * @returns {number} Minutes remaining
      */
     getLockoutTimeRemaining() {
-        if (!this.isAccountLocked()) return 0;
+        console.log('getLockoutTimeRemaining called');
+
+        // Ensure loginAttempts is initialized
+        this.ensureLoginAttemptsInitialized();
+        console.log('Current loginAttempts:', this.loginAttempts);
+
+        const isLocked = this.isAccountLocked();
+        console.log('isAccountLocked result:', isLocked);
+
+        if (!isLocked) {
+            console.log('Account not locked, returning 0');
+            return 0;
+        }
 
         // Ensure we have valid data
         if (!this.loginAttempts.lockedUntil || typeof this.loginAttempts.lockedUntil !== 'number') {
+            console.log('Invalid lockedUntil data, returning 0');
             return 0;
         }
 
         const remaining = Math.ceil((this.loginAttempts.lockedUntil - Date.now()) / (60 * 1000));
-        return Math.max(0, remaining); // Ensure we never return negative values
+        const result = Math.max(0, remaining);
+        console.log('Calculated remaining time:', result);
+        return result; // Ensure we never return negative values
     }
 
     /**
@@ -243,13 +275,19 @@ class AuthManager {
      * @returns {Promise<{success: boolean, message: string, session?: SessionData}>}
      */
     async login(username, password) {
+        // Debug logging before checking lock status
+        console.log('Login attempt - current loginAttempts:', this.loginAttempts);
+
         // Check if account is locked
-        if (this.isAccountLocked()) {
+        const isLocked = this.isAccountLocked();
+        console.log('Is account locked:', isLocked);
+
+        if (isLocked) {
             const remaining = this.getLockoutTimeRemaining();
 
             // Debug logging to identify the issue
             console.log('Account locked - remaining time:', remaining, typeof remaining);
-            console.log('Login attempts data:', this.loginAttempts);
+            console.log('Login attempts data after lock check:', this.loginAttempts);
 
             // Ensure remaining is a valid number
             const remainingMinutes = typeof remaining === 'number' && !isNaN(remaining) ? remaining : 0;
