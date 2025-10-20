@@ -8,7 +8,14 @@ class AuthManager {
         this.maxLoginAttempts = 5;
         this.lockoutDuration = 15 * 60 * 1000; // 15 minutes
         this.sessionTimeout = 30 * 60 * 1000; // 30 minutes
-        this.loginAttempts = this.getLoginAttempts();
+
+        // Initialize login attempts with safe fallback
+        try {
+            this.loginAttempts = this.getLoginAttempts();
+        } catch (error) {
+            console.warn('Error initializing login attempts:', error);
+            this.loginAttempts = { count: 0, lockedUntil: null };
+        }
 
         // Valid credentials (in production, this should be more secure)
         this.validCredentials = {
@@ -16,12 +23,41 @@ class AuthManager {
             passwordHash: this.hashPassword('nilknarf')
         };
 
-        // Initialize utility classes
-        this.sessionValidator = new SessionValidator();
-        this.logThrottler = new LogThrottler();
-        this.logger = this.logThrottler.createScopedLogger('AuthManager');
-        this.tokenManager = new TokenManager();
-        this.securityManager = new SecurityManager();
+        // Initialize utility classes with error handling
+        try {
+            this.sessionValidator = window.SessionValidator ? new SessionValidator() : null;
+            this.logThrottler = window.LogThrottler ? new LogThrottler() : null;
+            this.logger = this.logThrottler ? this.logThrottler.createScopedLogger('AuthManager') : console;
+            this.tokenManager = window.TokenManager ? new TokenManager() : null;
+            this.securityManager = window.SecurityManager ? new SecurityManager() : null;
+        } catch (error) {
+            console.warn('Error initializing AuthManager dependencies:', error);
+            // Create minimal fallbacks
+            this.sessionValidator = null;
+            this.logThrottler = null;
+            this.logger = console;
+            this.tokenManager = null;
+            this.securityManager = null;
+        }
+    }
+
+    /**
+     * Safe logging helper
+     * @param {string} level - Log level (info, warn, error, debug)
+     * @param {string} type - Log type/category
+     * @param {string} message - Log message
+     */
+    safeLog(level, type, message) {
+        try {
+            if (this.logger && typeof this.logger[level] === 'function') {
+                this.logger[level](type, message);
+            } else if (console && typeof console[level] === 'function') {
+                console[level](`[${type}] ${message}`);
+            }
+        } catch (error) {
+            // Fallback to basic console logging
+            console.log(`[${level.toUpperCase()}] [${type}] ${message}`);
+        }
     }
 
     /**
@@ -45,7 +81,7 @@ class AuthManager {
      * @returns {string} Session ID
      */
     generateSessionId() {
-        return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        return Date.now().toString(36) + Math.random().toString(36).substring(2);
     }
 
     /**
@@ -53,16 +89,40 @@ class AuthManager {
      * @returns {Object} Login attempts data
      */
     getLoginAttempts() {
-        const stored = localStorage.getItem('login_attempts');
-        if (stored) {
-            const data = JSON.parse(stored);
-            // Reset if lockout period has expired
-            if (data.lockedUntil && Date.now() > data.lockedUntil) {
-                this.clearLoginAttempts();
-                return { count: 0, lockedUntil: null };
+        try {
+            const stored = localStorage.getItem('login_attempts');
+            if (stored) {
+                const data = JSON.parse(stored);
+
+                // Validate data structure
+                if (typeof data !== 'object' || data === null) {
+                    this.clearLoginAttempts();
+                    return { count: 0, lockedUntil: null };
+                }
+
+                // Ensure count is a number
+                if (typeof data.count !== 'number' || isNaN(data.count)) {
+                    data.count = 0;
+                }
+
+                // Ensure lockedUntil is valid
+                if (data.lockedUntil !== null && (typeof data.lockedUntil !== 'number' || isNaN(data.lockedUntil))) {
+                    data.lockedUntil = null;
+                }
+
+                // Reset if lockout period has expired
+                if (data.lockedUntil && Date.now() > data.lockedUntil) {
+                    this.clearLoginAttempts();
+                    return { count: 0, lockedUntil: null };
+                }
+
+                return data;
             }
-            return data;
+        } catch (error) {
+            // If there's any error parsing, clear the data
+            this.clearLoginAttempts();
         }
+
         return { count: 0, lockedUntil: null };
     }
 
@@ -72,8 +132,17 @@ class AuthManager {
      * @param {number|null} lockedUntil - Lockout expiration timestamp
      */
     updateLoginAttempts(count, lockedUntil = null) {
-        this.loginAttempts = { count, lockedUntil };
-        localStorage.setItem('login_attempts', JSON.stringify(this.loginAttempts));
+        // Validate inputs
+        const validCount = typeof count === 'number' && !isNaN(count) ? Math.max(0, count) : 0;
+        const validLockedUntil = lockedUntil !== null && typeof lockedUntil === 'number' && !isNaN(lockedUntil) ? lockedUntil : null;
+
+        this.loginAttempts = { count: validCount, lockedUntil: validLockedUntil };
+
+        try {
+            localStorage.setItem('login_attempts', JSON.stringify(this.loginAttempts));
+        } catch (error) {
+            console.warn('Error saving login attempts to localStorage:', error);
+        }
     }
 
     /**
@@ -81,7 +150,59 @@ class AuthManager {
      */
     clearLoginAttempts() {
         this.loginAttempts = { count: 0, lockedUntil: null };
-        localStorage.removeItem('login_attempts');
+        try {
+            localStorage.removeItem('login_attempts');
+        } catch (error) {
+            console.warn('Error clearing login attempts from localStorage:', error);
+        }
+    }
+
+    /**
+     * Reset authentication state completely
+     * Useful for debugging and recovery
+     */
+    resetAuthState() {
+        try {
+            // Clear all auth-related localStorage items
+            localStorage.removeItem('login_attempts');
+            localStorage.removeItem(this.sessionKey);
+            localStorage.removeItem('admin_session');
+
+            // Reset internal state
+            this.loginAttempts = { count: 0, lockedUntil: null };
+
+            console.log('Authentication state reset successfully');
+            return true;
+        } catch (error) {
+            console.error('Error resetting auth state:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Diagnostic method to check AuthManager state
+     * @returns {Object} Diagnostic information
+     */
+    getDiagnostics() {
+        return {
+            loginAttempts: this.loginAttempts,
+            isLocked: this.isAccountLocked(),
+            lockoutTimeRemaining: this.getLockoutTimeRemaining(),
+            sessionKey: this.sessionKey,
+            maxLoginAttempts: this.maxLoginAttempts,
+            lockoutDuration: this.lockoutDuration,
+            dependencies: {
+                sessionValidator: !!this.sessionValidator,
+                logThrottler: !!this.logThrottler,
+                logger: !!this.logger,
+                tokenManager: !!this.tokenManager,
+                securityManager: !!this.securityManager
+            },
+            localStorage: {
+                loginAttempts: localStorage.getItem('login_attempts'),
+                session: localStorage.getItem(this.sessionKey)
+            }
+        };
     }
 
     /**
@@ -89,7 +210,14 @@ class AuthManager {
      * @returns {boolean} True if locked
      */
     isAccountLocked() {
-        return this.loginAttempts.lockedUntil && Date.now() < this.loginAttempts.lockedUntil;
+        // Ensure loginAttempts is properly initialized
+        if (!this.loginAttempts || typeof this.loginAttempts !== 'object') {
+            this.loginAttempts = this.getLoginAttempts();
+        }
+
+        return this.loginAttempts.lockedUntil &&
+            typeof this.loginAttempts.lockedUntil === 'number' &&
+            Date.now() < this.loginAttempts.lockedUntil;
     }
 
     /**
@@ -98,7 +226,14 @@ class AuthManager {
      */
     getLockoutTimeRemaining() {
         if (!this.isAccountLocked()) return 0;
-        return Math.ceil((this.loginAttempts.lockedUntil - Date.now()) / (60 * 1000));
+
+        // Ensure we have valid data
+        if (!this.loginAttempts.lockedUntil || typeof this.loginAttempts.lockedUntil !== 'number') {
+            return 0;
+        }
+
+        const remaining = Math.ceil((this.loginAttempts.lockedUntil - Date.now()) / (60 * 1000));
+        return Math.max(0, remaining); // Ensure we never return negative values
     }
 
     /**
@@ -111,9 +246,17 @@ class AuthManager {
         // Check if account is locked
         if (this.isAccountLocked()) {
             const remaining = this.getLockoutTimeRemaining();
+
+            // Debug logging to identify the issue
+            console.log('Account locked - remaining time:', remaining, typeof remaining);
+            console.log('Login attempts data:', this.loginAttempts);
+
+            // Ensure remaining is a valid number
+            const remainingMinutes = typeof remaining === 'number' && !isNaN(remaining) ? remaining : 0;
+
             return {
                 success: false,
-                message: `Conta bloqueada. Tente novamente em ${remaining} minutos.`
+                message: `Conta bloqueada. Tente novamente em ${remainingMinutes} minutos.`
             };
         }
 
@@ -165,8 +308,12 @@ class AuthManager {
         localStorage.setItem(this.sessionKey, JSON.stringify(session));
 
         // Notify managers of session change
-        this.tokenManager.onSessionChange(session);
-        this.securityManager.initializeForSession(session);
+        if (this.tokenManager && typeof this.tokenManager.onSessionChange === 'function') {
+            this.tokenManager.onSessionChange(session);
+        }
+        if (this.securityManager && typeof this.securityManager.initializeForSession === 'function') {
+            this.securityManager.initializeForSession(session);
+        }
 
         return {
             success: true,
@@ -180,8 +327,12 @@ class AuthManager {
      */
     logout() {
         // Notify managers of session end
-        this.tokenManager.onSessionChange(null);
-        this.securityManager.initializeForSession(null);
+        if (this.tokenManager && typeof this.tokenManager.onSessionChange === 'function') {
+            this.tokenManager.onSessionChange(null);
+        }
+        if (this.securityManager && typeof this.securityManager.initializeForSession === 'function') {
+            this.securityManager.initializeForSession(null);
+        }
 
         localStorage.removeItem(this.sessionKey);
         // Redirect to login or refresh page
@@ -198,27 +349,29 @@ class AuthManager {
 
         // Validate origin first
         if (!this.validateOrigin()) {
-            this.logger.error('origin_validation_failed', 'Origin validation failed');
+            this.safeLog('error', 'origin_validation_failed', 'Origin validation failed');
             this.logout();
             return false;
         }
 
         // Use throttled validation to prevent infinite loops
-        const validationResult = this.sessionValidator.validateSession(session);
-        
+        const validationResult = this.sessionValidator ?
+            this.sessionValidator.validateSession(session) :
+            { valid: true, throttled: false };
+
         // Update validation counter
         if (session.validationCount !== undefined) {
             session.validationCount++;
             session.lastValidation = Date.now();
         }
-        
+
         // If validation is throttled or failed, handle appropriately
         if (!validationResult.valid) {
             if (validationResult.throttled) {
                 // Log throttling with throttled logger
-                this.logger.debug('validation_throttled', 
+                this.logger.debug('validation_throttled',
                     `Session validation throttled: ${validationResult.reason}`);
-                
+
                 // If throttled but we have a cached valid result, trust it temporarily
                 if (validationResult.cached && validationResult.reason !== 'validation_error') {
                     return session.authenticated;
@@ -226,11 +379,11 @@ class AuthManager {
                 // Otherwise, assume invalid to be safe
                 return false;
             }
-            
+
             // Log validation failure
-            this.logger.warn('validation_failed', 
+            this.logger.warn('validation_failed',
                 `Session validation failed: ${validationResult.reason} - ${validationResult.message}`);
-            
+
             // Session validation failed, clean up silently
             this.silentCleanup();
             return false;
@@ -254,15 +407,17 @@ class AuthManager {
 
         // Update last activity
         session.lastActivity = now;
-        
+
         // Rotate session ID if needed
         const rotatedSession = this.rotateSessionId(session);
-        
+
         // Store updated session
         localStorage.setItem(this.sessionKey, JSON.stringify(rotatedSession));
 
         // Ensure managers have current session
-        this.tokenManager.onSessionChange(rotatedSession);
+        if (this.tokenManager && typeof this.tokenManager.onSessionChange === 'function') {
+            this.tokenManager.onSessionChange(rotatedSession);
+        }
 
         return rotatedSession.authenticated;
     }
@@ -277,19 +432,21 @@ class AuthManager {
 
         try {
             const session = JSON.parse(stored);
-            
+
             // Use throttled validation instead of basic checks
-            const validationResult = this.sessionValidator.validateSession(session);
-            
+            const validationResult = this.sessionValidator ?
+                this.sessionValidator.validateSession(session) :
+                { valid: true, throttled: false };
+
             if (validationResult.valid) {
                 return session;
             }
-            
+
             // If validation is throttled, return session if it exists and has basic structure
             if (validationResult.throttled && session && session.authenticated === true) {
                 return session;
             }
-            
+
             // Session is invalid, clean up silently
             this.silentCleanup();
             return null;
@@ -332,16 +489,20 @@ class AuthManager {
      */
     silentCleanup() {
         localStorage.removeItem(this.sessionKey);
-        
+
         // Use throttled logging for cleanup events
         this.logger.debug('session_cleanup', 'Invalid session cleaned up silently');
-        
+
         // Notify managers of session end without logging
-        if (this.tokenManager && typeof this.tokenManager.onSessionChange === 'function') {
-            this.tokenManager.onSessionChange(null);
-        }
-        if (this.securityManager && typeof this.securityManager.initializeForSession === 'function') {
-            this.securityManager.initializeForSession(null);
+        try {
+            if (this.tokenManager && typeof this.tokenManager.onSessionChange === 'function') {
+                this.tokenManager.onSessionChange(null);
+            }
+            if (this.securityManager && typeof this.securityManager.initializeForSession === 'function') {
+                this.securityManager.initializeForSession(null);
+            }
+        } catch (error) {
+            // Ignore errors during cleanup
         }
     }
 
@@ -357,7 +518,7 @@ class AuthManager {
             ctx.textBaseline = 'top';
             ctx.font = '14px Arial';
             ctx.fillText('Browser fingerprint', 2, 2);
-            
+
             const fingerprint = [
                 navigator.userAgent || '',
                 navigator.language || '',
@@ -365,25 +526,25 @@ class AuthManager {
                 screen.width + 'x' + screen.height,
                 screen.colorDepth || '',
                 new Date().getTimezoneOffset(),
-                navigator.platform || '',
+                navigator.userAgentData?.platform || navigator.platform || '',
                 navigator.cookieEnabled ? '1' : '0',
                 navigator.doNotTrack || '',
                 window.location.origin || '',
                 canvas.toDataURL()
             ].join('|');
-            
+
             return this.hashPassword(fingerprint);
         } catch (error) {
             // Fallback fingerprint if canvas or other features fail
             this.logger.warn('fingerprint_error', `Failed to generate full fingerprint: ${error.message}`);
-            
+
             const basicFingerprint = [
                 navigator.userAgent || 'unknown',
                 screen.width + 'x' + screen.height,
                 new Date().getTimezoneOffset(),
                 window.location.origin || 'unknown'
             ].join('|');
-            
+
             return this.hashPassword(basicFingerprint);
         }
     }
@@ -402,12 +563,12 @@ class AuthManager {
 
         const currentFingerprint = this.generateFingerprint();
         const isValid = session.fingerprint === currentFingerprint;
-        
+
         if (!isValid) {
-            this.logger.warn('fingerprint_mismatch', 
+            this.logger.warn('fingerprint_mismatch',
                 'Session fingerprint mismatch - possible session hijacking');
         }
-        
+
         return isValid;
     }
 
@@ -426,12 +587,12 @@ class AuthManager {
 
         const currentOrigin = window.location.origin;
         const isValid = allowedOrigins.includes(currentOrigin);
-        
+
         if (!isValid) {
-            this.logger.error('origin_invalid', 
+            this.logger.error('origin_invalid',
                 `Invalid origin detected: ${currentOrigin}`);
         }
-        
+
         return isValid;
     }
 
@@ -447,52 +608,30 @@ class AuthManager {
         const now = Date.now();
         const sessionAge = now - session.loginTime;
         const timeSinceRotation = session.lastRotation ? now - session.lastRotation : sessionAge;
-        
+
         // Rotate every 15 minutes or if forced
         const shouldRotate = timeSinceRotation > (15 * 60 * 1000);
-        
+
         if (shouldRotate) {
-            const oldSessionId = session.sessionId;
             session.sessionId = this.generateSessionId();
             session.lastRotation = now;
-            
-            this.logger.info('session_rotated', 
+
+            this.logger.info('session_rotated',
                 `Session ID rotated after ${Math.round(timeSinceRotation / 60000)} minutes`);
-            
+
             // Store updated session
             localStorage.setItem(this.sessionKey, JSON.stringify(session));
-            
+
             // Notify managers of session change
-            this.tokenManager.onSessionChange(session);
+            if (this.tokenManager && typeof this.tokenManager.onSessionChange === 'function') {
+                this.tokenManager.onSessionChange(session);
+            }
         }
-        
+
         return session;
     }
 
-    /**
-     * Check if validation should be skipped to prevent excessive checks
-     * @returns {boolean} True if validation should be skipped
-     * @private
-     */
-    shouldSkipValidation() {
-        const session = this.getRawSession();
-        if (!session || !session.validationCount || !session.lastValidation) {
-            return false;
-        }
 
-        const now = Date.now();
-        const timeSinceLastValidation = now - session.lastValidation;
-        const validationsPerMinute = session.validationCount / ((now - session.loginTime) / 60000);
-
-        // Skip if too many validations in a short time
-        if (validationsPerMinute > 30 && timeSinceLastValidation < 2000) {
-            this.logger.debug('validation_skipped', 
-                `Skipping validation due to excessive checks: ${validationsPerMinute.toFixed(1)}/min`);
-            return true;
-        }
-
-        return false;
-    }
 
     /**
      * Get raw session data without validation
@@ -518,11 +657,11 @@ class AuthManager {
         return {
             authenticated: this.isAuthenticated(),
             sessionTimeRemaining: this.getSessionTimeRemaining(),
-            tokenStatus: this.tokenManager.getTokenStatus(),
-            securityStatus: this.securityManager.getSecurityStatus(),
+            tokenStatus: this.tokenManager ? this.tokenManager.getTokenStatus() : null,
+            securityStatus: this.securityManager ? this.securityManager.getSecurityStatus() : null,
             loginAttempts: this.loginAttempts,
-            validationStats: this.sessionValidator.getStats(),
-            loggingStats: this.logThrottler.getStats()
+            validationStats: this.sessionValidator ? this.sessionValidator.getStats() : null,
+            loggingStats: this.logThrottler ? this.logThrottler.getStats() : null
         };
     }
 
@@ -552,12 +691,12 @@ class AuthManager {
         // Set up security event listeners
         window.addEventListener('security-threat', (event) => {
             // Use throttled logging for security events
-            this.logger.warn('security_threat', 
+            this.logger.warn('security_threat',
                 `Security threat detected: ${event.detail.type || 'unknown'}`);
 
             // Log security event with additional details
             if (event.detail) {
-                this.logger.info('security_details', 
+                this.logger.info('security_details',
                     `Security threat details: ${JSON.stringify(event.detail)}`);
             }
         });
@@ -567,6 +706,6 @@ class AuthManager {
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = AuthManager;
-} else {
+} else if (typeof window !== 'undefined') {
     window.AuthManager = AuthManager;
 }

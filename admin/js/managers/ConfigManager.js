@@ -91,13 +91,13 @@ class ConfigManager {
      */
     async loadFromGitHub() {
         const githubManager = window.adminApp.githubManager;
-        const content = await githubManager.getFileContent('config/settings.json');
+        const fileData = await githubManager.getFileContent('config/settings.json');
         
-        if (!content) {
+        if (!fileData || !fileData.content) {
             throw new Error('Configuration file not found in repository');
         }
         
-        return JSON.parse(content);
+        return JSON.parse(fileData.content);
     }
 
     /**
