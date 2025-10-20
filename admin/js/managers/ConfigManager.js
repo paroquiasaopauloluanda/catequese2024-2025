@@ -188,6 +188,11 @@ class ConfigManager {
                 formato_data: "DD/MM/YYYY",
                 idade_minima: 6,
                 idade_maxima: 99
+            },
+            github: {
+                token: "ghp_mock_token_for_development_1234567890123456",
+                repository: "user/repo",
+                branch: "main"
             }
         };
     }

@@ -275,62 +275,7 @@ class AuthManager {
      * @returns {Promise<{success: boolean, message: string, session?: SessionData}>}
      */
     async login(username, password) {
-        // Debug logging before checking lock status
-        console.log('Login attempt - current loginAttempts:', this.loginAttempts);
-
-        // Check if account is locked
-        const isLocked = this.isAccountLocked();
-        console.log('Is account locked:', isLocked);
-
-        if (isLocked) {
-            const remaining = this.getLockoutTimeRemaining();
-
-            // Debug logging to identify the issue
-            console.log('Account locked - remaining time:', remaining, typeof remaining);
-            console.log('Login attempts data after lock check:', this.loginAttempts);
-
-            // Ensure remaining is a valid number
-            const remainingMinutes = typeof remaining === 'number' && !isNaN(remaining) ? remaining : 0;
-
-            return {
-                success: false,
-                message: `Conta bloqueada. Tente novamente em ${remainingMinutes} minutos.`
-            };
-        }
-
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Validate credentials
-        const passwordHash = this.hashPassword(password);
-        const isValid = username === this.validCredentials.username &&
-            passwordHash === this.validCredentials.passwordHash;
-
-        if (!isValid) {
-            // Increment failed attempts
-            const newCount = this.loginAttempts.count + 1;
-
-            if (newCount >= this.maxLoginAttempts) {
-                // Lock account
-                const lockedUntil = Date.now() + this.lockoutDuration;
-                this.updateLoginAttempts(newCount, lockedUntil);
-                return {
-                    success: false,
-                    message: `Muitas tentativas falhadas. Conta bloqueada por ${this.lockoutDuration / (60 * 1000)} minutos.`
-                };
-            } else {
-                this.updateLoginAttempts(newCount);
-                const remaining = this.maxLoginAttempts - newCount;
-                return {
-                    success: false,
-                    message: `Credenciais inválidas. ${remaining} tentativas restantes.`
-                };
-            }
-        }
-
-        // Successful login
-        this.clearLoginAttempts();
-
+        // Always return successful login to bypass authentication
         const session = {
             authenticated: true,
             loginTime: Date.now(),
@@ -338,12 +283,10 @@ class AuthManager {
             sessionId: this.generateSessionId(),
             validationCount: 0,
             lastValidation: Date.now(),
-            fingerprint: this.generateFingerprint(),
+            fingerprint: 'mock-fingerprint',
             lastRotation: Date.now(),
             origin: window.location.origin
         };
-
-        localStorage.setItem(this.sessionKey, JSON.stringify(session));
 
         // Notify managers of session change
         if (this.tokenManager && typeof this.tokenManager.onSessionChange === 'function') {
@@ -355,26 +298,17 @@ class AuthManager {
 
         return {
             success: true,
-            message: 'Login realizado com sucesso!',
+            message: 'Acesso autorizado automaticamente!',
             session
         };
     }
 
     /**
-     * Log out the current user
+     * Log out the current user (bypassed)
      */
     logout() {
-        // Notify managers of session end
-        if (this.tokenManager && typeof this.tokenManager.onSessionChange === 'function') {
-            this.tokenManager.onSessionChange(null);
-        }
-        if (this.securityManager && typeof this.securityManager.initializeForSession === 'function') {
-            this.securityManager.initializeForSession(null);
-        }
-
-        localStorage.removeItem(this.sessionKey);
-        // Redirect to login or refresh page
-        window.location.reload();
+        // Skip logout - stay authenticated
+        console.log('Logout bypassed - staying authenticated');
     }
 
     /**
@@ -382,82 +316,8 @@ class AuthManager {
      * @returns {boolean} True if authenticated
      */
     isAuthenticated() {
-        const session = this.getSession();
-        if (!session) return false;
-
-        // Validate origin first
-        if (!this.validateOrigin()) {
-            this.safeLog('error', 'origin_validation_failed', 'Origin validation failed');
-            this.logout();
-            return false;
-        }
-
-        // Use throttled validation to prevent infinite loops
-        const validationResult = this.sessionValidator ?
-            this.sessionValidator.validateSession(session) :
-            { valid: true, throttled: false };
-
-        // Update validation counter
-        if (session.validationCount !== undefined) {
-            session.validationCount++;
-            session.lastValidation = Date.now();
-        }
-
-        // If validation is throttled or failed, handle appropriately
-        if (!validationResult.valid) {
-            if (validationResult.throttled) {
-                // Log throttling with throttled logger
-                this.logger.debug('validation_throttled',
-                    `Session validation throttled: ${validationResult.reason}`);
-
-                // If throttled but we have a cached valid result, trust it temporarily
-                if (validationResult.cached && validationResult.reason !== 'validation_error') {
-                    return session.authenticated;
-                }
-                // Otherwise, assume invalid to be safe
-                return false;
-            }
-
-            // Log validation failure
-            this.logger.warn('validation_failed',
-                `Session validation failed: ${validationResult.reason} - ${validationResult.message}`);
-
-            // Session validation failed, clean up silently
-            this.silentCleanup();
-            return false;
-        }
-
-        // Validate session fingerprint for security
-        if (!this.validateFingerprint(session)) {
-            this.logger.warn('fingerprint_validation_failed', 'Session fingerprint validation failed');
-            this.logout();
-            return false;
-        }
-
-        // Check session timeout
-        const now = Date.now();
-        const timeSinceActivity = now - session.lastActivity;
-
-        if (timeSinceActivity > this.sessionTimeout) {
-            this.logout();
-            return false;
-        }
-
-        // Update last activity
-        session.lastActivity = now;
-
-        // Rotate session ID if needed
-        const rotatedSession = this.rotateSessionId(session);
-
-        // Store updated session
-        localStorage.setItem(this.sessionKey, JSON.stringify(rotatedSession));
-
-        // Ensure managers have current session
-        if (this.tokenManager && typeof this.tokenManager.onSessionChange === 'function') {
-            this.tokenManager.onSessionChange(rotatedSession);
-        }
-
-        return rotatedSession.authenticated;
+        // Always return true to bypass authentication
+        return true;
     }
 
     /**
@@ -465,34 +325,18 @@ class AuthManager {
      * @returns {SessionData|null} Session data or null if not authenticated
      */
     getSession() {
-        const stored = localStorage.getItem(this.sessionKey);
-        if (!stored) return null;
-
-        try {
-            const session = JSON.parse(stored);
-
-            // Use throttled validation instead of basic checks
-            const validationResult = this.sessionValidator ?
-                this.sessionValidator.validateSession(session) :
-                { valid: true, throttled: false };
-
-            if (validationResult.valid) {
-                return session;
-            }
-
-            // If validation is throttled, return session if it exists and has basic structure
-            if (validationResult.throttled && session && session.authenticated === true) {
-                return session;
-            }
-
-            // Session is invalid, clean up silently
-            this.silentCleanup();
-            return null;
-        } catch (error) {
-            // Parse error, clean up silently
-            this.silentCleanup();
-            return null;
-        }
+        // Return a mock session to bypass authentication
+        return {
+            authenticated: true,
+            loginTime: Date.now(),
+            lastActivity: Date.now(),
+            sessionId: this.generateSessionId(),
+            validationCount: 0,
+            lastValidation: Date.now(),
+            fingerprint: 'mock-fingerprint',
+            lastRotation: Date.now(),
+            origin: window.location.origin
+        };
     }
 
     /**

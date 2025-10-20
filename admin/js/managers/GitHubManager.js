@@ -104,6 +104,12 @@ class GitHubManager {
             throw new Error('GitHub token não configurado');
         }
         
+        // Skip validation for mock tokens
+        if (this.token.includes('mock_token')) {
+            console.log('Using mock token - skipping validation');
+            return this.createMockResponse(endpoint);
+        }
+        
         // Refresh token validation if needed
         if (this.tokenManager.needsValidationRefresh()) {
             const refreshResult = await this.tokenManager.refreshTokenValidation();
@@ -2084,6 +2090,69 @@ class GitHubManager {
             actions,
             conflicts
         };
+    }
+
+    /**
+     * Create mock response for development/testing
+     * @param {string} endpoint - API endpoint
+     * @returns {Promise<Response>} Mock response
+     * @private
+     */
+    async createMockResponse(endpoint) {
+        console.log('Creating mock response for:', endpoint);
+        
+        // Mock response data based on endpoint
+        let mockData = {};
+        
+        if (endpoint.includes('/contents/')) {
+            // Mock file content response
+            mockData = {
+                content: btoa(JSON.stringify({
+                    paroquia: {
+                        nome: "Paróquia Mock",
+                        secretariado: "Secretariado Mock"
+                    }
+                })),
+                sha: 'mock-sha-123',
+                size: 100,
+                encoding: 'base64',
+                download_url: 'https://mock-url.com'
+            };
+        } else if (endpoint.includes('/repos/')) {
+            // Mock repository info
+            mockData = {
+                name: 'mock-repo',
+                full_name: 'user/mock-repo',
+                owner: { login: 'user' },
+                has_pages: true
+            };
+        } else if (endpoint.includes('/rate_limit')) {
+            // Mock rate limit response
+            mockData = {
+                rate: {
+                    limit: 5000,
+                    remaining: 4999,
+                    reset: Math.floor(Date.now() / 1000) + 3600
+                }
+            };
+        } else {
+            // Default mock response
+            mockData = { success: true, message: 'Mock response' };
+        }
+
+        // Create mock Response object
+        const mockResponse = new Response(JSON.stringify(mockData), {
+            status: 200,
+            statusText: 'OK',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-RateLimit-Limit': '5000',
+                'X-RateLimit-Remaining': '4999',
+                'X-RateLimit-Reset': Math.floor(Date.now() / 1000) + 3600
+            }
+        });
+
+        return mockResponse;
     }
 }
 

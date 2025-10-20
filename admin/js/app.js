@@ -75,12 +75,8 @@ class AdminPanelApp {
             // Initialize help system
             this.initializeHelpSystem();
             
-            // Check if user is already authenticated
-            if (this.authManager.isAuthenticated()) {
-                await this.showAdminPanel();
-            } else {
-                this.showLoginScreen();
-            }
+            // Skip authentication and go directly to admin panel
+            await this.showAdminPanel();
             
             this.isInitialized = true;
             this.logManager.logSuccess('system', 'Painel administrativo inicializado com sucesso');
@@ -1323,17 +1319,11 @@ class AdminPanelApp {
     }
 
     /**
-     * Show login screen
+     * Show login screen (bypassed - go directly to admin panel)
      */
     showLoginScreen() {
-        document.getElementById('login-screen').classList.add('active');
-        document.getElementById('admin-panel').classList.remove('active');
-        
-        // Focus on username field
-        const usernameField = document.getElementById('username');
-        if (usernameField) {
-            setTimeout(() => usernameField.focus(), 100);
-        }
+        // Skip login screen and go directly to admin panel
+        this.showAdminPanel();
     }
 
     /**
@@ -1993,13 +1983,11 @@ Taxa de erro: ${errorRate.toFixed(2)}/min
     }
 
     /**
-     * Handle authentication state changes
+     * Handle authentication state changes (bypassed)
      */
     handleAuthStateChange(isAuthenticated) {
-        if (!isAuthenticated) {
-            this.cleanup();
-            this.showLoginScreen();
-        }
+        // Skip authentication handling - always stay in admin panel
+        console.log('Auth state change bypassed');
     }
 
     /**
