@@ -1,13 +1,17 @@
 # 🚀 Configuração do GitHub para o Painel Administrativo
 
-## ✅ **Problema Resolvido**
+## ✅ **Problemas Resolvidos**
 
-O erro `actions/upload-artifact: v3` foi corrigido! Atualizei todos os workflows para usar as versões mais recentes:
+1. **Erro `actions/upload-artifact: v3`** - Atualizado para v4
+2. **Erro `npm ci` sem package-lock.json** - Criado package-lock.json e fallback para npm install
 
+Atualizações feitas:
 - ✅ `actions/checkout@v4`
 - ✅ `actions/setup-node@v4` 
 - ✅ `actions/upload-artifact@v4`
 - ✅ `peaceiris/actions-gh-pages@v4`
+- ✅ Criado `admin/package-lock.json`
+- ✅ Fallback para `npm install` se `npm ci` falhar
 
 ## 🔧 **Configuração Passo a Passo**
 
@@ -74,15 +78,20 @@ git push origin main
 
 ## 📋 **Workflows Criados**
 
-### **1. deploy-admin.yml**
+### **1. simple-deploy.yml** (Recomendado)
+- Deploy direto sem build
+- Mais simples e confiável
+- Não depende de npm/node
+
+### **2. deploy-admin.yml**
 - Executa quando há mudanças na pasta `admin/`
 - Faz build e deploy do painel administrativo
 - Cria artifacts para backup
 
-### **2. pages.yml** 
+### **3. pages.yml** 
 - Deploy geral para GitHub Pages
 - Usa as actions mais recentes
-- Configuração simplificada e robusta
+- Configuração com build
 
 ## 🎯 **Como Usar Após Deploy**
 
