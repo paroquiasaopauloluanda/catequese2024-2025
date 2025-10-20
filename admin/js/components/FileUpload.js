@@ -283,11 +283,12 @@ class FileUpload {
     showValidationErrors(type, errors) {
         const statusDiv = document.getElementById(`status-${type}`);
         statusDiv.style.display = 'block';
+        const errorList = Array.isArray(errors) ? errors : ['Erro de validação desconhecido'];
         statusDiv.innerHTML = `
             <div class="status-error">
                 <h4>Erro de Validação</h4>
                 <ul>
-                    ${errors.map(error => `<li>${error}</li>`).join('')}
+                    ${errorList.map(error => `<li>${error}</li>`).join('')}
                 </ul>
             </div>
         `;

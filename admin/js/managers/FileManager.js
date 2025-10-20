@@ -124,7 +124,11 @@ class FileManager {
             warnings.push('Arquivo muito grande, processamento pode ser lento');
         }
 
-        return { errors, warnings };
+        return { 
+            isValid: errors.length === 0, 
+            errors, 
+            warnings 
+        };
     }
 
     /**
@@ -139,7 +143,11 @@ class FileManager {
         // Check MIME type
         if (!file.type.startsWith('image/')) {
             errors.push('Arquivo não é uma imagem válida');
-            return { errors, warnings };
+            return { 
+                isValid: false, 
+                errors, 
+                warnings 
+            };
         }
 
         // Check specific image formats
@@ -158,7 +166,11 @@ class FileManager {
             warnings.push('Imagem muito pequena, qualidade pode ser baixa');
         }
 
-        return { errors, warnings };
+        return { 
+            isValid: errors.length === 0, 
+            errors, 
+            warnings 
+        };
     }
 
     /**
