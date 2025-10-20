@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +8,13 @@
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/responsive.css">
 </head>
+
 <body>
     <div id="app">
         <!-- Skip Links for Accessibility -->
         <a href="#main-content" class="skip-link">Pular para o conteúdo principal</a>
         <a href="#navigation" class="skip-link">Pular para a navegação</a>
-        
+
         <!-- Login Screen -->
         <div id="login-screen" class="screen active">
             <div class="login-container">
@@ -23,16 +25,14 @@
                 <form id="login-form" class="login-form">
                     <div class="form-group">
                         <label for="username">Usuário</label>
-                        <input type="text" id="username" name="username" required 
-                               data-help="Digite 'admin' para acessar o sistema"
-                               data-help-position="bottom">
+                        <input type="text" id="username" name="username" required
+                            data-help="Digite 'admin' para acessar o sistema" data-help-position="bottom">
                         <span class="error-message" id="username-error"></span>
                     </div>
                     <div class="form-group">
                         <label for="password">Senha</label>
                         <input type="password" id="password" name="password" required
-                               data-help="Digite a senha configurada para o sistema"
-                               data-help-position="bottom">
+                            data-help="Digite a senha configurada para o sistema" data-help-position="bottom">
                         <span class="error-message" id="password-error"></span>
                     </div>
                     <button type="submit" class="btn btn-primary" id="login-btn">
@@ -88,7 +88,8 @@
             <nav class="admin-nav" role="navigation" id="navigation" aria-label="Navegação principal">
                 <ul class="nav-menu" role="menubar">
                     <li role="none">
-                        <a href="#config" class="nav-link active" data-section="config" role="menuitem" aria-current="page">
+                        <a href="#config" class="nav-link active" data-section="config" role="menuitem"
+                            aria-current="page">
                             <span class="nav-icon" aria-hidden="true">⚙️</span>
                             <span class="nav-text">Configurações</span>
                             <span class="nav-badge" id="config-badge" aria-label="Notificações de configuração"></span>
@@ -133,7 +134,7 @@
                         <h2>Painel de Controle</h2>
                         <p class="dashboard-subtitle">Visão geral do sistema administrativo</p>
                     </div>
-                    
+
                     <div class="dashboard-grid">
                         <div class="dashboard-card" data-section="config">
                             <div class="card-header">
@@ -249,38 +250,49 @@
                         </div>
                     </div>
                     <!-- GitHub Token Configuration -->
-                    <div class="config-card" style="margin-bottom: 2rem; padding: 1.5rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8f9fa;">
+                    <div class="config-card"
+                        style="margin-bottom: 2rem; padding: 1.5rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8f9fa;">
                         <h3 style="margin: 0 0 1rem 0; color: #2d3748;">🔑 Configuração GitHub</h3>
-                        <p style="margin: 0 0 1rem 0; color: #718096;">Configure seu Personal Access Token para sincronização com o repositório.</p>
-                        
+                        <p style="margin: 0 0 1rem 0; color: #718096;">Configure seu Personal Access Token para
+                            sincronização com o repositório.</p>
+
                         <div style="display: flex; gap: 1rem; align-items: end; flex-wrap: wrap;">
                             <div style="flex: 1; min-width: 300px;">
-                                <label for="github-token" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">GitHub Token:</label>
-                                <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" 
-                                       style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-family: monospace;">
+                                <label for="github-token"
+                                    style="display: block; margin-bottom: 0.5rem; font-weight: 600;">GitHub
+                                    Token:</label>
+                                <input type="password" id="github-token"
+                                    placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                                    style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-family: monospace;">
                             </div>
                             <button id="save-github-token" class="btn btn-primary" onclick="adminApp.saveGitHubToken()">
                                 💾 Salvar Token
                             </button>
                         </div>
-                        
-                        <div id="github-status" style="margin-top: 1rem; padding: 0.75rem; border-radius: 6px; display: none;">
+
+                        <div id="github-status"
+                            style="margin-top: 1rem; padding: 0.75rem; border-radius: 6px; display: none;">
                             <!-- Status will be shown here -->
                         </div>
-                        
+
                         <details style="margin-top: 1rem;">
-                            <summary style="cursor: pointer; font-weight: 600; color: #4a5568;">Como criar um Personal Access Token?</summary>
-                            <div style="margin-top: 0.5rem; padding: 1rem; background: white; border-radius: 6px; font-size: 0.9rem;">
+                            <summary style="cursor: pointer; font-weight: 600; color: #4a5568;">Como criar um Personal
+                                Access Token?</summary>
+                            <div
+                                style="margin-top: 0.5rem; padding: 1rem; background: white; border-radius: 6px; font-size: 0.9rem;">
                                 <ol style="margin: 0; padding-left: 1.5rem;">
-                                    <li>Vá para <strong>GitHub.com → Settings → Developer settings → Personal access tokens</strong></li>
+                                    <li>Vá para <strong>GitHub.com → Settings → Developer settings → Personal access
+                                            tokens</strong></li>
                                     <li>Clique em <strong>"Generate new token (classic)"</strong></li>
-                                    <li>Configure os scopes: <code>repo</code>, <code>workflow</code>, <code>write:packages</code> (opcional)</li>
+                                    <li>Configure os scopes: <code>repo</code>, <code>workflow</code>,
+                                        <code>write:packages</code> (opcional)
+                                    </li>
                                     <li>Copie o token e cole no campo acima</li>
                                 </ol>
                             </div>
                         </details>
                     </div>
-                    
+
                     <div id="config-form-container">
                         <!-- Configuration form will be dynamically generated -->
                     </div>
@@ -342,10 +354,12 @@
             </main>
 
             <!-- Progress Overlay -->
-            <div id="progress-overlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="progress-title">
+            <div id="progress-overlay" class="overlay hidden" role="dialog" aria-modal="true"
+                aria-labelledby="progress-title">
                 <div class="progress-container">
                     <h3 id="progress-title">Processando...</h3>
-                    <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                        aria-valuenow="0">
                         <div id="progress-fill" class="progress-fill"></div>
                     </div>
                     <p id="progress-message" aria-live="polite">Iniciando operação...</p>
@@ -354,7 +368,8 @@
             </div>
 
             <!-- Notification Container -->
-            <div id="notification-container" class="notification-container" role="region" aria-label="Notificações" aria-live="polite"></div>
+            <div id="notification-container" class="notification-container" role="region" aria-label="Notificações"
+                aria-live="polite"></div>
         </div>
     </div>
 
@@ -391,4 +406,5 @@
     <script src="js/components/LogDisplay.js"></script>
     <script src="js/app.js"></script>
 </body>
+
 </html>

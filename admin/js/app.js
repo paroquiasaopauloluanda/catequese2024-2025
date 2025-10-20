@@ -1501,14 +1501,20 @@ class AdminPanelApp {
      * Load configuration section
      */
     async loadConfigurationSection() {
+        console.log('Loading configuration section');
         const container = document.getElementById('config-form-container');
-        if (!container) return;
+        if (!container) {
+            console.error('Config form container not found');
+            return;
+        }
         
         try {
+            console.log('Initializing configForm component');
             await this.initializeComponent('configForm', container);
             
             // Reload the form if it already exists
             if (this.configForm && this.configForm.init) {
+                console.log('Initializing existing configForm');
                 this.configForm.init();
             }
         } catch (error) {
@@ -2078,7 +2084,9 @@ Taxa de erro: ${errorRate.toFixed(2)}/min
      * Initialize component if not already done
      */
     async initializeComponent(componentName, container, ...args) {
+        console.log(`Initializing component: ${componentName}`);
         if (this.componentStates.get(componentName) === 'initialized') {
+            console.log(`Component ${componentName} already initialized`);
             return this[componentName];
         }
 
@@ -2087,6 +2095,7 @@ Taxa de erro: ${errorRate.toFixed(2)}/min
             
             switch (componentName) {
                 case 'configForm':
+                    console.log('Creating ConfigForm instance');
                     this.configForm = new ConfigForm(container, this.configManager);
                     this.configForm.setProgressComponents(this.progressTracker, this.progressBar);
                     break;

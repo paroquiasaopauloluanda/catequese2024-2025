@@ -234,8 +234,15 @@ class FileUpload {
             // Validate file
             const validation = this.fileManager.validateFile(file, type);
             
+            // Ensure validation has the expected structure
+            if (!validation || typeof validation !== 'object') {
+                this.showValidationErrors(type, ['Erro de validação desconhecido']);
+                return;
+            }
+            
             if (!validation.isValid) {
-                this.showValidationErrors(type, validation.errors);
+                const errors = Array.isArray(validation.errors) ? validation.errors : ['Erro de validação'];
+                this.showValidationErrors(type, errors);
                 return;
             }
             

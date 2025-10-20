@@ -334,6 +334,7 @@ class AuthManager {
             origin: window.location.origin
         };
 
+        console.log('Creating session:', session);
         localStorage.setItem(this.sessionKey, JSON.stringify(session));
 
         // Notify managers of session change

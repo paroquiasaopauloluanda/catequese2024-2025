@@ -28,6 +28,7 @@ class ConfigForm {
      * Initialize the form builder
      */
     init() {
+        console.log('ConfigForm init called');
         this.container.innerHTML = '';
         this.createFormStructure();
         this.loadConfiguration();
@@ -86,9 +87,11 @@ class ConfigForm {
      */
     async loadConfiguration() {
         try {
+            console.log('Loading configuration for form');
             this.showLoading();
             
             const config = await this.configManager.loadSettings();
+            console.log('Configuration loaded:', config);
             this.currentConfig = JSON.parse(JSON.stringify(config)); // Deep copy
             this.originalConfig = JSON.parse(JSON.stringify(config)); // Deep copy
             
