@@ -214,7 +214,9 @@ class AdminPanelApp {
         try {
             // Check if ConfigForm class is available
             if (!window.ConfigForm) {
-                throw new Error('ConfigForm class não está disponível');
+                console.warn('ConfigForm class não está disponível, criando interface básica');
+                this.createBasicConfigInterface(container);
+                return;
             }
             
             // Initialize or reinitialize the component
@@ -230,7 +232,8 @@ class AdminPanelApp {
             
         } catch (error) {
             console.error('Error loading configuration section:', error);
-            throw error;
+            console.log('Falling back to basic interface');
+            this.createBasicConfigInterface(container);
         }
     }
 
@@ -247,7 +250,9 @@ class AdminPanelApp {
         try {
             // Check if FileUpload class is available
             if (!window.FileUpload) {
-                throw new Error('FileUpload class não está disponível');
+                console.warn('FileUpload class não está disponível, criando interface básica');
+                this.createBasicFilesInterface(container);
+                return;
             }
             
             // Initialize or reinitialize the component
@@ -266,7 +271,8 @@ class AdminPanelApp {
             
         } catch (error) {
             console.error('Error loading files section:', error);
-            throw error;
+            console.log('Falling back to basic interface');
+            this.createBasicFilesInterface(container);
         }
     }
 
@@ -283,7 +289,9 @@ class AdminPanelApp {
         try {
             // Check if DataManager class is available
             if (!window.DataManager) {
-                throw new Error('DataManager class não está disponível');
+                console.warn('DataManager class não está disponível, criando interface básica');
+                this.createBasicDataInterface(container);
+                return;
             }
             
             // Initialize or reinitialize the component
@@ -303,7 +311,8 @@ class AdminPanelApp {
             
         } catch (error) {
             console.error('Error loading data management section:', error);
-            throw error;
+            console.log('Falling back to basic interface');
+            this.createBasicDataInterface(container);
         }
     }
 
@@ -531,6 +540,75 @@ class AdminPanelApp {
         }
         alert('Restauração de backup em desenvolvimento. Sistema será restaurado.');
     }
+
+    /**
+     * Create basic configuration interface
+     */
+    createBasicConfigInterface(container) {
+        container.innerHTML = 
+            '<div class="config-form-wrapper">' +
+                '<div class="form-header">' +
+                    '<h3>⚙️ Configurações do Sistema</h3>' +
+                '</div>' +
+                '<div class="basic-interface-message">' +
+                    '<div class="message-icon">⚠️</div>' +
+                    '<h4>Interface Básica</h4>' +
+                    '<p>O componente ConfigForm não está disponível. Usando interface simplificada.</p>' +
+                    '<button class="btn btn-primary" onclick="window.testConfigForm()">🔧 Carregar Formulário de Teste</button>' +
+                '</div>' +
+            '</div>';
+    }
+
+    /**
+     * Create basic data management interface
+     */
+    createBasicDataInterface(container) {
+        container.innerHTML = 
+            '<div class="data-manager-wrapper">' +
+                '<div class="section-header">' +
+                    '<h3>📊 Gerenciar Dados</h3>' +
+                '</div>' +
+                '<div class="basic-interface-message">' +
+                    '<div class="message-icon">⚠️</div>' +
+                    '<h4>Interface Básica</h4>' +
+                    '<p>O componente DataManager não está disponível. Usando interface simplificada.</p>' +
+                    '<div class="basic-data-actions">' +
+                        '<button class="btn btn-primary" onclick="alert(\'Funcionalidade em desenvolvimento\')">👥 Gerenciar Catequistas</button>' +
+                        '<button class="btn btn-secondary" onclick="alert(\'Funcionalidade em desenvolvimento\')">📚 Gerenciar Catecúmenos</button>' +
+                        '<button class="btn btn-success" onclick="alert(\'Funcionalidade em desenvolvimento\')">📊 Relatórios</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+    }
+
+    /**
+     * Create basic files interface
+     */
+    createBasicFilesInterface(container) {
+        container.innerHTML = 
+            '<div class="file-upload-wrapper">' +
+                '<div class="section-header">' +
+                    '<h3>📁 Gerenciar Arquivos</h3>' +
+                '</div>' +
+                '<div class="basic-interface-message">' +
+                    '<div class="message-icon">⚠️</div>' +
+                    '<h4>Interface Básica</h4>' +
+                    '<p>O componente FileUpload não está disponível. Usando interface simplificada.</p>' +
+                    '<div class="basic-file-actions">' +
+                        '<div class="upload-area">' +
+                            '<h5>📊 Upload de Excel</h5>' +
+                            '<input type="file" accept=".xlsx,.xls" style="margin: 10px 0;">' +
+                            '<button class="btn btn-primary" onclick="alert(\'Funcionalidade em desenvolvimento\')">📤 Enviar Excel</button>' +
+                        '</div>' +
+                        '<div class="upload-area">' +
+                            '<h5>🖼️ Upload de Imagens</h5>' +
+                            '<input type="file" accept="image/*" style="margin: 10px 0;">' +
+                            '<button class="btn btn-secondary" onclick="alert(\'Funcionalidade em desenvolvimento\')">📤 Enviar Imagem</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+    }
 }
 
 // Global functions for debugging and testing
@@ -623,16 +701,16 @@ document.addEventListener('DOMContentLoaded', () => {
     requiredClasses.forEach(className => {
         if (!window[className]) {
             missingClasses.push(className);
-            console.error(className + ' class not available');
+            console.warn(className + ' class not available');
         } else {
             console.log(className + ' class available');
         }
     });
     
     if (missingClasses.length > 0) {
-        console.error('Missing classes:', missingClasses);
-        alert('Erro: Alguns componentes não foram carregados. Recarregue a página.');
-        return;
+        console.warn('Missing classes:', missingClasses);
+        console.log('Continuing with available components...');
+        // Don't stop execution, just warn about missing components
     }
     
     console.log('All component classes available, initializing app...');
