@@ -38,25 +38,27 @@ class ConfigForm {
      * Create the basic form structure
      */
     createFormStructure() {
+        console.log('Creating form structure');
         const formHTML = `
             <div class="config-form-wrapper">
                 <div class="form-header">
+                    <h3>Configurações do Sistema</h3>
                     <div class="form-actions">
                         <button id="preview-changes" class="btn btn-secondary" disabled>
-                            <i class="icon-eye"></i> Visualizar Alterações
+                            👁️ Visualizar Alterações
                         </button>
                         <button id="reset-form" class="btn btn-secondary">
-                            <i class="icon-refresh"></i> Resetar
+                            🔄 Resetar
                         </button>
                         <button id="save-config" class="btn btn-primary" disabled>
-                            <i class="icon-save"></i> Salvar Configurações
+                            💾 Salvar Configurações
                         </button>
                     </div>
                 </div>
                 
                 <form id="config-form" class="config-form">
                     <div id="form-content" class="form-content">
-                        <!-- Dynamic form content will be inserted here -->
+                        <div class="loading-message">Carregando configurações...</div>
                     </div>
                 </form>
                 
@@ -92,6 +94,11 @@ class ConfigForm {
             
             const config = await this.configManager.loadSettings();
             console.log('Configuration loaded:', config);
+            
+            if (!config || typeof config !== 'object') {
+                throw new Error('Configuração inválida ou não encontrada');
+            }
+            
             this.currentConfig = JSON.parse(JSON.stringify(config)); // Deep copy
             this.originalConfig = JSON.parse(JSON.stringify(config)); // Deep copy
             
@@ -100,6 +107,7 @@ class ConfigForm {
             
         } catch (error) {
             console.error('Error loading configuration:', error);
+            this.hideLoading();
             this.showError('Erro ao carregar configurações: ' + error.message);
         }
     }
@@ -955,7 +963,7 @@ class ConfigForm {
      * Save configuration
      */
     async saveConfiguration() {
-        const operationId = `config-save-${Date.now()}`;
+        console.log('Saving configuration...');
         
         try {
             if (!this.validateForm()) {
@@ -963,98 +971,23 @@ class ConfigForm {
                 return;
             }
             
-            // Start progress tracking
-            if (this.progressTracker) {
-                this.progressTracker.startOperation(operationId, 'Salvando Configurações', 'Iniciando salvamento...');
-                
-                // Create config update tracker
-                const tracker = this.progressTracker.createConfigUpdateTracker(operationId);
-                
-                // Show inline progress in form
-                if (this.progressBar) {
-                    const formHeader = this.container.querySelector('.form-header');
-                    this.progressBar.createInlineProgressBar(formHeader, operationId, {
-                        title: 'Salvando configurações...',
-                        showCancel: false,
-                        showPercentage: true
-                    });
-                    
-                    // Create button progress for save button
-                    const saveBtn = document.getElementById('save-config');
-                    this.progressBar.createButtonProgress(saveBtn, operationId);
-                }
-                
-                // Step 1: Validate
-                if (tracker && typeof tracker.validate === 'function') {
-                    tracker.validate();
-                } else {
-                    console.warn('Tracker validate method not available');
-                }
-                await this.delay(500);
-                
-                // Step 2: Backup
-                tracker.backup();
-                await this.delay(800);
-                
-                // Step 3: Update
-                tracker.update();
-                await this.delay(300);
-            }
-            
             this.showLoading('Salvando configurações...');
             
+            console.log('Current config to save:', this.currentConfig);
             const result = await this.configManager.updateSettings(this.currentConfig);
-            
-            if (this.progressTracker) {
-                const tracker = this.progressTracker.createConfigUpdateTracker(operationId);
-                
-                // Step 4: Commit
-                tracker.commit();
-                await this.delay(1000);
-                
-                // Step 5: Deploy
-                tracker.deploy();
-                await this.delay(1500);
-            }
+            console.log('Save result:', result);
             
             if (result.success) {
-                // Complete progress tracking
-                if (this.progressTracker) {
-                    this.progressTracker.completeOperation(operationId, 'Configurações salvas com sucesso!');
-                }
-                
+                // Update original config to reflect saved state
                 this.originalConfig = JSON.parse(JSON.stringify(this.currentConfig));
                 this.updateFormState();
-                this.showSuccess(result.message);
+                this.showSuccess(result.message || 'Configurações salvas com sucesso!');
             } else {
-                // Fail progress tracking with retry capability
-                if (this.progressTracker) {
-                    const retryFunction = () => this.saveConfiguration();
-                    
-                    this.progressTracker.failOperation(operationId, result.message, {
-                        canRetry: true,
-                        retryFunction,
-                        showNotification: true
-                    });
-                }
-                
-                this.showError(result.message);
+                this.showError(result.message || 'Erro ao salvar configurações');
             }
             
         } catch (error) {
             console.error('Error saving configuration:', error);
-            
-            // Fail progress tracking with retry capability
-            if (this.progressTracker) {
-                const retryFunction = () => this.saveConfiguration();
-                
-                this.progressTracker.failOperation(operationId, error.message, {
-                    canRetry: true,
-                    retryFunction,
-                    showNotification: true
-                });
-            }
-            
             this.showError('Erro ao salvar configurações: ' + error.message);
         } finally {
             this.hideLoading();

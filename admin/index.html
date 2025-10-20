@@ -103,6 +103,13 @@
                         </a>
                     </li>
                     <li role="none">
+                        <a href="#data" class="nav-link" data-section="data" role="menuitem">
+                            <span class="nav-icon" aria-hidden="true">📊</span>
+                            <span class="nav-text">Gerenciar Dados</span>
+                            <span class="nav-badge" id="data-badge" aria-label="Notificações de dados"></span>
+                        </a>
+                    </li>
+                    <li role="none">
                         <a href="#logs" class="nav-link" data-section="logs" role="menuitem">
                             <span class="nav-icon" aria-hidden="true">📋</span>
                             <span class="nav-text">Logs</span>
@@ -323,6 +330,24 @@
                     </div>
                     <div id="file-upload-container">
                         <!-- File upload areas will be dynamically generated -->
+                    </div>
+                </section>
+
+                <!-- Data Management Section -->
+                <section id="data-section" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <h2>Gerenciamento de Dados</h2>
+                            <p class="section-subtitle">Gerencie catequistas, catecúmenos e dados do Excel</p>
+                        </div>
+                        <div class="section-actions">
+                            <button id="back-to-dashboard-data" class="btn btn-secondary btn-sm">
+                                ← Voltar ao Dashboard
+                            </button>
+                        </div>
+                    </div>
+                    <div id="data-manager-container">
+                        <!-- Data management interface will be dynamically generated -->
                     </div>
                 </section>
 

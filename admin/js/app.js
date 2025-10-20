@@ -37,6 +37,7 @@ class AdminPanelApp {
         // UI Components (initialized later)
         this.configForm = null;
         this.fileUpload = null;
+        this.dataManager = null;
         this.logDisplay = null;
         this.backupManager = null;
         
@@ -1480,6 +1481,9 @@ class AdminPanelApp {
             case 'files':
                 await this.loadFilesSection();
                 break;
+            case 'data':
+                await this.loadDataSection();
+                break;
             case 'logs':
                 await this.loadLogsSection();
                 break;
@@ -1561,6 +1565,40 @@ class AdminPanelApp {
                 customActions: [{
                     label: 'Reinicializar Componente',
                     onclick: 'adminApp.reinitializeComponent("fileUpload")'
+                }]
+            });
+        }
+    }
+
+    /**
+     * Load data management section
+     */
+    async loadDataSection() {
+        console.log('Loading data management section');
+        const container = document.getElementById('data-manager-container');
+        if (!container) {
+            console.error('Data manager container not found');
+            return;
+        }
+        
+        try {
+            console.log('Initializing dataManager component');
+            await this.initializeComponent('dataManager', container);
+            
+            // Initialize the data manager if it exists
+            if (this.dataManager && this.dataManager.init) {
+                console.log('Initializing existing dataManager');
+                this.dataManager.init();
+            }
+        } catch (error) {
+            console.error('Error loading data management section:', error);
+            this.errorHandler.handleError(error, {
+                operation: 'loadDataSection',
+                context: 'AdminPanelApp',
+                userMessage: 'Erro ao carregar seção de gerenciamento de dados',
+                customActions: [{
+                    label: 'Reinicializar Componente',
+                    onclick: 'adminApp.reinitializeComponent("dataManager")'
                 }]
             });
         }
@@ -2108,6 +2146,14 @@ Taxa de erro: ${errorRate.toFixed(2)}/min
                     console.log('FileUpload initialized');
                     break;
                     
+                case 'dataManager':
+                    console.log('Creating DataManager instance');
+                    this.dataManager = new DataManager(this.fileManager);
+                    // Make it globally available for onclick handlers
+                    window.dataManager = this.dataManager;
+                    console.log('DataManager initialized');
+                    break;
+                    
                 case 'logDisplay':
                     this.logDisplay = new LogDisplay(container, this.logManager);
                     this.logDisplay.init();
@@ -2184,7 +2230,7 @@ Taxa de erro: ${errorRate.toFixed(2)}/min
             }
             
             // Check component states
-            ['configForm', 'fileUpload', 'logDisplay', 'backupManager'].forEach(component => {
+            ['configForm', 'fileUpload', 'dataManager', 'logDisplay', 'backupManager'].forEach(component => {
                 health.components[component] = this.getComponentState(component);
             });
             
@@ -2221,6 +2267,9 @@ Taxa de erro: ${errorRate.toFixed(2)}/min
                 case 'fileUpload':
                     await this.loadFilesSection();
                     break;
+                case 'dataManager':
+                    await this.loadDataSection();
+                    break;
                 case 'logDisplay':
                     await this.loadLogsSection();
                     break;
@@ -2254,6 +2303,7 @@ Taxa de erro: ${errorRate.toFixed(2)}/min
         const containerIds = {
             configForm: 'config-form-container',
             fileUpload: 'file-upload-container',
+            dataManager: 'data-manager-container',
             logDisplay: 'logs-container',
             backupManager: 'backup-container'
         };
@@ -2352,6 +2402,7 @@ Taxa de erro: ${errorRate.toFixed(2)}/min
         // Clear component references
         this.configForm = null;
         this.fileUpload = null;
+        this.dataManager = null;
         this.logDisplay = null;
         this.backupManager = null;
     }
