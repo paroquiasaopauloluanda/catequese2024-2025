@@ -54,7 +54,7 @@
     "repository": "paroquiasaopauloluanda/catequese2024-2025",
     "branches": {
       "development": "dev",
-      "staging": "staging", 
+      "staging": "staging",
       "production": "main"
     },
     "pages": {
@@ -105,7 +105,7 @@
       "enabled": true,
       "tests": [
         "authentication",
-        "configuration", 
+        "configuration",
         "fileUpload",
         "githubIntegration",
         "security"
