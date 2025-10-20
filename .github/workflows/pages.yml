@@ -1,9 +1,10 @@
 name: Deploy to GitHub Pages
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+  # Temporariamente desabilitado
+  # push:
+  #   branches: [ main ]
 
 permissions:
   contents: read

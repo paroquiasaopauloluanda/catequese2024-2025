@@ -1,9 +1,10 @@
 name: GitHub Pages Deploy (Fixed)
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+  # Temporariamente desabilitado
+  # push:
+  #   branches: [ main ]
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:

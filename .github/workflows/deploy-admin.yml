@@ -1,12 +1,14 @@
 name: Deploy Admin Panel
 
 on:
-  push:
-    branches: [ main, staging ]
-    paths: [ 'admin/**' ]
-  pull_request:
-    branches: [ main ]
-    paths: [ 'admin/**' ]
+  workflow_dispatch:
+  # Temporariamente desabilitado para evitar conflitos
+  # push:
+  #   branches: [ main, staging ]
+  #   paths: [ 'admin/**' ]
+  # pull_request:
+  #   branches: [ main ]
+  #   paths: [ 'admin/**' ]
 
 permissions:
   contents: read
@@ -15,6 +17,9 @@ permissions:
 
 jobs:
   build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     
     steps:
