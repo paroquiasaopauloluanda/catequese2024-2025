@@ -2105,16 +2105,49 @@ class GitHubManager {
         let mockData = {};
         
         if (endpoint.includes('/contents/')) {
-            // Mock file content response
+            // Mock file content response with full default config
+            const defaultConfig = {
+                paroquia: {
+                    nome: "Paróquia de São Paulo",
+                    secretariado: "Secretariado da Catequese",
+                    ano_catequetico: "2024/2025",
+                    data_inicio: "2024-10-01",
+                    data_inicio_formatada: "1 de Outubro de 2024"
+                },
+                arquivos: {
+                    dados_principais: "data/dados-catequese.xlsx",
+                    template_export: "data/template-export.xlsx",
+                    logo: "assets/images/logo-paroquia.jpg"
+                },
+                interface: {
+                    tema: "claro",
+                    idioma: "pt",
+                    items_por_pagina: 50,
+                    auto_backup: true,
+                    backup_intervalo_horas: 24
+                },
+                exportacao: {
+                    template_start_cell: "B8",
+                    template_date_cell: "B6",
+                    nome_arquivo_padrao: "catequistas_filtrado"
+                },
+                validacao: {
+                    campos_obrigatorios: ["nome", "centro", "etapa", "sala", "horario", "catequistas"],
+                    formato_data: "DD/MM/YYYY",
+                    idade_minima: 6,
+                    idade_maxima: 99
+                },
+                github: {
+                    token: "ghp_mock_token_for_development_1234567890123456",
+                    repository: "user/repo",
+                    branch: "main"
+                }
+            };
+            
             mockData = {
-                content: btoa(JSON.stringify({
-                    paroquia: {
-                        nome: "Paróquia Mock",
-                        secretariado: "Secretariado Mock"
-                    }
-                })),
+                content: btoa(JSON.stringify(defaultConfig)),
                 sha: 'mock-sha-123',
-                size: 100,
+                size: JSON.stringify(defaultConfig).length,
                 encoding: 'base64',
                 download_url: 'https://mock-url.com'
             };

@@ -971,7 +971,11 @@ class ConfigForm {
                 }
                 
                 // Step 1: Validate
-                tracker.validate();
+                if (tracker && typeof tracker.validate === 'function') {
+                    tracker.validate();
+                } else {
+                    console.warn('Tracker validate method not available');
+                }
                 await this.delay(500);
                 
                 // Step 2: Backup

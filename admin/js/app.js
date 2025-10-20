@@ -1714,20 +1714,22 @@ class AdminPanelApp {
                 const statusDot = githubStatus.querySelector('.status-dot');
                 const statusText = githubStatus.querySelector('.status-text');
                 
-                if (networkComponent.githubReachable && authComponent.hasAuthToken) {
-                    statusDot.style.backgroundColor = 'var(--success-color)';
-                    statusText.textContent = 'GitHub OK';
-                    githubStatus.classList.remove('warning', 'error');
-                } else if (networkComponent.githubReachable) {
-                    statusDot.style.backgroundColor = 'var(--warning-color)';
-                    statusText.textContent = 'GitHub (sem token)';
-                    githubStatus.classList.add('warning');
-                    githubStatus.classList.remove('error');
-                } else {
-                    statusDot.style.backgroundColor = 'var(--error-color)';
-                    statusText.textContent = 'GitHub indisponível';
-                    githubStatus.classList.add('error');
-                    githubStatus.classList.remove('warning');
+                if (statusDot && statusText) {
+                    if (networkComponent.githubReachable && authComponent.hasAuthToken) {
+                        statusDot.style.backgroundColor = 'var(--success-color)';
+                        statusText.textContent = 'GitHub OK';
+                        githubStatus.classList.remove('warning', 'error');
+                    } else if (networkComponent.githubReachable) {
+                        statusDot.style.backgroundColor = 'var(--warning-color)';
+                        statusText.textContent = 'GitHub (sem token)';
+                        githubStatus.classList.add('warning');
+                        githubStatus.classList.remove('error');
+                    } else {
+                        statusDot.style.backgroundColor = 'var(--error-color)';
+                        statusText.textContent = 'GitHub indisponível';
+                        githubStatus.classList.add('error');
+                        githubStatus.classList.remove('warning');
+                    }
                 }
             }
 

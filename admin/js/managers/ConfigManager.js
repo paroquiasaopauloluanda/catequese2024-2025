@@ -54,6 +54,12 @@ class ConfigManager {
                 config = await this.loadFromLocal();
             }
             
+            // Ensure config is not null or undefined
+            if (!config) {
+                console.warn('Configuration is null/undefined, using defaults');
+                config = this.getDefaultConfig();
+            }
+            
             // Validate configuration
             const validation = this.validateConfig(config);
             
@@ -65,7 +71,8 @@ class ConfigManager {
                 // Validate again
                 const secondValidation = this.validateConfig(config);
                 if (!secondValidation.isValid) {
-                    throw new Error(`Invalid configuration: ${secondValidation.errors.join(', ')}`);
+                    console.warn('Second validation failed, using defaults');
+                    config = this.getDefaultConfig();
                 }
             }
             
