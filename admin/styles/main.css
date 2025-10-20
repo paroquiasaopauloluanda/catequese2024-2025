@@ -197,6 +197,17 @@ body {
     color: var(--text-light);
 }
 
+.btn-danger {
+    background-color: var(--error-color);
+    color: var(--text-light);
+    border: 1px solid var(--error-color);
+}
+
+.btn-danger:hover:not(:disabled) {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
 .btn-loading .btn-text {
     opacity: 0;
 }
@@ -3345,6 +3356,22 @@ nhanced Dashboard Layout Styles */
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: var(--spacing-lg);
     margin-bottom: var(--spacing-xl);
+}
+
+/* Dashboard Statistics Indicators */
+.stat-item.stat-success {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.stat-item.stat-warning {
+    color: var(--warning-color);
+    font-weight: 600;
+}
+
+.stat-item.stat-error {
+    color: var(--error-color);
+    font-weight: 600;
 }
 
 .dashboard-card {

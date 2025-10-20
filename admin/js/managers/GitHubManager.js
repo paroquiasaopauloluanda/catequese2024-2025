@@ -17,6 +17,24 @@ class GitHubManager {
         
         // Initialize GitHub optimizer
         this.githubOptimizer = new GitHubOptimizer();
+        
+        // Initialize response handler for safe API response processing
+        this.responseHandler = new ResponseHandler();
+        
+        // Initialize offline mode and caching
+        this.offlineMode = false;
+        this.localCache = new Map();
+        this.cacheTimeout = 300000; // 5 minutes
+        this.lastOnlineCheck = 0;
+        this.onlineCheckInterval = 60000; // 1 minute
+        
+        // Initialize local rate limiting
+        this.requestQueue = [];
+        this.requestHistory = [];
+        this.maxRequestsPerMinute = 60; // Conservative limit
+        this.maxRequestsPerHour = 1000; // Well below GitHub's 5000/hour
+        this.requestDelay = 100; // Minimum delay between requests (ms)
+        this.lastRequestTime = 0;
     }
 
     /**
@@ -96,6 +114,9 @@ class GitHubManager {
 
         // Check rate limit before making request
         await this.checkAndWaitForRateLimit();
+        
+        // Apply local rate limiting
+        await this.applyLocalRateLimit();
 
         const url = endpoint.startsWith('http') ? endpoint : `${this.apiBase}${endpoint}`;
         
@@ -114,9 +135,18 @@ class GitHubManager {
 
         let retryCount = 0;
         const maxRetries = 3;
+        let lastError = null;
         
         while (retryCount < maxRetries) {
             try {
+                // Check if we should try to go back online
+                if (this.offlineMode) {
+                    await this.checkOnlineStatus();
+                    if (this.offlineMode) {
+                        throw new Error('Sistema em modo offline - sem conectividade com GitHub');
+                    }
+                }
+
                 const response = await fetch(url, secureOptions);
 
                 // Update rate limit info
@@ -124,7 +154,7 @@ class GitHubManager {
                 this.rateLimitReset = parseInt(response.headers.get('X-RateLimit-Reset') || '0') * 1000;
 
                 if (!response.ok) {
-                    // Handle rate limiting
+                    // Handle rate limiting with intelligent backoff
                     if (response.status === 403 && response.headers.get('X-RateLimit-Remaining') === '0') {
                         const resetTime = parseInt(response.headers.get('X-RateLimit-Reset') || '0') * 1000;
                         const waitTime = Math.max(0, resetTime - Date.now()) + 1000; // Add 1 second buffer
@@ -134,26 +164,55 @@ class GitHubManager {
                         retryCount++;
                         continue;
                     }
+
+                    // Handle secondary rate limiting (abuse detection)
+                    if (response.status === 403 && response.headers.get('Retry-After')) {
+                        const retryAfter = parseInt(response.headers.get('Retry-After')) * 1000;
+                        console.warn(`Secondary rate limit hit. Waiting ${retryAfter}ms.`);
+                        await this.sleep(retryAfter);
+                        retryCount++;
+                        continue;
+                    }
                     
-                    // Handle other API errors
-                    const error = await response.json().catch(() => ({ message: response.statusText }));
-                    throw new Error(`GitHub API Error: ${error.message}`);
+                    // Handle other API errors using safe parsing
+                    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = await ResponseHandler.safeJsonParse(response);
+                        errorMessage = errorData.message || errorData.error || errorMessage;
+                    } catch (parseError) {
+                        // If parsing fails, use the default message
+                        console.warn('Failed to parse error response:', parseError.message);
+                    }
+                    
+                    const apiError = new Error(`GitHub API Error: ${errorMessage}`);
+                    apiError.status = response.status;
+                    apiError.response = response;
+                    throw apiError;
                 }
 
                 return response;
                 
             } catch (error) {
+                lastError = error;
                 retryCount++;
-                if (retryCount >= maxRetries) {
+                
+                // Don't retry on certain errors
+                if (this.shouldNotRetryError(error) || retryCount >= maxRetries) {
+                    // Check if we should enter offline mode
+                    if (this.shouldEnterOfflineMode(error)) {
+                        await this.enterOfflineMode();
+                    }
                     throw error;
                 }
                 
-                // Exponential backoff for network errors
-                const backoffTime = Math.pow(2, retryCount) * 1000;
-                console.warn(`Request failed, retrying in ${backoffTime}ms. Attempt ${retryCount}/${maxRetries}`);
+                // Calculate intelligent backoff based on error type
+                const backoffTime = this.calculateRetryDelay(retryCount, error);
+                console.warn(`Request failed, retrying in ${backoffTime}ms. Attempt ${retryCount}/${maxRetries}. Error: ${error.message}`);
                 await this.sleep(backoffTime);
             }
         }
+
+        throw lastError || new Error('Max retries exceeded');
     }
 
     /**
@@ -171,12 +230,460 @@ class GitHubManager {
     }
 
     /**
+     * Apply local rate limiting to prevent API abuse
+     * @private
+     */
+    async applyLocalRateLimit() {
+        const now = Date.now();
+        
+        // Clean old request history (older than 1 hour)
+        this.requestHistory = this.requestHistory.filter(time => now - time < 3600000);
+        
+        // Check hourly limit
+        if (this.requestHistory.length >= this.maxRequestsPerHour) {
+            const oldestRequest = Math.min(...this.requestHistory);
+            const waitTime = 3600000 - (now - oldestRequest) + 1000; // Wait until oldest request is 1 hour old
+            console.warn(`Hourly rate limit reached. Waiting ${waitTime}ms.`);
+            await this.sleep(waitTime);
+        }
+
+        // Check per-minute limit
+        const recentRequests = this.requestHistory.filter(time => now - time < 60000);
+        if (recentRequests.length >= this.maxRequestsPerMinute) {
+            const oldestRecentRequest = Math.min(...recentRequests);
+            const waitTime = 60000 - (now - oldestRecentRequest) + 1000; // Wait until oldest recent request is 1 minute old
+            console.warn(`Per-minute rate limit reached. Waiting ${waitTime}ms.`);
+            await this.sleep(waitTime);
+        }
+
+        // Ensure minimum delay between requests
+        const timeSinceLastRequest = now - this.lastRequestTime;
+        if (timeSinceLastRequest < this.requestDelay) {
+            const waitTime = this.requestDelay - timeSinceLastRequest;
+            await this.sleep(waitTime);
+        }
+
+        // Record this request
+        this.requestHistory.push(Date.now());
+        this.lastRequestTime = Date.now();
+    }
+
+    /**
+     * Get rate limiting statistics
+     * @returns {Object} Rate limiting statistics
+     */
+    getRateLimitStats() {
+        const now = Date.now();
+        const recentRequests = this.requestHistory.filter(time => now - time < 60000);
+        const hourlyRequests = this.requestHistory.filter(time => now - time < 3600000);
+
+        return {
+            requestsLastMinute: recentRequests.length,
+            requestsLastHour: hourlyRequests.length,
+            maxRequestsPerMinute: this.maxRequestsPerMinute,
+            maxRequestsPerHour: this.maxRequestsPerHour,
+            githubRateLimitRemaining: this.rateLimitRemaining,
+            githubRateLimitReset: this.rateLimitReset,
+            lastRequestTime: this.lastRequestTime,
+            requestDelay: this.requestDelay
+        };
+    }
+
+    /**
+     * Adjust local rate limiting parameters
+     * @param {Object} config - Rate limiting configuration
+     */
+    configureRateLimit(config = {}) {
+        if (config.maxRequestsPerMinute !== undefined) {
+            this.maxRequestsPerMinute = Math.max(1, config.maxRequestsPerMinute);
+        }
+        if (config.maxRequestsPerHour !== undefined) {
+            this.maxRequestsPerHour = Math.max(1, config.maxRequestsPerHour);
+        }
+        if (config.requestDelay !== undefined) {
+            this.requestDelay = Math.max(0, config.requestDelay);
+        }
+    }
+
+    /**
      * Sleep for specified milliseconds
      * @param {number} ms - Milliseconds to sleep
      * @private
      */
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    /**
+     * Check if should enter offline mode based on error
+     * @param {Error} error - The error that occurred
+     * @returns {boolean} True if should enter offline mode
+     * @private
+     */
+    shouldEnterOfflineMode(error) {
+        const message = error.message.toLowerCase();
+        
+        // Network errors
+        if (message.includes('network') || 
+            message.includes('fetch') || 
+            message.includes('timeout') ||
+            message.includes('connection')) {
+            return true;
+        }
+
+        // Rate limiting (temporary)
+        if (message.includes('rate limit') || message.includes('403')) {
+            return true;
+        }
+
+        // Server errors (5xx)
+        if (message.includes('http 5')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Enter offline mode
+     * @private
+     */
+    async enterOfflineMode() {
+        if (!this.offlineMode) {
+            console.warn('Entrando no modo offline devido a problemas de conectividade');
+            this.offlineMode = true;
+            this.lastOnlineCheck = Date.now();
+            
+            // Dispatch event for UI updates
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('github-offline', {
+                    detail: { manager: this, timestamp: Date.now() }
+                }));
+            }
+        }
+    }
+
+    /**
+     * Exit offline mode
+     * @private
+     */
+    async exitOfflineMode() {
+        if (this.offlineMode) {
+            console.log('Saindo do modo offline - conectividade restaurada');
+            this.offlineMode = false;
+            
+            // Dispatch event for UI updates
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('github-online', {
+                    detail: { manager: this, timestamp: Date.now() }
+                }));
+            }
+        }
+    }
+
+    /**
+     * Check if we should try to go back online
+     * @returns {Promise<boolean>} True if back online
+     */
+    async checkOnlineStatus() {
+        if (!this.offlineMode) {
+            return true;
+        }
+
+        // Don't check too frequently
+        if (Date.now() - this.lastOnlineCheck < this.onlineCheckInterval) {
+            return false;
+        }
+
+        this.lastOnlineCheck = Date.now();
+
+        try {
+            // Try a simple API call to check connectivity
+            const response = await fetch(`${this.apiBase}/rate_limit`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `token ${this.token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+                timeout: 5000
+            });
+
+            if (response.ok) {
+                await this.exitOfflineMode();
+                return true;
+            }
+        } catch (error) {
+            // Still offline
+        }
+
+        return false;
+    }
+
+    /**
+     * Get data from local cache
+     * @param {string} key - Cache key
+     * @returns {any|null} Cached data or null
+     * @private
+     */
+    getFromLocalCache(key) {
+        const cached = this.localCache.get(key);
+        
+        if (!cached) {
+            return null;
+        }
+
+        // Check if cache is expired
+        if (Date.now() - cached.timestamp > this.cacheTimeout) {
+            this.localCache.delete(key);
+            return null;
+        }
+
+        return cached.data;
+    }
+
+    /**
+     * Set data in local cache
+     * @param {string} key - Cache key
+     * @param {any} data - Data to cache
+     * @private
+     */
+    setLocalCache(key, data) {
+        // Limit cache size
+        if (this.localCache.size >= 50) {
+            // Remove oldest entries
+            const entries = Array.from(this.localCache.entries());
+            entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+            
+            const toRemove = entries.slice(0, 10);
+            toRemove.forEach(([cacheKey]) => this.localCache.delete(cacheKey));
+        }
+
+        this.localCache.set(key, {
+            data: JSON.parse(JSON.stringify(data)), // Deep clone
+            timestamp: Date.now()
+        });
+    }
+
+    /**
+     * Clear local cache
+     */
+    clearLocalCache() {
+        this.localCache.clear();
+    }
+
+    /**
+     * Get cache statistics
+     * @returns {Object} Cache statistics
+     */
+    getCacheStats() {
+        const now = Date.now();
+        let validEntries = 0;
+        let expiredEntries = 0;
+
+        for (const [, entry] of this.localCache.entries()) {
+            if (now - entry.timestamp > this.cacheTimeout) {
+                expiredEntries++;
+            } else {
+                validEntries++;
+            }
+        }
+
+        return {
+            totalEntries: this.localCache.size,
+            validEntries,
+            expiredEntries,
+            offlineMode: this.offlineMode,
+            lastOnlineCheck: this.lastOnlineCheck
+        };
+    }
+
+    /**
+     * Check if error should not trigger a retry
+     * @param {Error} error - Error object
+     * @returns {boolean} True if should not retry
+     * @private
+     */
+    shouldNotRetryError(error) {
+        // Don't retry on client errors (4xx except rate limiting)
+        if (error.status >= 400 && error.status < 500 && error.status !== 403) {
+            return true;
+        }
+
+        // Don't retry on authentication errors
+        if (error.status === 401 || error.status === 403) {
+            // Unless it's rate limiting, which we handle separately
+            if (!error.message.includes('rate limit')) {
+                return true;
+            }
+        }
+
+        // Don't retry on validation errors
+        if (error.status === 422) {
+            return true;
+        }
+
+        const message = error.message.toLowerCase();
+        
+        // Don't retry on parsing errors (likely not transient)
+        if (message.includes('parsing error') || message.includes('invalid json')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Calculate intelligent retry delay based on error type
+     * @param {number} attempt - Current attempt number
+     * @param {Error} error - The error that occurred
+     * @returns {number} Delay in milliseconds
+     * @private
+     */
+    calculateRetryDelay(attempt, error) {
+        const baseDelay = 1000; // 1 second
+        let multiplier = 2;
+
+        // Adjust multiplier based on error type
+        if (error.message.includes('rate limit')) {
+            multiplier = 1.5; // Slower backoff for rate limiting
+        } else if (error.message.includes('network') || error.message.includes('timeout')) {
+            multiplier = 2.5; // Faster backoff for network issues
+        } else if (error.status >= 500) {
+            multiplier = 3; // Aggressive backoff for server errors
+        }
+
+        const exponentialDelay = baseDelay * Math.pow(multiplier, attempt - 1);
+        const jitter = Math.random() * 1000; // Add jitter to prevent thundering herd
+        
+        return Math.min(exponentialDelay + jitter, 30000); // Max 30 seconds
+    }
+
+    /**
+     * Load fallback data when GitHub API is unavailable
+     * @param {string} dataType - Type of data to load ('config', 'files', 'repository')
+     * @param {Object} options - Options for fallback data
+     * @returns {Promise<Object>} Fallback data
+     */
+    async loadFallbackData(dataType, options = {}) {
+        const fallbackData = {
+            config: {
+                repository: this.repository || 'unknown/repository',
+                branch: this.branch || 'main',
+                lastSync: null,
+                offlineMode: true,
+                message: 'Dados de configuração padrão (modo offline)'
+            },
+            files: {
+                content: null,
+                sha: null,
+                size: 0,
+                encoding: null,
+                downloadUrl: null,
+                offlineMode: true,
+                message: 'Arquivo não disponível no modo offline'
+            },
+            repository: {
+                name: this.repository ? this.repository.split('/')[1] : 'unknown',
+                full_name: this.repository || 'unknown/repository',
+                private: false,
+                permissions: {
+                    admin: false,
+                    push: false,
+                    pull: true
+                },
+                offlineMode: true,
+                message: 'Informações do repositório não disponíveis (modo offline)'
+            }
+        };
+
+        // Try to load from localStorage if available
+        if (typeof localStorage !== 'undefined') {
+            try {
+                const storageKey = `github_fallback_${dataType}_${this.repository}`;
+                const stored = localStorage.getItem(storageKey);
+                if (stored) {
+                    const parsedData = JSON.parse(stored);
+                    // Check if data is not too old (max 24 hours)
+                    if (Date.now() - parsedData.timestamp < 86400000) {
+                        return {
+                            ...parsedData.data,
+                            fromStorage: true,
+                            offlineMode: true
+                        };
+                    }
+                }
+            } catch (error) {
+                console.warn('Failed to load fallback data from storage:', error.message);
+            }
+        }
+
+        return fallbackData[dataType] || fallbackData.config;
+    }
+
+    /**
+     * Store data for offline fallback
+     * @param {string} dataType - Type of data to store
+     * @param {Object} data - Data to store
+     * @private
+     */
+    storeFallbackData(dataType, data) {
+        if (typeof localStorage !== 'undefined') {
+            try {
+                const storageKey = `github_fallback_${dataType}_${this.repository}`;
+                const storageData = {
+                    data: JSON.parse(JSON.stringify(data)), // Deep clone
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(storageKey, JSON.stringify(storageData));
+            } catch (error) {
+                console.warn('Failed to store fallback data:', error.message);
+            }
+        }
+    }
+
+    /**
+     * Get repository information with offline fallback
+     * @returns {Promise<Object>} Repository information
+     */
+    async getRepositoryInfo() {
+        try {
+            if (this.offlineMode) {
+                return await this.loadFallbackData('repository');
+            }
+
+            const response = await this.makeRequest(`/repos/${this.repository}`);
+            const data = await ResponseHandler.safeJsonParse(response);
+            
+            // Store for offline use
+            this.storeFallbackData('repository', data);
+            
+            return data;
+            
+        } catch (error) {
+            if (this.shouldEnterOfflineMode(error)) {
+                await this.enterOfflineMode();
+                return await this.loadFallbackData('repository');
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Get system status including offline mode and cache information
+     * @returns {Object} System status
+     */
+    getSystemStatus() {
+        return {
+            online: !this.offlineMode,
+            offlineMode: this.offlineMode,
+            lastOnlineCheck: this.lastOnlineCheck,
+            rateLimit: this.getRateLimitStats(),
+            cache: this.getCacheStats(),
+            responseHandler: this.responseHandler.getStats(),
+            repository: this.repository,
+            branch: this.branch,
+            configured: this.isConfigured()
+        };
     }
 
     /**
@@ -187,12 +694,23 @@ class GitHubManager {
      */
     async getFileContent(path, ref = null) {
         try {
+            // Check offline mode and cache first
+            const cacheKey = `file:${this.repository}:${path}:${ref || this.branch}`;
+            if (this.offlineMode) {
+                const cached = this.getFromLocalCache(cacheKey);
+                if (cached) {
+                    return { ...cached, fromCache: true };
+                }
+                throw new Error('Arquivo não disponível no modo offline');
+            }
+
             const refParam = ref || this.branch;
             const response = await this.makeRequest(
                 `/repos/${this.repository}/contents/${path}?ref=${refParam}`
             );
             
-            const data = await response.json();
+            // Use safe JSON parsing
+            const data = await ResponseHandler.safeJsonParse(response);
             
             // Handle directory case
             if (Array.isArray(data)) {
@@ -205,15 +723,29 @@ class GitHubManager {
                 content = atob(data.content.replace(/\n/g, ''));
             }
             
-            return {
+            const result = {
                 content,
                 sha: data.sha,
                 size: data.size,
                 encoding: data.encoding,
                 downloadUrl: data.download_url
             };
+
+            // Cache successful result
+            this.setLocalCache(cacheKey, result);
+            
+            return result;
             
         } catch (error) {
+            // Check for offline fallback
+            if (this.shouldEnterOfflineMode(error)) {
+                await this.enterOfflineMode();
+                const cached = this.getFromLocalCache(`file:${this.repository}:${path}:${ref || this.branch}`);
+                if (cached) {
+                    return { ...cached, fromCache: true, offline: true };
+                }
+            }
+
             if (error.message.includes('404')) {
                 return { 
                     content: null, 
@@ -333,7 +865,8 @@ class GitHubManager {
                 }
             );
             
-            const data = await response.json();
+            // Use safe JSON parsing
+            const data = await ResponseHandler.safeJsonParse(response);
             
             if (progressCallback) progressCallback(100, 'Commit realizado com sucesso');
             
@@ -426,14 +959,14 @@ class GitHubManager {
             const branchResponse = await this.makeRequest(
                 `/repos/${this.repository}/git/refs/heads/${this.branch}`
             );
-            const branchData = await branchResponse.json();
+            const branchData = await ResponseHandler.safeJsonParse(branchResponse);
             const baseSha = branchData.object.sha;
             
             // Get base tree
             const baseTreeResponse = await this.makeRequest(
                 `/repos/${this.repository}/git/commits/${baseSha}`
             );
-            const baseTreeData = await baseTreeResponse.json();
+            const baseTreeData = await ResponseHandler.safeJsonParse(baseTreeResponse);
             const baseTreeSha = baseTreeData.tree.sha;
             
             // Create tree with new files
@@ -457,7 +990,7 @@ class GitHubManager {
                     })
                 }
             );
-            const treeData = await treeResponse.json();
+            const treeData = await ResponseHandler.safeJsonParse(treeResponse);
             
             // Create commit
             const commitResponse = await this.makeRequest(
@@ -474,7 +1007,7 @@ class GitHubManager {
                     })
                 }
             );
-            const commitData = await commitResponse.json();
+            const commitData = await ResponseHandler.safeJsonParse(commitResponse);
             
             // Update branch reference
             await this.makeRequest(
@@ -516,7 +1049,7 @@ class GitHubManager {
                 `/repos/${this.repository}/pages`
             );
             
-            const data = await response.json();
+            const data = await ResponseHandler.safeJsonParse(response);
             
             // Get latest deployment info
             const deploymentInfo = await this.getLatestDeployment();
@@ -553,7 +1086,7 @@ class GitHubManager {
                 `/repos/${this.repository}/pages/deployments`
             );
             
-            const deployments = await response.json();
+            const deployments = await ResponseHandler.safeJsonParse(response);
             
             if (deployments.length === 0) {
                 return null;
@@ -844,7 +1377,7 @@ class GitHubManager {
                 `/repos/${this.repository}/commits?per_page=${count}&sha=${this.branch}`
             );
             
-            const commits = await response.json();
+            const commits = await ResponseHandler.safeJsonParse(response);
             
             return commits.map(commit => ({
                 sha: commit.sha.substring(0, 7),
@@ -886,7 +1419,7 @@ class GitHubManager {
                 }
             );
             
-            const data = await response.json();
+            const data = await ResponseHandler.safeJsonParse(response);
             
             return {
                 success: true,
@@ -911,7 +1444,7 @@ class GitHubManager {
     async checkRateLimit() {
         try {
             const response = await this.makeRequest('/rate_limit');
-            const data = await response.json();
+            const data = await ResponseHandler.safeJsonParse(response);
             
             return {
                 remaining: data.rate.remaining,
@@ -936,7 +1469,7 @@ class GitHubManager {
         try {
             // Check token validity and get user info
             const userResponse = await this.makeRequest('/user');
-            const userData = await userResponse.json();
+            const userData = await ResponseHandler.safeJsonParse(userResponse);
             
             if (!this.repository) {
                 return {
@@ -949,7 +1482,7 @@ class GitHubManager {
             
             // Check repository access
             const repoResponse = await this.makeRequest(`/repos/${this.repository}`);
-            const repoData = await repoResponse.json();
+            const repoData = await ResponseHandler.safeJsonParse(repoResponse);
             
             const permissions = [];
             if (repoData.permissions.admin) permissions.push('admin');
@@ -1025,7 +1558,7 @@ class GitHubManager {
     async getRepositoryInfo() {
         try {
             const response = await this.makeRequest(`/repos/${this.repository}`);
-            const data = await response.json();
+            const data = await ResponseHandler.safeJsonParse(response);
             
             return {
                 name: data.name,
@@ -1066,7 +1599,7 @@ class GitHubManager {
             const responseTime = Date.now() - startTime;
             
             if (response.ok) {
-                const data = await response.json();
+                const data = await ResponseHandler.safeJsonParse(response);
                 return {
                     available: true,
                     status: data.status || 'good',
@@ -1146,7 +1679,7 @@ class GitHubManager {
             const branchResponse = await this.makeRequest(
                 `/repos/${this.repository}/branches/${targetBranch}`
             );
-            const branchData = await branchResponse.json();
+            const branchData = await ResponseHandler.safeJsonParse(branchResponse);
             
             // Check if branch is behind the default branch
             const repoInfo = await this.getRepositoryInfo();
@@ -1156,7 +1689,7 @@ class GitHubManager {
                 const compareResponse = await this.makeRequest(
                     `/repos/${this.repository}/compare/${defaultBranch}...${targetBranch}`
                 );
-                const compareData = await compareResponse.json();
+                const compareData = await ResponseHandler.safeJsonParse(compareResponse);
                 
                 const conflicts = [];
                 
@@ -1192,7 +1725,7 @@ class GitHubManager {
             const pullsResponse = await this.makeRequest(
                 `/repos/${this.repository}/pulls?state=open&base=${targetBranch}`
             );
-            const openPRs = await pullsResponse.json();
+            const openPRs = await ResponseHandler.safeJsonParse(pullsResponse);
             
             const conflicts = [];
             
@@ -1336,7 +1869,7 @@ class GitHubManager {
             const branchResponse = await this.makeRequest(
                 `/repos/${this.repository}/git/refs/heads/${sourceBranch}`
             );
-            const branchData = await branchResponse.json();
+            const branchData = await ResponseHandler.safeJsonParse(branchResponse);
             const sha = branchData.object.sha;
             
             // Create backup branch
@@ -1484,7 +2017,7 @@ class GitHubManager {
                 }
             );
             
-            const data = await response.json();
+            const data = await ResponseHandler.safeJsonParse(response);
             
             return {
                 success: true,

@@ -68,6 +68,15 @@
                             </span>
                             <span id="user-info" class="user-info">Administrador</span>
                         </div>
+                        <button id="system-diagnostics-btn" class="btn btn-icon" title="Diagnósticos do Sistema">
+                            <span class="btn-icon">🔍</span>
+                        </button>
+                        <button id="integration-test-btn" class="btn btn-icon" title="Teste de Integração">
+                            <span class="btn-icon">🧪</span>
+                        </button>
+                        <button id="emergency-reset-btn" class="btn btn-icon btn-danger" title="Reset de Emergência">
+                            <span class="btn-icon">🚨</span>
+                        </button>
                         <button id="logout-btn" class="btn btn-secondary">
                             <span class="btn-icon">🚪</span>
                             Sair
@@ -194,6 +203,25 @@
                             <div class="card-actions">
                                 <button class="btn btn-primary btn-sm" onclick="adminApp.showSection('backup')">
                                     Acessar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card" data-section="system-health">
+                            <div class="card-header">
+                                <span class="card-icon">🔍</span>
+                                <h3>Sistema</h3>
+                            </div>
+                            <div class="card-content">
+                                <p>Monitoramento e diagnósticos</p>
+                                <div class="card-stats">
+                                    <span id="error-rate" class="stat-item">Taxa de erro: --</span>
+                                    <span id="system-status" class="stat-item">Status: --</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-primary btn-sm" onclick="adminApp.handleSystemDiagnostics()">
+                                    Diagnósticos
                                 </button>
                             </div>
                         </div>
@@ -332,9 +360,14 @@
 
     <!-- Scripts -->
     <script src="js/interfaces/types.js"></script>
+    <script src="js/utils/SessionValidator.js"></script>
+    <script src="js/utils/LogThrottler.js"></script>
+    <script src="js/utils/ResponseHandler.js"></script>
     <script src="js/utils/FileOptimizer.js"></script>
     <script src="js/utils/GitHubOptimizer.js"></script>
     <script src="js/utils/DeploymentVerifier.js"></script>
+    <script src="js/utils/SystemRecovery.js"></script>
+    <script src="js/utils/ErrorReporter.js"></script>
     <script src="js/managers/DeploymentManager.js"></script>
     <script src="js/managers/TokenManager.js"></script>
     <script src="js/managers/SecurityManager.js"></script>

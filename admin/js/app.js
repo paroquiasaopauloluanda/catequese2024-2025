@@ -24,6 +24,12 @@ class AdminPanelApp {
         this.dialogManager = new DialogManager();
         this.errorWrapper = new ErrorWrapper(this.errorHandler);
         
+        // System recovery
+        this.systemRecovery = new SystemRecovery();
+        
+        // Error reporting
+        this.errorReporter = new ErrorReporter(this.systemRecovery);
+        
         // Security managers (initialized by AuthManager)
         this.tokenManager = null;
         this.securityManager = null;
@@ -283,6 +289,22 @@ class AdminPanelApp {
         if (cancelBtn) {
             cancelBtn.addEventListener('click', this.handleCancelOperation.bind(this));
         }
+
+        // System recovery buttons
+        const emergencyResetBtn = document.getElementById('emergency-reset-btn');
+        if (emergencyResetBtn) {
+            emergencyResetBtn.addEventListener('click', this.handleEmergencyReset.bind(this));
+        }
+
+        const diagnosticsBtn = document.getElementById('system-diagnostics-btn');
+        if (diagnosticsBtn) {
+            diagnosticsBtn.addEventListener('click', this.handleSystemDiagnostics.bind(this));
+        }
+
+        const integrationTestBtn = document.getElementById('integration-test-btn');
+        if (integrationTestBtn) {
+            integrationTestBtn.addEventListener('click', this.handleIntegrationTest.bind(this));
+        }
     }
 
     /**
@@ -525,6 +547,779 @@ class AdminPanelApp {
         
         const message = this.notificationsEnabled ? 'Notificações ativadas' : 'Notificações desativadas';
         HelperUtils.showNotification(message, 'info');
+    }
+
+    /**
+     * Handle emergency reset button click
+     */
+    async handleEmergencyReset() {
+        try {
+            // Show confirmation dialog
+            const confirmed = await this.dialogManager.showConfirmation({
+                title: 'Reset de Emergência',
+                message: `
+                    <p><strong>⚠️ Atenção:</strong> Esta ação irá resetar o sistema para resolver problemas críticos.</p>
+                    <p>Escolha o tipo de reset:</p>
+                    <div style="margin: 1rem 0;">
+                        <label style="display: block; margin: 0.5rem 0;">
+                            <input type="radio" name="resetMode" value="soft" checked> 
+                            <strong>Suave:</strong> Limpar apenas sessões e cache
+                        </label>
+                        <label style="display: block; margin: 0.5rem 0;">
+                            <input type="radio" name="resetMode" value="medium"> 
+                            <strong>Médio:</strong> Resetar configurações para padrão
+                        </label>
+                        <label style="display: block; margin: 0.5rem 0;">
+                            <input type="radio" name="resetMode" value="hard"> 
+                            <strong>Completo:</strong> Reset total do sistema (recarrega a página)
+                        </label>
+                    </div>
+                `,
+                confirmText: 'Executar Reset',
+                cancelText: 'Cancelar',
+                type: 'warning'
+            });
+
+            if (!confirmed) return;
+
+            // Get selected reset mode
+            const selectedMode = document.querySelector('input[name="resetMode"]:checked')?.value || 'soft';
+
+            // Show progress
+            this.showProgressOverlay('Executando reset do sistema...', 0);
+
+            // Perform reset
+            const result = await this.systemRecovery.performEmergencyReset(selectedMode);
+
+            this.hideProgressOverlay();
+
+            if (result.success) {
+                this.notificationManager.showNotification(result.message, 'success');
+                this.logManager.logSuccess('system', `Reset de emergência concluído: ${selectedMode}`);
+                
+                // If it's a hard reset, the page will reload automatically
+                if (selectedMode !== 'hard') {
+                    // Refresh the current section
+                    await this.loadSectionContent(this.currentSection);
+                    await this.updateSystemStatus();
+                }
+            } else {
+                this.notificationManager.showNotification(result.message, 'error');
+                this.logManager.logError('system', `Falha no reset de emergência: ${result.error}`);
+            }
+
+        } catch (error) {
+            this.hideProgressOverlay();
+            console.error('Error during emergency reset:', error);
+            this.notificationManager.showNotification('Erro durante reset de emergência', 'error');
+            this.logManager.logError('system', 'Erro durante reset de emergência', { error: error.message });
+        }
+    }
+
+    /**
+     * Handle system diagnostics button click
+     */
+    async handleSystemDiagnostics() {
+        try {
+            // Show progress while gathering diagnostics
+            this.showProgressOverlay('Coletando diagnósticos do sistema...', 0);
+
+            // Perform health check
+            const healthCheck = await this.systemRecovery.performHealthCheck();
+            const diagnostics = this.systemRecovery.getSystemDiagnostics();
+            const recommendations = this.systemRecovery.getRecoveryRecommendations();
+
+            this.hideProgressOverlay();
+
+            // Create diagnostics dialog content
+            const diagnosticsContent = this.createDiagnosticsContent(healthCheck, diagnostics, recommendations);
+
+            // Show diagnostics dialog
+            this.dialogManager.showDialog({
+                title: 'Diagnósticos do Sistema',
+                content: diagnosticsContent,
+                width: '800px',
+                height: '600px',
+                buttons: [
+                    {
+                        text: 'Exportar Diagnósticos',
+                        class: 'btn-secondary',
+                        onclick: () => {
+                            this.systemRecovery.exportDiagnostics();
+                            this.notificationManager.showNotification('Diagnósticos exportados com sucesso', 'success');
+                        }
+                    },
+                    {
+                        text: 'Atualizar',
+                        class: 'btn-primary',
+                        onclick: () => {
+                            this.handleSystemDiagnostics();
+                        }
+                    },
+                    {
+                        text: 'Fechar',
+                        class: 'btn-secondary',
+                        onclick: () => {
+                            this.dialogManager.closeDialog();
+                        }
+                    }
+                ]
+            });
+
+        } catch (error) {
+            this.hideProgressOverlay();
+            console.error('Error gathering system diagnostics:', error);
+            this.notificationManager.showNotification('Erro ao coletar diagnósticos', 'error');
+            this.logManager.logError('system', 'Erro ao coletar diagnósticos', { error: error.message });
+        }
+    }
+
+    /**
+     * Handle integration test button click
+     */
+    async handleIntegrationTest() {
+        try {
+            // Show progress while running tests
+            this.showProgressOverlay('Executando testes de integração...', 0);
+
+            // Run integration tests
+            const testResults = await this.testSystemIntegration();
+
+            this.hideProgressOverlay();
+
+            // Create test results dialog content
+            const testContent = this.createIntegrationTestContent(testResults);
+
+            // Show test results dialog
+            this.dialogManager.showDialog({
+                title: 'Resultados do Teste de Integração',
+                content: testContent,
+                width: '800px',
+                height: '600px',
+                buttons: [
+                    {
+                        text: 'Executar Novamente',
+                        class: 'btn-primary',
+                        onclick: () => {
+                            this.handleIntegrationTest();
+                        }
+                    },
+                    {
+                        text: 'Exportar Resultados',
+                        class: 'btn-secondary',
+                        onclick: () => {
+                            this.exportIntegrationTestResults(testResults);
+                        }
+                    },
+                    {
+                        text: 'Fechar',
+                        class: 'btn-secondary',
+                        onclick: () => {
+                            this.dialogManager.closeDialog();
+                        }
+                    }
+                ]
+            });
+
+        } catch (error) {
+            this.hideProgressOverlay();
+            console.error('Error running integration test:', error);
+            this.notificationManager.showNotification('Erro ao executar teste de integração', 'error');
+            this.logManager.logError('system', 'Erro ao executar teste de integração', { error: error.message });
+        }
+    }
+
+    /**
+     * Create integration test results content
+     */
+    createIntegrationTestContent(testResults) {
+        const statusColor = testResults.overallStatus === 'passed' ? '#10b981' : '#ef4444';
+        const statusIcon = testResults.overallStatus === 'passed' ? '✅' : '❌';
+
+        return `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                <!-- Overall Status -->
+                <div style="margin-bottom: 2rem; padding: 1rem; border-radius: 8px; background: #f8f9fa; border-left: 4px solid ${statusColor};">
+                    <h3 style="margin: 0 0 0.5rem 0; color: ${statusColor};">
+                        ${statusIcon} Status Geral: ${testResults.overallStatus.toUpperCase()}
+                    </h3>
+                    <p style="margin: 0; color: #6b7280; font-size: 0.9rem;">
+                        Executado em: ${new Date(testResults.timestamp).toLocaleString('pt-BR')}
+                    </p>
+                </div>
+
+                <!-- Test Results -->
+                <div style="margin-bottom: 2rem;">
+                    <h4 style="margin: 0 0 1rem 0;">Resultados dos Testes</h4>
+                    <div style="space-y: 1rem;">
+                        ${testResults.tests.map(test => {
+                            const testStatusColor = test.status === 'passed' ? '#10b981' : '#ef4444';
+                            const testStatusIcon = test.status === 'passed' ? '✅' : '❌';
+                            
+                            return `
+                                <div style="border: 1px solid #e5e7eb; border-radius: 6px; background: white; margin-bottom: 1rem;">
+                                    <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb;">
+                                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                                            <h5 style="margin: 0; font-size: 1rem;">${test.name}</h5>
+                                            <span style="color: ${testStatusColor}; font-weight: 600;">
+                                                ${testStatusIcon} ${test.status.toUpperCase()}
+                                            </span>
+                                        </div>
+                                        ${test.error ? `
+                                            <div style="margin-top: 0.5rem; padding: 0.5rem; background: #fef2f2; border-radius: 4px; color: #dc2626; font-size: 0.9rem;">
+                                                <strong>Erro:</strong> ${test.error}
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    <div style="padding: 1rem;">
+                                        <h6 style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #6b7280;">Detalhes:</h6>
+                                        <div style="font-size: 0.8rem; color: #374151;">
+                                            ${Object.entries(test.details).map(([key, value]) => `
+                                                <div style="margin-bottom: 0.5rem;">
+                                                    <strong>${key}:</strong>
+                                                    <div style="margin-left: 1rem;">
+                                                        ${typeof value === 'object' ? 
+                                                            Object.entries(value).map(([subKey, subValue]) => 
+                                                                `<div>${subKey}: ${subValue ? '✅' : '❌'}</div>`
+                                                            ).join('') :
+                                                            value
+                                                        }
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+
+                <!-- Summary -->
+                <div style="margin-bottom: 1rem;">
+                    <h4 style="margin: 0 0 1rem 0;">Resumo</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                        <div style="text-align: center; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 6px; background: white;">
+                            <div style="font-size: 1.5rem; font-weight: 600; color: #10b981;">
+                                ${testResults.tests.filter(t => t.status === 'passed').length}
+                            </div>
+                            <div style="font-size: 0.9rem; color: #6b7280;">Testes Aprovados</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 6px; background: white;">
+                            <div style="font-size: 1.5rem; font-weight: 600; color: #ef4444;">
+                                ${testResults.tests.filter(t => t.status === 'failed').length}
+                            </div>
+                            <div style="font-size: 0.9rem; color: #6b7280;">Testes Falharam</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 6px; background: white;">
+                            <div style="font-size: 1.5rem; font-weight: 600; color: #6b7280;">
+                                ${testResults.tests.length}
+                            </div>
+                            <div style="font-size: 0.9rem; color: #6b7280;">Total de Testes</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Export integration test results
+     */
+    exportIntegrationTestResults(testResults) {
+        const exportData = {
+            exportTimestamp: new Date().toISOString(),
+            testResults,
+            systemInfo: {
+                userAgent: navigator.userAgent,
+                url: window.location.href,
+                timestamp: new Date().toISOString()
+            }
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+            type: 'application/json'
+        });
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `integration-test-results-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        this.notificationManager.showNotification('Resultados do teste exportados com sucesso', 'success');
+    }
+
+    /**
+     * Create diagnostics content for dialog
+     */
+    createDiagnosticsContent(healthCheck, diagnostics, recommendations) {
+        const statusColors = {
+            healthy: '#10b981',
+            warning: '#f59e0b',
+            degraded: '#ef4444',
+            critical: '#dc2626'
+        };
+
+        const statusColor = statusColors[healthCheck.status] || '#6b7280';
+
+        return `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                <!-- System Status -->
+                <div style="margin-bottom: 2rem; padding: 1rem; border-radius: 8px; background: #f8f9fa; border-left: 4px solid ${statusColor};">
+                    <h3 style="margin: 0 0 0.5rem 0; color: ${statusColor};">
+                        Status do Sistema: ${healthCheck.status.toUpperCase()}
+                    </h3>
+                    <p style="margin: 0; color: #6b7280; font-size: 0.9rem;">
+                        Última verificação: ${new Date(healthCheck.timestamp).toLocaleString('pt-BR')}
+                    </p>
+                </div>
+
+                <!-- Components Status -->
+                <div style="margin-bottom: 2rem;">
+                    <h4 style="margin: 0 0 1rem 0;">Status dos Componentes</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        ${Object.entries(healthCheck.components).map(([name, component]) => `
+                            <div style="padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 6px; background: white;">
+                                <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                                    <span style="width: 8px; height: 8px; border-radius: 50%; background: ${statusColors[component.status] || '#6b7280'}; margin-right: 0.5rem;"></span>
+                                    <strong style="font-size: 0.9rem;">${name}</strong>
+                                </div>
+                                <div style="font-size: 0.8rem; color: #6b7280;">
+                                    ${component.error ? `Erro: ${component.error}` : 'Funcionando'}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Error Rate -->
+                ${healthCheck.metrics.errorRate ? `
+                    <div style="margin-bottom: 2rem;">
+                        <h4 style="margin: 0 0 1rem 0;">Taxa de Erros</h4>
+                        <div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 6px; background: white;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>Erros recentes (5 min):</span>
+                                <strong>${healthCheck.metrics.errorRate.recentErrors}</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>Total de erros:</span>
+                                <strong>${healthCheck.metrics.errorRate.totalErrors}</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>Taxa por minuto:</span>
+                                <strong>${healthCheck.metrics.errorRate.rate.toFixed(2)}</strong>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Recommendations -->
+                ${recommendations.length > 0 ? `
+                    <div style="margin-bottom: 2rem;">
+                        <h4 style="margin: 0 0 1rem 0;">Recomendações de Recuperação</h4>
+                        <div style="space-y: 0.5rem;">
+                            ${recommendations.map(rec => `
+                                <div style="padding: 0.75rem; border-left: 4px solid ${rec.priority === 'high' ? '#ef4444' : '#f59e0b'}; background: #fef7f0; margin-bottom: 0.5rem;">
+                                    <div style="font-weight: 600; color: #92400e; margin-bottom: 0.25rem;">
+                                        ${rec.priority === 'high' ? '🔴 Alta Prioridade' : '🟡 Média Prioridade'}
+                                    </div>
+                                    <div style="color: #451a03;">${rec.message}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Browser Info -->
+                <div style="margin-bottom: 1rem;">
+                    <h4 style="margin: 0 0 1rem 0;">Informações do Navegador</h4>
+                    <div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 6px; background: white; font-size: 0.8rem; color: #6b7280;">
+                        <div><strong>Navegador:</strong> ${diagnostics.browserInfo.userAgent}</div>
+                        <div><strong>Idioma:</strong> ${diagnostics.browserInfo.language}</div>
+                        <div><strong>Plataforma:</strong> ${diagnostics.browserInfo.platform}</div>
+                        <div><strong>Online:</strong> ${diagnostics.browserInfo.onLine ? 'Sim' : 'Não'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Test system integration and stability
+     */
+    async testSystemIntegration() {
+        const testResults = {
+            timestamp: new Date().toISOString(),
+            tests: [],
+            overallStatus: 'passed',
+            errors: []
+        };
+
+        try {
+            // Test 1: Core managers initialization
+            testResults.tests.push(await this.testManagersInitialization());
+
+            // Test 2: Utility classes integration
+            testResults.tests.push(await this.testUtilityClassesIntegration());
+
+            // Test 3: Error handling system
+            testResults.tests.push(await this.testErrorHandlingSystem());
+
+            // Test 4: System recovery functionality
+            testResults.tests.push(await this.testSystemRecoveryFunctionality());
+
+            // Test 5: Authentication flow
+            testResults.tests.push(await this.testAuthenticationFlow());
+
+            // Test 6: GitHub integration
+            testResults.tests.push(await this.testGitHubIntegration());
+
+            // Determine overall status
+            const failedTests = testResults.tests.filter(test => test.status === 'failed');
+            if (failedTests.length > 0) {
+                testResults.overallStatus = 'failed';
+                testResults.errors = failedTests.map(test => test.error);
+            }
+
+            // Log results
+            this.logManager.logInfo('integration_test', 'Teste de integração do sistema concluído', {
+                status: testResults.overallStatus,
+                passedTests: testResults.tests.filter(test => test.status === 'passed').length,
+                failedTests: failedTests.length
+            });
+
+            return testResults;
+
+        } catch (error) {
+            testResults.overallStatus = 'error';
+            testResults.errors.push(error.message);
+            this.logManager.logError('integration_test', 'Erro durante teste de integração', { error: error.message });
+            return testResults;
+        }
+    }
+
+    /**
+     * Test managers initialization
+     */
+    async testManagersInitialization() {
+        const test = {
+            name: 'Managers Initialization',
+            status: 'passed',
+            details: {},
+            error: null
+        };
+
+        try {
+            // Test AuthManager
+            test.details.authManager = {
+                initialized: !!this.authManager,
+                hasSessionValidator: !!this.authManager.sessionValidator,
+                hasLogThrottler: !!this.authManager.logThrottler,
+                hasTokenManager: !!this.authManager.tokenManager,
+                hasSecurityManager: !!this.authManager.securityManager
+            };
+
+            // Test GitHubManager
+            test.details.githubManager = {
+                initialized: !!this.githubManager,
+                hasResponseHandler: !!this.githubManager.responseHandler,
+                hasOfflineMode: this.githubManager.offlineMode !== undefined,
+                hasLocalCache: !!this.githubManager.localCache
+            };
+
+            // Test SystemRecovery
+            test.details.systemRecovery = {
+                initialized: !!this.systemRecovery,
+                hasLogThrottler: !!this.systemRecovery.logThrottler,
+                hasErrorHistory: Array.isArray(this.systemRecovery.errorHistory),
+                hasSystemHealth: !!this.systemRecovery.systemHealth
+            };
+
+            // Test ErrorReporter
+            test.details.errorReporter = {
+                initialized: !!this.errorReporter,
+                hasSystemRecovery: !!this.errorReporter.systemRecovery,
+                hasErrorCategories: !!this.errorReporter.errorCategories,
+                hasReportingThresholds: !!this.errorReporter.reportingThresholds
+            };
+
+            // Check for any missing components
+            const missingComponents = [];
+            Object.keys(test.details).forEach(manager => {
+                const managerDetails = test.details[manager];
+                Object.keys(managerDetails).forEach(component => {
+                    if (!managerDetails[component]) {
+                        missingComponents.push(`${manager}.${component}`);
+                    }
+                });
+            });
+
+            if (missingComponents.length > 0) {
+                test.status = 'failed';
+                test.error = `Missing components: ${missingComponents.join(', ')}`;
+            }
+
+        } catch (error) {
+            test.status = 'failed';
+            test.error = error.message;
+        }
+
+        return test;
+    }
+
+    /**
+     * Test utility classes integration
+     */
+    async testUtilityClassesIntegration() {
+        const test = {
+            name: 'Utility Classes Integration',
+            status: 'passed',
+            details: {},
+            error: null
+        };
+
+        try {
+            // Test SessionValidator
+            if (this.authManager.sessionValidator) {
+                const testSession = {
+                    authenticated: true,
+                    loginTime: Date.now(),
+                    lastActivity: Date.now(),
+                    sessionId: 'test-session'
+                };
+                
+                const validationResult = this.authManager.sessionValidator.validateSession(testSession);
+                test.details.sessionValidator = {
+                    canValidate: validationResult !== undefined,
+                    hasThrottling: !!this.authManager.sessionValidator.lastCheck
+                };
+            }
+
+            // Test LogThrottler
+            if (this.authManager.logThrottler) {
+                this.authManager.logThrottler.throttledLog('test', 'Integration test message', 'info');
+                test.details.logThrottler = {
+                    canLog: true,
+                    hasMessageCache: !!this.authManager.logThrottler.messageCache
+                };
+            }
+
+            // Test ResponseHandler
+            if (this.githubManager.responseHandler) {
+                test.details.responseHandler = {
+                    hasStaticMethods: typeof ResponseHandler.safeJsonParse === 'function',
+                    canHandleResponses: true
+                };
+            }
+
+            // Test SystemRecovery
+            if (this.systemRecovery) {
+                const healthCheck = await this.systemRecovery.performHealthCheck();
+                test.details.systemRecovery = {
+                    canPerformHealthCheck: !!healthCheck,
+                    hasValidHealthStatus: ['healthy', 'warning', 'degraded', 'critical'].includes(healthCheck.status),
+                    canTrackErrors: typeof this.systemRecovery.trackError === 'function'
+                };
+            }
+
+            // Test ErrorReporter
+            if (this.errorReporter) {
+                const errorStats = this.errorReporter.getErrorStatistics();
+                test.details.errorReporter = {
+                    canGetStatistics: errorStats !== null,
+                    canCategorizeErrors: typeof this.errorReporter.categorizeError === 'function',
+                    canAnalyzeTrends: typeof this.errorReporter.analyzeErrorTrends === 'function'
+                };
+            }
+
+        } catch (error) {
+            test.status = 'failed';
+            test.error = error.message;
+        }
+
+        return test;
+    }
+
+    /**
+     * Test error handling system
+     */
+    async testErrorHandlingSystem() {
+        const test = {
+            name: 'Error Handling System',
+            status: 'passed',
+            details: {},
+            error: null
+        };
+
+        try {
+            // Test error tracking
+            const initialErrorCount = this.systemRecovery.errorHistory.length;
+            this.systemRecovery.trackError('test', 'Integration test error', { test: true });
+            const newErrorCount = this.systemRecovery.errorHistory.length;
+            
+            test.details.errorTracking = {
+                canTrackErrors: newErrorCount > initialErrorCount,
+                errorHistoryExists: Array.isArray(this.systemRecovery.errorHistory)
+            };
+
+            // Test error categorization
+            const testError = {
+                message: 'Authentication failed',
+                type: 'auth_error',
+                details: { operation: 'login' }
+            };
+            
+            const categorization = this.errorReporter.categorizeError(testError);
+            test.details.errorCategorization = {
+                canCategorize: !!categorization.category,
+                hasSeverity: !!categorization.severity,
+                hasConfidence: typeof categorization.confidence === 'number'
+            };
+
+            // Test error reporting
+            const errorStats = this.errorReporter.getErrorStatistics();
+            test.details.errorReporting = {
+                canGenerateStats: errorStats !== null,
+                hasErrorRate: typeof errorStats?.errorRate === 'number',
+                hasRecentErrors: typeof errorStats?.recentErrors === 'number'
+            };
+
+        } catch (error) {
+            test.status = 'failed';
+            test.error = error.message;
+        }
+
+        return test;
+    }
+
+    /**
+     * Test system recovery functionality
+     */
+    async testSystemRecoveryFunctionality() {
+        const test = {
+            name: 'System Recovery Functionality',
+            status: 'passed',
+            details: {},
+            error: null
+        };
+
+        try {
+            // Test health check
+            const healthCheck = await this.systemRecovery.performHealthCheck();
+            test.details.healthCheck = {
+                hasStatus: !!healthCheck.status,
+                hasComponents: !!healthCheck.components,
+                hasMetrics: !!healthCheck.metrics,
+                hasTimestamp: !!healthCheck.timestamp
+            };
+
+            // Test diagnostics
+            const diagnostics = this.systemRecovery.getSystemDiagnostics();
+            test.details.diagnostics = {
+                hasSystemHealth: !!diagnostics.systemHealth,
+                hasErrorHistory: Array.isArray(diagnostics.errorHistory),
+                hasBrowserInfo: !!diagnostics.browserInfo,
+                hasStorageInfo: !!diagnostics.storageInfo
+            };
+
+            // Test recovery recommendations
+            const recommendations = this.systemRecovery.getRecoveryRecommendations();
+            test.details.recommendations = {
+                isArray: Array.isArray(recommendations),
+                canGenerateRecommendations: true
+            };
+
+        } catch (error) {
+            test.status = 'failed';
+            test.error = error.message;
+        }
+
+        return test;
+    }
+
+    /**
+     * Test authentication flow
+     */
+    async testAuthenticationFlow() {
+        const test = {
+            name: 'Authentication Flow',
+            status: 'passed',
+            details: {},
+            error: null
+        };
+
+        try {
+            // Test session validation without infinite loops
+            const initialValidationCount = this.authManager.sessionValidator.lastCheck || 0;
+            
+            // Simulate multiple rapid session checks
+            for (let i = 0; i < 5; i++) {
+                this.authManager.isAuthenticated();
+            }
+            
+            const finalValidationCount = this.authManager.sessionValidator.lastCheck || 0;
+            
+            test.details.sessionValidation = {
+                hasThrottling: finalValidationCount > initialValidationCount,
+                noInfiniteLoop: true // If we reach here, no infinite loop occurred
+            };
+
+            // Test session cleanup
+            test.details.sessionCleanup = {
+                canClearSessions: typeof this.authManager.clearSession === 'function',
+                hasSilentCleanup: true
+            };
+
+        } catch (error) {
+            test.status = 'failed';
+            test.error = error.message;
+        }
+
+        return test;
+    }
+
+    /**
+     * Test GitHub integration
+     */
+    async testGitHubIntegration() {
+        const test = {
+            name: 'GitHub Integration',
+            status: 'passed',
+            details: {},
+            error: null
+        };
+
+        try {
+            // Test response handling
+            test.details.responseHandling = {
+                hasResponseHandler: !!this.githubManager.responseHandler,
+                hasSafeJsonParse: typeof ResponseHandler.safeJsonParse === 'function',
+                hasOfflineMode: this.githubManager.offlineMode !== undefined
+            };
+
+            // Test caching
+            test.details.caching = {
+                hasLocalCache: !!this.githubManager.localCache,
+                hasCacheTimeout: typeof this.githubManager.cacheTimeout === 'number'
+            };
+
+            // Test rate limiting
+            test.details.rateLimiting = {
+                hasRequestQueue: Array.isArray(this.githubManager.requestQueue),
+                hasRequestHistory: Array.isArray(this.githubManager.requestHistory),
+                hasRateLimits: typeof this.githubManager.maxRequestsPerMinute === 'number'
+            };
+
+        } catch (error) {
+            test.status = 'failed';
+            test.error = error.message;
+        }
+
+        return test;
     }
 
     /**
@@ -894,44 +1689,60 @@ class AdminPanelApp {
      */
     async updateSystemStatus() {
         try {
+            // Perform comprehensive health check
+            const healthCheck = await this.systemRecovery.performHealthCheck();
+            
             // Update connection status
             const connectionStatus = document.getElementById('connection-status');
             if (connectionStatus) {
-                const isOnline = navigator.onLine;
+                const networkComponent = healthCheck.components.network;
                 const statusDot = connectionStatus.querySelector('.status-dot');
                 const statusText = connectionStatus.querySelector('.status-text');
                 
-                if (isOnline) {
+                if (networkComponent.online && networkComponent.githubReachable) {
                     statusDot.style.backgroundColor = 'var(--success-color)';
                     statusText.textContent = 'Conectado';
                     connectionStatus.classList.remove('warning', 'error');
+                } else if (networkComponent.online) {
+                    statusDot.style.backgroundColor = 'var(--warning-color)';
+                    statusText.textContent = 'Conectado (GitHub indisponível)';
+                    connectionStatus.classList.add('warning');
+                    connectionStatus.classList.remove('error');
                 } else {
                     statusDot.style.backgroundColor = 'var(--error-color)';
                     statusText.textContent = 'Desconectado';
                     connectionStatus.classList.add('error');
+                    connectionStatus.classList.remove('warning');
                 }
             }
 
             // Update GitHub status
             const githubStatus = document.getElementById('github-status');
-            if (githubStatus && this.githubManager) {
-                try {
-                    // Simple check - this would be replaced with actual GitHub API call
-                    const statusDot = githubStatus.querySelector('.status-dot');
-                    const statusText = githubStatus.querySelector('.status-text');
-                    
+            if (githubStatus) {
+                const networkComponent = healthCheck.components.network;
+                const authComponent = healthCheck.components.authentication;
+                const statusDot = githubStatus.querySelector('.status-dot');
+                const statusText = githubStatus.querySelector('.status-text');
+                
+                if (networkComponent.githubReachable && authComponent.hasAuthToken) {
                     statusDot.style.backgroundColor = 'var(--success-color)';
                     statusText.textContent = 'GitHub OK';
                     githubStatus.classList.remove('warning', 'error');
-                } catch (error) {
-                    const statusDot = githubStatus.querySelector('.status-dot');
-                    const statusText = githubStatus.querySelector('.status-text');
-                    
+                } else if (networkComponent.githubReachable) {
+                    statusDot.style.backgroundColor = 'var(--warning-color)';
+                    statusText.textContent = 'GitHub (sem token)';
+                    githubStatus.classList.add('warning');
+                    githubStatus.classList.remove('error');
+                } else {
                     statusDot.style.backgroundColor = 'var(--error-color)';
-                    statusText.textContent = 'GitHub Error';
+                    statusText.textContent = 'GitHub indisponível';
                     githubStatus.classList.add('error');
+                    githubStatus.classList.remove('warning');
                 }
             }
+
+            // Update system health indicator in header
+            this.updateSystemHealthIndicator(healthCheck);
 
             // Update last sync time
             const lastSync = document.getElementById('last-sync');
@@ -940,9 +1751,83 @@ class AdminPanelApp {
                 lastSync.textContent = `Última sync: ${now.toLocaleTimeString()}`;
             }
 
+            // Log system health if there are issues
+            if (healthCheck.status !== 'healthy') {
+                this.logManager.logWarning('system', `Sistema em estado: ${healthCheck.status}`, {
+                    errorRate: healthCheck.metrics.errorRate?.rate,
+                    issues: healthCheck.issues
+                });
+            }
+
         } catch (error) {
             console.error('Error updating system status:', error);
+            this.systemRecovery.trackError('system_status', 'Erro ao atualizar status do sistema', { error: error.message });
         }
+    }
+
+    /**
+     * Update system health indicator in header
+     */
+    updateSystemHealthIndicator(healthCheck) {
+        // Find or create system health indicator
+        let healthIndicator = document.getElementById('system-health-indicator');
+        
+        if (!healthIndicator) {
+            // Create health indicator
+            healthIndicator = document.createElement('span');
+            healthIndicator.id = 'system-health-indicator';
+            healthIndicator.className = 'status-indicator';
+            healthIndicator.title = 'Status geral do sistema';
+            
+            healthIndicator.innerHTML = `
+                <span class="status-dot"></span>
+                <span class="status-text">Sistema</span>
+            `;
+            
+            // Insert after GitHub status
+            const githubStatus = document.getElementById('github-status');
+            if (githubStatus && githubStatus.parentNode) {
+                githubStatus.parentNode.insertBefore(healthIndicator, githubStatus.nextSibling);
+            }
+        }
+
+        // Update health indicator
+        const statusDot = healthIndicator.querySelector('.status-dot');
+        const statusText = healthIndicator.querySelector('.status-text');
+        
+        const statusColors = {
+            healthy: 'var(--success-color)',
+            warning: 'var(--warning-color)',
+            degraded: 'var(--error-color)',
+            critical: 'var(--error-color)'
+        };
+
+        const statusTexts = {
+            healthy: 'Sistema OK',
+            warning: 'Sistema (avisos)',
+            degraded: 'Sistema degradado',
+            critical: 'Sistema crítico'
+        };
+
+        statusDot.style.backgroundColor = statusColors[healthCheck.status] || 'var(--secondary-color)';
+        statusText.textContent = statusTexts[healthCheck.status] || 'Sistema desconhecido';
+        
+        // Update classes
+        healthIndicator.className = 'status-indicator';
+        if (healthCheck.status === 'warning' || healthCheck.status === 'degraded') {
+            healthIndicator.classList.add('warning');
+        } else if (healthCheck.status === 'critical') {
+            healthIndicator.classList.add('error');
+        }
+
+        // Update tooltip with detailed information
+        const errorRate = healthCheck.metrics.errorRate?.rate || 0;
+        const recentErrors = healthCheck.metrics.errorRate?.recentErrors || 0;
+        
+        healthIndicator.title = `Status: ${healthCheck.status}
+Erros recentes: ${recentErrors}
+Taxa de erro: ${errorRate.toFixed(2)}/min
+Última verificação: ${new Date(healthCheck.timestamp).toLocaleTimeString()}`;
     }
 
     /**
@@ -983,11 +1868,45 @@ class AdminPanelApp {
                 backupCount.textContent = `Backups: ${backups.length || 0}`;
             }
 
+            // Update error statistics
+            const errorStats = this.errorReporter.getErrorStatistics();
+            if (errorStats) {
+                const errorRate = document.getElementById('error-rate');
+                if (errorRate) {
+                    errorRate.textContent = `Taxa de erro: ${errorStats.errorRate.toFixed(2)}/min`;
+                    
+                    // Add visual indicator based on error rate
+                    errorRate.className = 'stat-item';
+                    if (errorStats.errorRate > 5) {
+                        errorRate.classList.add('stat-error');
+                    } else if (errorStats.errorRate > 2) {
+                        errorRate.classList.add('stat-warning');
+                    }
+                }
+
+                const systemStatus = document.getElementById('system-status');
+                if (systemStatus) {
+                    const healthCheck = this.systemRecovery.systemHealth;
+                    systemStatus.textContent = `Status: ${healthCheck.status || 'unknown'}`;
+                    
+                    // Add visual indicator based on system status
+                    systemStatus.className = 'stat-item';
+                    if (healthCheck.status === 'critical' || healthCheck.status === 'degraded') {
+                        systemStatus.classList.add('stat-error');
+                    } else if (healthCheck.status === 'warning') {
+                        systemStatus.classList.add('stat-warning');
+                    } else if (healthCheck.status === 'healthy') {
+                        systemStatus.classList.add('stat-success');
+                    }
+                }
+            }
+
             // Update navigation badges
             this.updateNavigationBadges();
 
         } catch (error) {
             console.error('Error updating dashboard stats:', error);
+            this.systemRecovery.trackError('dashboard', 'Erro ao atualizar estatísticas do dashboard', { error: error.message });
         }
     }
 

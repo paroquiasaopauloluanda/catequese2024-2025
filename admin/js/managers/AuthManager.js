@@ -16,7 +16,10 @@ class AuthManager {
             passwordHash: this.hashPassword('nilknarf')
         };
 
-        // Initialize token manager and security manager
+        // Initialize utility classes
+        this.sessionValidator = new SessionValidator();
+        this.logThrottler = new LogThrottler();
+        this.logger = this.logThrottler.createScopedLogger('AuthManager');
         this.tokenManager = new TokenManager();
         this.securityManager = new SecurityManager();
     }
@@ -151,7 +154,12 @@ class AuthManager {
             authenticated: true,
             loginTime: Date.now(),
             lastActivity: Date.now(),
-            sessionId: this.generateSessionId()
+            sessionId: this.generateSessionId(),
+            validationCount: 0,
+            lastValidation: Date.now(),
+            fingerprint: this.generateFingerprint(),
+            lastRotation: Date.now(),
+            origin: window.location.origin
         };
 
         localStorage.setItem(this.sessionKey, JSON.stringify(session));
@@ -188,12 +196,52 @@ class AuthManager {
         const session = this.getSession();
         if (!session) return false;
 
-        // Validate session fingerprint for security (desabilitado temporariamente)
-        // if (!this.securityManager.validateSessionFingerprint()) {
-        //     console.warn('Session fingerprint validation failed');
-        //     this.logout();
-        //     return false;
-        // }
+        // Validate origin first
+        if (!this.validateOrigin()) {
+            this.logger.error('origin_validation_failed', 'Origin validation failed');
+            this.logout();
+            return false;
+        }
+
+        // Use throttled validation to prevent infinite loops
+        const validationResult = this.sessionValidator.validateSession(session);
+        
+        // Update validation counter
+        if (session.validationCount !== undefined) {
+            session.validationCount++;
+            session.lastValidation = Date.now();
+        }
+        
+        // If validation is throttled or failed, handle appropriately
+        if (!validationResult.valid) {
+            if (validationResult.throttled) {
+                // Log throttling with throttled logger
+                this.logger.debug('validation_throttled', 
+                    `Session validation throttled: ${validationResult.reason}`);
+                
+                // If throttled but we have a cached valid result, trust it temporarily
+                if (validationResult.cached && validationResult.reason !== 'validation_error') {
+                    return session.authenticated;
+                }
+                // Otherwise, assume invalid to be safe
+                return false;
+            }
+            
+            // Log validation failure
+            this.logger.warn('validation_failed', 
+                `Session validation failed: ${validationResult.reason} - ${validationResult.message}`);
+            
+            // Session validation failed, clean up silently
+            this.silentCleanup();
+            return false;
+        }
+
+        // Validate session fingerprint for security
+        if (!this.validateFingerprint(session)) {
+            this.logger.warn('fingerprint_validation_failed', 'Session fingerprint validation failed');
+            this.logout();
+            return false;
+        }
 
         // Check session timeout
         const now = Date.now();
@@ -206,12 +254,17 @@ class AuthManager {
 
         // Update last activity
         session.lastActivity = now;
-        localStorage.setItem(this.sessionKey, JSON.stringify(session));
+        
+        // Rotate session ID if needed
+        const rotatedSession = this.rotateSessionId(session);
+        
+        // Store updated session
+        localStorage.setItem(this.sessionKey, JSON.stringify(rotatedSession));
 
         // Ensure managers have current session
-        this.tokenManager.onSessionChange(session);
+        this.tokenManager.onSessionChange(rotatedSession);
 
-        return session.authenticated;
+        return rotatedSession.authenticated;
     }
 
     /**
@@ -225,17 +278,24 @@ class AuthManager {
         try {
             const session = JSON.parse(stored);
             
-            // Validação simplificada para evitar loops
-            if (session && typeof session === 'object' && session.authenticated) {
+            // Use throttled validation instead of basic checks
+            const validationResult = this.sessionValidator.validateSession(session);
+            
+            if (validationResult.valid) {
                 return session;
-            } else {
-                console.warn('Invalid session format, clearing...');
-                localStorage.removeItem(this.sessionKey);
-                return null;
             }
+            
+            // If validation is throttled, return session if it exists and has basic structure
+            if (validationResult.throttled && session && session.authenticated === true) {
+                return session;
+            }
+            
+            // Session is invalid, clean up silently
+            this.silentCleanup();
+            return null;
         } catch (error) {
-            console.error('Error parsing session data:', error);
-            localStorage.removeItem(this.sessionKey);
+            // Parse error, clean up silently
+            this.silentCleanup();
             return null;
         }
     }
@@ -266,6 +326,191 @@ class AuthManager {
     }
 
     /**
+     * Silent cleanup of invalid session without logging
+     * Used to prevent console spam during validation failures
+     * @private
+     */
+    silentCleanup() {
+        localStorage.removeItem(this.sessionKey);
+        
+        // Use throttled logging for cleanup events
+        this.logger.debug('session_cleanup', 'Invalid session cleaned up silently');
+        
+        // Notify managers of session end without logging
+        if (this.tokenManager && typeof this.tokenManager.onSessionChange === 'function') {
+            this.tokenManager.onSessionChange(null);
+        }
+        if (this.securityManager && typeof this.securityManager.initializeForSession === 'function') {
+            this.securityManager.initializeForSession(null);
+        }
+    }
+
+    /**
+     * Generate comprehensive browser fingerprint for session security
+     * @returns {string} Browser fingerprint
+     * @private
+     */
+    generateFingerprint() {
+        try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = 'top';
+            ctx.font = '14px Arial';
+            ctx.fillText('Browser fingerprint', 2, 2);
+            
+            const fingerprint = [
+                navigator.userAgent || '',
+                navigator.language || '',
+                navigator.languages ? navigator.languages.join(',') : '',
+                screen.width + 'x' + screen.height,
+                screen.colorDepth || '',
+                new Date().getTimezoneOffset(),
+                navigator.platform || '',
+                navigator.cookieEnabled ? '1' : '0',
+                navigator.doNotTrack || '',
+                window.location.origin || '',
+                canvas.toDataURL()
+            ].join('|');
+            
+            return this.hashPassword(fingerprint);
+        } catch (error) {
+            // Fallback fingerprint if canvas or other features fail
+            this.logger.warn('fingerprint_error', `Failed to generate full fingerprint: ${error.message}`);
+            
+            const basicFingerprint = [
+                navigator.userAgent || 'unknown',
+                screen.width + 'x' + screen.height,
+                new Date().getTimezoneOffset(),
+                window.location.origin || 'unknown'
+            ].join('|');
+            
+            return this.hashPassword(basicFingerprint);
+        }
+    }
+
+    /**
+     * Validate session fingerprint
+     * @param {Object} session - Session data
+     * @returns {boolean} True if fingerprint is valid
+     * @private
+     */
+    validateFingerprint(session) {
+        if (!session || !session.fingerprint) {
+            this.logger.warn('fingerprint_missing', 'Session missing fingerprint');
+            return false;
+        }
+
+        const currentFingerprint = this.generateFingerprint();
+        const isValid = session.fingerprint === currentFingerprint;
+        
+        if (!isValid) {
+            this.logger.warn('fingerprint_mismatch', 
+                'Session fingerprint mismatch - possible session hijacking');
+        }
+        
+        return isValid;
+    }
+
+    /**
+     * Validate request origin
+     * @returns {boolean} True if origin is valid
+     * @private
+     */
+    validateOrigin() {
+        const allowedOrigins = [
+            window.location.origin,
+            'http://localhost:3000',
+            'http://127.0.0.1:3000',
+            'https://localhost:3000'
+        ];
+
+        const currentOrigin = window.location.origin;
+        const isValid = allowedOrigins.includes(currentOrigin);
+        
+        if (!isValid) {
+            this.logger.error('origin_invalid', 
+                `Invalid origin detected: ${currentOrigin}`);
+        }
+        
+        return isValid;
+    }
+
+    /**
+     * Rotate session ID for security
+     * @param {Object} session - Current session
+     * @returns {Object} Session with new ID
+     * @private
+     */
+    rotateSessionId(session) {
+        if (!session) return null;
+
+        const now = Date.now();
+        const sessionAge = now - session.loginTime;
+        const timeSinceRotation = session.lastRotation ? now - session.lastRotation : sessionAge;
+        
+        // Rotate every 15 minutes or if forced
+        const shouldRotate = timeSinceRotation > (15 * 60 * 1000);
+        
+        if (shouldRotate) {
+            const oldSessionId = session.sessionId;
+            session.sessionId = this.generateSessionId();
+            session.lastRotation = now;
+            
+            this.logger.info('session_rotated', 
+                `Session ID rotated after ${Math.round(timeSinceRotation / 60000)} minutes`);
+            
+            // Store updated session
+            localStorage.setItem(this.sessionKey, JSON.stringify(session));
+            
+            // Notify managers of session change
+            this.tokenManager.onSessionChange(session);
+        }
+        
+        return session;
+    }
+
+    /**
+     * Check if validation should be skipped to prevent excessive checks
+     * @returns {boolean} True if validation should be skipped
+     * @private
+     */
+    shouldSkipValidation() {
+        const session = this.getRawSession();
+        if (!session || !session.validationCount || !session.lastValidation) {
+            return false;
+        }
+
+        const now = Date.now();
+        const timeSinceLastValidation = now - session.lastValidation;
+        const validationsPerMinute = session.validationCount / ((now - session.loginTime) / 60000);
+
+        // Skip if too many validations in a short time
+        if (validationsPerMinute > 30 && timeSinceLastValidation < 2000) {
+            this.logger.debug('validation_skipped', 
+                `Skipping validation due to excessive checks: ${validationsPerMinute.toFixed(1)}/min`);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get raw session data without validation
+     * @returns {Object|null} Raw session data
+     * @private
+     */
+    getRawSession() {
+        const stored = localStorage.getItem(this.sessionKey);
+        if (!stored) return null;
+
+        try {
+            return JSON.parse(stored);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    /**
      * Get security status
      * @returns {Object} Security status information
      */
@@ -275,7 +520,9 @@ class AuthManager {
             sessionTimeRemaining: this.getSessionTimeRemaining(),
             tokenStatus: this.tokenManager.getTokenStatus(),
             securityStatus: this.securityManager.getSecurityStatus(),
-            loginAttempts: this.loginAttempts
+            loginAttempts: this.loginAttempts,
+            validationStats: this.sessionValidator.getStats(),
+            loggingStats: this.logThrottler.getStats()
         };
     }
 
@@ -304,11 +551,14 @@ class AuthManager {
 
         // Set up security event listeners
         window.addEventListener('security-threat', (event) => {
-            console.warn('Security threat detected:', event.detail);
+            // Use throttled logging for security events
+            this.logger.warn('security_threat', 
+                `Security threat detected: ${event.detail.type || 'unknown'}`);
 
-            // Log security event
-            if (window.logManager) {
-                window.logManager.log('security', `Security threat: ${event.detail.type}`, 'warning');
+            // Log security event with additional details
+            if (event.detail) {
+                this.logger.info('security_details', 
+                    `Security threat details: ${JSON.stringify(event.detail)}`);
             }
         });
     }
