@@ -68,14 +68,7 @@ body {
     display: block;
 }
 
-/* Login Screen Styles */
-#login-screen.active {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
-    padding: var(--spacing-md);
-}
+/* Login Screen Styles - Removed (now in separate login.html) */
 
 .login-container {
     background: var(--bg-primary);
@@ -5298,4 +5291,210 @@ textarea:focus {
         box-shadow: none !important;
         border: 1px solid #000 !important;
     }
+}/* Se
+ction error styles */
+.section-error {
+    text-align: center;
+    padding: var(--spacing-xl);
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--error-color);
+}
+
+.section-error .error-icon {
+    font-size: 3rem;
+    margin-bottom: var(--spacing-md);
+}
+
+.section-error h3 {
+    color: var(--error-color);
+    margin-bottom: var(--spacing-sm);
+}
+
+.section-error p {
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-md);
+}
+
+.section-error details {
+    text-align: left;
+    background: var(--bg-primary);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius);
+    margin: var(--spacing-md) 0;
+}
+
+.section-error pre {
+    font-size: 0.8rem;
+    color: var(--error-color);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Logs interface styles */
+.logs-interface {
+    padding: var(--spacing-md);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.section-header h3 {
+    margin: 0;
+    color: var(--primary-color);
+}
+
+.section-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.logs-content {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+}
+
+.log-filters {
+    margin-bottom: var(--spacing-md);
+}
+
+.log-filters select {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--bg-primary);
+}
+
+.logs-display {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-sm);
+    max-height: 400px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+}
+
+.log-entry {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-time {
+    color: var(--text-secondary);
+    min-width: 150px;
+}
+
+.log-level {
+    font-weight: bold;
+    min-width: 60px;
+}
+
+.log-level.info {
+    color: var(--primary-color);
+}
+
+.log-level.error {
+    color: var(--error-color);
+}
+
+.log-level.warning {
+    color: var(--warning-color);
+}
+
+.log-message {
+    flex: 1;
+    color: var(--text-primary);
+}
+
+/* Backup interface styles */
+.backup-interface {
+    padding: var(--spacing-md);
+}
+
+.backup-content {
+    display: grid;
+    gap: var(--spacing-lg);
+}
+
+.backup-section,
+.restore-section,
+.backup-history {
+    background: var(--bg-secondary);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.backup-section h4,
+.restore-section h4,
+.backup-history h4 {
+    margin: 0 0 var(--spacing-md) 0;
+    color: var(--primary-color);
+}
+
+.backup-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-md);
+}
+
+.backup-options label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    cursor: pointer;
+}
+
+.file-upload-area {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.backup-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.backup-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--bg-primary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.backup-date {
+    flex: 1;
+    font-weight: 500;
+}
+
+.backup-size,
+.backup-type {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.btn-sm {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.8rem;
 }

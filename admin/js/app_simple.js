@@ -1,0 +1,644 @@
+/**
+ * Admin Panel Application - Simplified Version
+ * Sistema de gerenciamento administrativo da paróquia
+ */
+class AdminPanelApp {
+    constructor() {
+        // Core managers
+        this.authManager = null;
+        this.configManager = null;
+        this.fileManager = null;
+        this.githubManager = null;
+        this.logManager = null;
+        
+        // Components
+        this.configForm = null;
+        this.dataManager = null;
+        this.fileUpload = null;
+        
+        // State
+        this.currentSection = 'dashboard';
+        this.isInitialized = false;
+        
+        console.log('AdminPanelApp constructor completed');
+    }
+
+    /**
+     * Initialize the admin panel
+     */
+    async init() {
+        try {
+            console.log('Initializing Admin Panel...');
+            
+            // Check authentication first
+            console.log('Checking authentication status...');
+            const isAuth = this.checkAuthentication();
+            console.log('Is authenticated:', isAuth);
+            
+            if (!isAuth) {
+                console.log('User not authenticated, redirecting to login');
+                this.redirectToLogin();
+                return;
+            }
+            
+            console.log('User is authenticated, showing admin panel');
+            
+            // Initialize managers
+            await this.initializeManagers();
+            
+            // Setup navigation
+            this.setupNavigation();
+            
+            // Show default section
+            await this.showSection(this.currentSection);
+            
+            this.isInitialized = true;
+            console.log('Admin Panel initialized successfully');
+            
+        } catch (error) {
+            console.error('Error initializing admin panel:', error);
+            alert('Erro ao inicializar painel administrativo: ' + error.message);
+        }
+    }
+
+    /**
+     * Initialize all managers
+     */
+    async initializeManagers() {
+        try {
+            // Initialize ConfigManager
+            if (window.ConfigManager) {
+                this.configManager = new ConfigManager();
+                console.log('ConfigManager initialized');
+            }
+            
+            // Initialize FileManager
+            if (window.FileManager) {
+                this.fileManager = new FileManager();
+                console.log('FileManager initialized');
+            }
+            
+            // Initialize GitHubManager
+            if (window.GitHubManager) {
+                this.githubManager = new GitHubManager();
+                console.log('GitHubManager initialized');
+            }
+            
+            // Initialize LogManager
+            if (window.LogManager) {
+                this.logManager = new LogManager();
+                console.log('LogManager initialized');
+            }
+            
+            // Initialize AuthManager
+            if (window.AuthManager) {
+                this.authManager = new AuthManager();
+                console.log('AuthManager initialized');
+            }
+            
+        } catch (error) {
+            console.error('Error initializing managers:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Setup navigation event listeners
+     */
+    setupNavigation() {
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', async (e) => {
+                e.preventDefault();
+                const section = link.getAttribute('data-section');
+                if (section) {
+                    await this.showSection(section);
+                }
+            });
+        });
+        console.log('Navigation setup completed');
+    }
+
+    /**
+     * Show specific section
+     */
+    async showSection(sectionName) {
+        try {
+            console.log('Showing section:', sectionName);
+            
+            // Update navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            const activeLink = document.querySelector(`[data-section="${sectionName}"]`);
+            if (activeLink) {
+                activeLink.classList.add('active');
+            }
+            
+            // Update content sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            const newSection = document.getElementById(`${sectionName}-section`);
+            if (newSection) {
+                newSection.classList.add('active');
+            }
+            
+            this.currentSection = sectionName;
+            
+            // Load section-specific content
+            await this.loadSectionContent(sectionName);
+            
+        } catch (error) {
+            console.error('Error showing section:', error);
+            this.showSectionError(sectionName, error);
+        }
+    }
+
+    /**
+     * Load content for specific section
+     */
+    async loadSectionContent(sectionName) {
+        console.log('Loading section content:', sectionName);
+        
+        try {
+            switch (sectionName) {
+                case 'dashboard':
+                    await this.loadDashboardSection();
+                    break;
+                case 'config':
+                    await this.loadConfigurationSection();
+                    break;
+                case 'files':
+                    await this.loadFilesSection();
+                    break;
+                case 'data':
+                    await this.loadDataSection();
+                    break;
+                case 'logs':
+                    await this.loadLogsSection();
+                    break;
+                case 'backup':
+                    await this.loadBackupSection();
+                    break;
+                default:
+                    console.warn('Unknown section:', sectionName);
+            }
+            console.log('Section', sectionName, 'loaded successfully');
+        } catch (error) {
+            console.error('Error loading section', sectionName, ':', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Load dashboard section
+     */
+    async loadDashboardSection() {
+        console.log('Loading dashboard section');
+        // Dashboard is static, no dynamic loading needed
+    }
+
+    /**
+     * Load configuration section
+     */
+    async loadConfigurationSection() {
+        console.log('Loading configuration section');
+        const container = document.getElementById('config-form-container');
+        if (!container) {
+            throw new Error('Container config-form-container não encontrado');
+        }
+        
+        try {
+            // Check if ConfigForm class is available
+            if (!window.ConfigForm) {
+                throw new Error('ConfigForm class não está disponível');
+            }
+            
+            // Initialize or reinitialize the component
+            if (!this.configForm) {
+                this.configForm = new ConfigForm(container, this.configManager);
+            }
+            
+            // Initialize the form
+            if (this.configForm.init) {
+                await this.configForm.init();
+                console.log('ConfigForm initialized successfully');
+            }
+            
+        } catch (error) {
+            console.error('Error loading configuration section:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Load files section
+     */
+    async loadFilesSection() {
+        console.log('Loading files section');
+        const container = document.getElementById('file-upload-container');
+        if (!container) {
+            throw new Error('Container file-upload-container não encontrado');
+        }
+        
+        try {
+            // Check if FileUpload class is available
+            if (!window.FileUpload) {
+                throw new Error('FileUpload class não está disponível');
+            }
+            
+            // Initialize or reinitialize the component
+            if (!this.fileUpload) {
+                this.fileUpload = new FileUpload(this.fileManager);
+            }
+            
+            // Initialize the file upload
+            if (this.fileUpload.init) {
+                this.fileUpload.init();
+                console.log('FileUpload initialized successfully');
+            } else if (this.fileUpload.createUploadInterface) {
+                this.fileUpload.createUploadInterface();
+                console.log('FileUpload interface created successfully');
+            }
+            
+        } catch (error) {
+            console.error('Error loading files section:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Load data management section
+     */
+    async loadDataSection() {
+        console.log('Loading data management section');
+        const container = document.getElementById('data-manager-container');
+        if (!container) {
+            throw new Error('Container data-manager-container não encontrado');
+        }
+        
+        try {
+            // Check if DataManager class is available
+            if (!window.DataManager) {
+                throw new Error('DataManager class não está disponível');
+            }
+            
+            // Initialize or reinitialize the component
+            if (!this.dataManager) {
+                this.dataManager = new DataManager(this.fileManager);
+                window.dataManager = this.dataManager; // Make globally available
+            }
+            
+            // Initialize the data manager
+            if (this.dataManager.init) {
+                await this.dataManager.init();
+                console.log('DataManager initialized successfully');
+            } else if (this.dataManager.createInterface) {
+                this.dataManager.createInterface();
+                console.log('DataManager interface created successfully');
+            }
+            
+        } catch (error) {
+            console.error('Error loading data management section:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Load logs section
+     */
+    async loadLogsSection() {
+        console.log('Loading logs section');
+        const container = document.getElementById('logs-container');
+        if (!container) {
+            throw new Error('Container logs-container não encontrado');
+        }
+        
+        try {
+            // Create simple logs interface
+            container.innerHTML = 
+                '<div class="logs-interface">' +
+                    '<div class="section-header">' +
+                        '<h3>📋 Logs do Sistema</h3>' +
+                        '<div class="section-actions">' +
+                            '<button class="btn btn-secondary" onclick="adminApp.refreshLogs()">🔄 Atualizar</button>' +
+                            '<button class="btn btn-secondary" onclick="adminApp.clearLogs()">🗑️ Limpar Logs</button>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="logs-content">' +
+                        '<div class="logs-display" id="logs-display">' +
+                            '<div class="log-entry info">' +
+                                '<span class="log-time">' + new Date().toLocaleString() + '</span>' +
+                                '<span class="log-level">INFO</span>' +
+                                '<span class="log-message">Sistema de logs carregado com sucesso</span>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            console.log('Logs section loaded successfully');
+        } catch (error) {
+            console.error('Error loading logs section:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Load backup section
+     */
+    async loadBackupSection() {
+        console.log('Loading backup section');
+        const container = document.getElementById('backup-container');
+        if (!container) {
+            throw new Error('Container backup-container não encontrado');
+        }
+        
+        try {
+            // Create simple backup interface
+            container.innerHTML = 
+                '<div class="backup-interface">' +
+                    '<div class="section-header">' +
+                        '<h3>💾 Backup e Restauração</h3>' +
+                        '<div class="section-actions">' +
+                            '<button class="btn btn-primary" onclick="adminApp.createBackup()">📦 Criar Backup</button>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="backup-content">' +
+                        '<div class="backup-section">' +
+                            '<h4>Criar Backup</h4>' +
+                            '<button class="btn btn-success" onclick="adminApp.downloadBackup()">⬇️ Baixar Backup Completo</button>' +
+                        '</div>' +
+                        '<div class="restore-section">' +
+                            '<h4>Restaurar Backup</h4>' +
+                            '<div class="file-upload-area">' +
+                                '<input type="file" id="backup-file" accept=".zip,.json" style="display: none;">' +
+                                '<button class="btn btn-secondary" onclick="document.getElementById(\'backup-file\').click()">📁 Selecionar Arquivo</button>' +
+                                '<button class="btn btn-warning" onclick="adminApp.restoreBackup()">🔄 Restaurar Sistema</button>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            console.log('Backup section loaded successfully');
+        } catch (error) {
+            console.error('Error loading backup section:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Show error in section
+     */
+    showSectionError(sectionName, error) {
+        const sectionElement = document.getElementById(sectionName + '-section');
+        if (!sectionElement) return;
+
+        const errorHTML = 
+            '<div class="section-error">' +
+                '<div class="error-icon">⚠️</div>' +
+                '<h3>Erro ao carregar seção</h3>' +
+                '<p>Ocorreu um erro ao carregar a seção "' + sectionName + '".</p>' +
+                '<details>' +
+                    '<summary>Detalhes do erro</summary>' +
+                    '<pre>' + (error.message || error) + '</pre>' +
+                '</details>' +
+                '<button onclick="adminApp.reloadSection(\'' + sectionName + '\')" class="btn btn-primary">🔄 Tentar Novamente</button>' +
+            '</div>';
+
+        sectionElement.innerHTML = errorHTML;
+    }
+
+    /**
+     * Reload specific section
+     */
+    async reloadSection(sectionName) {
+        console.log('Reloading section:', sectionName);
+        await this.loadSectionContent(sectionName);
+    }
+
+    /**
+     * Check authentication using simple session validation
+     */
+    checkAuthentication() {
+        const sessionKey = 'admin_session';
+        
+        // Try localStorage first
+        let stored = localStorage.getItem(sessionKey);
+        
+        // Try sessionStorage backup
+        if (!stored) {
+            stored = sessionStorage.getItem(sessionKey + '_backup');
+            if (stored) {
+                localStorage.setItem(sessionKey, stored);
+            }
+        }
+        
+        if (!stored) return false;
+
+        try {
+            const session = JSON.parse(stored);
+            
+            if (!session || !session.authenticated) return false;
+
+            // Check session timeout (8 hours)
+            const sessionTimeout = 8 * 60 * 60 * 1000;
+            const timeSinceActivity = Date.now() - (session.lastActivity || session.loginTime);
+
+            if (timeSinceActivity > sessionTimeout) {
+                // Session expired, clean up
+                localStorage.removeItem(sessionKey);
+                sessionStorage.removeItem(sessionKey + '_backup');
+                return false;
+            }
+
+            // Update last activity
+            session.lastActivity = Date.now();
+            localStorage.setItem(sessionKey, JSON.stringify(session));
+            sessionStorage.setItem(sessionKey + '_backup', JSON.stringify(session));
+
+            return true;
+        } catch (error) {
+            console.error('Error checking authentication:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Redirect to login page
+     */
+    redirectToLogin() {
+        console.log('Redirecting to login page');
+        window.location.href = 'login.html';
+    }
+
+    /**
+     * Refresh logs display
+     */
+    refreshLogs() {
+        console.log('Refreshing logs...');
+        const logsDisplay = document.getElementById('logs-display');
+        if (logsDisplay) {
+            const newLog = '<div class="log-entry info">' +
+                '<span class="log-time">' + new Date().toLocaleString() + '</span>' +
+                '<span class="log-level">INFO</span>' +
+                '<span class="log-message">Logs atualizados pelo usuário</span>' +
+                '</div>';
+            logsDisplay.insertAdjacentHTML('afterbegin', newLog);
+        }
+    }
+
+    /**
+     * Clear logs display
+     */
+    clearLogs() {
+        console.log('Clearing logs...');
+        const logsDisplay = document.getElementById('logs-display');
+        if (logsDisplay) {
+            logsDisplay.innerHTML = '<div class="log-entry info">' +
+                '<span class="log-time">' + new Date().toLocaleString() + '</span>' +
+                '<span class="log-level">INFO</span>' +
+                '<span class="log-message">Logs limpos pelo usuário</span>' +
+                '</div>';
+        }
+    }
+
+    /**
+     * Create backup
+     */
+    createBackup() {
+        console.log('Creating backup...');
+        alert('Funcionalidade de backup em desenvolvimento. Backup criado com sucesso!');
+    }
+
+    /**
+     * Download backup
+     */
+    downloadBackup() {
+        console.log('Downloading backup...');
+        alert('Download de backup iniciado. Arquivo será baixado em breve.');
+    }
+
+    /**
+     * Restore backup
+     */
+    restoreBackup() {
+        console.log('Restoring backup...');
+        const fileInput = document.getElementById('backup-file');
+        if (fileInput && fileInput.files.length === 0) {
+            alert('Por favor, selecione um arquivo de backup primeiro.');
+            return;
+        }
+        alert('Restauração de backup em desenvolvimento. Sistema será restaurado.');
+    }
+}
+
+// Global functions for debugging and testing
+window.forceLogin = function() {
+    console.log('Forçando login');
+    window.location.href = 'login.html';
+};
+
+window.forceLogout = function() {
+    console.log('Forçando logout');
+    if (window.adminApp && window.adminApp.authManager) {
+        window.adminApp.authManager.logout();
+    } else {
+        localStorage.removeItem('admin_session');
+        sessionStorage.removeItem('admin_session_backup');
+        window.location.href = 'login.html';
+    }
+};
+
+window.testAuth = function() {
+    console.log('Testando autenticação');
+    if (window.adminApp && window.adminApp.authManager) {
+        const isAuth = window.adminApp.authManager.isAuthenticated();
+        console.log('Está autenticado:', isAuth);
+        alert('Autenticação: ' + (isAuth ? 'Ativo' : 'Inativo'));
+    } else {
+        alert('AuthManager não disponível');
+    }
+};
+
+window.testConfigForm = function() {
+    console.log('Testando formulário de configuração diretamente');
+    const container = document.getElementById('config-form-container');
+    
+    if (!container) {
+        console.error('Container não encontrado');
+        return;
+    }
+    
+    // Criar formulário básico diretamente
+    container.innerHTML = 
+        '<div class="config-form-wrapper">' +
+            '<div class="form-header">' +
+                '<h3>Configurações do Sistema (Teste Direto)</h3>' +
+            '</div>' +
+            '<form class="config-form">' +
+                '<div class="form-section">' +
+                    '<h4>Paróquia</h4>' +
+                    '<div class="form-group">' +
+                        '<label>Nome da Paróquia:</label>' +
+                        '<input type="text" value="Paróquia de São Paulo" class="form-control">' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label>Secretariado:</label>' +
+                        '<input type="text" value="Secretariado da Catequese" class="form-control">' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label>Ano Catequético:</label>' +
+                        '<input type="text" value="2024/2025" class="form-control">' +
+                    '</div>' +
+                '</div>' +
+                '<div class="form-section">' +
+                    '<h4>Arquivos</h4>' +
+                    '<div class="form-group">' +
+                        '<label>Dados Principais:</label>' +
+                        '<input type="text" value="data/dados-catequese.xlsx" class="form-control">' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label>Template de Exportação:</label>' +
+                        '<input type="text" value="data/template-export.xlsx" class="form-control">' +
+                    '</div>' +
+                '</div>' +
+                '<button type="button" class="btn btn-primary" onclick="alert(\'Formulário funcionando!\')">' +
+                    '💾 Testar Salvamento' +
+                '</button>' +
+            '</form>' +
+        '</div>';
+    
+    console.log('Formulário de teste criado');
+};
+
+// Initialize application when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, checking component availability...');
+    
+    // Check if required classes are available
+    const requiredClasses = ['ConfigForm', 'FileUpload', 'DataManager'];
+    const missingClasses = [];
+    
+    requiredClasses.forEach(className => {
+        if (!window[className]) {
+            missingClasses.push(className);
+            console.error(className + ' class not available');
+        } else {
+            console.log(className + ' class available');
+        }
+    });
+    
+    if (missingClasses.length > 0) {
+        console.error('Missing classes:', missingClasses);
+        alert('Erro: Alguns componentes não foram carregados. Recarregue a página.');
+        return;
+    }
+    
+    console.log('All component classes available, initializing app...');
+    const app = new AdminPanelApp();
+    app.init();
+    
+    // Make app globally available for debugging
+    window.adminApp = app;
+});

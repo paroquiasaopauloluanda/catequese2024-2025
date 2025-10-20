@@ -15,37 +15,8 @@
         <a href="#main-content" class="skip-link">Pular para o conteúdo principal</a>
         <a href="#navigation" class="skip-link">Pular para a navegação</a>
 
-        <!-- Login Screen -->
-        <div id="login-screen" class="screen active">
-            <div class="login-container">
-                <div class="login-header">
-                    <h1>Painel Administrativo</h1>
-                    <p>Sistema de Gerenciamento da Paróquia</p>
-                </div>
-                <form id="login-form" class="login-form">
-                    <div class="form-group">
-                        <label for="username">Usuário</label>
-                        <input type="text" id="username" name="username" required
-                            data-help="Digite 'admin' para acessar o sistema" data-help-position="bottom">
-                        <span class="error-message" id="username-error"></span>
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Senha</label>
-                        <input type="password" id="password" name="password" required
-                            data-help="Digite a senha configurada para o sistema" data-help-position="bottom">
-                        <span class="error-message" id="password-error"></span>
-                    </div>
-                    <button type="submit" class="btn btn-primary" id="login-btn">
-                        <span class="btn-text">Entrar</span>
-                        <span class="btn-loading hidden">Entrando...</span>
-                    </button>
-                    <div class="login-error" id="login-error"></div>
-                </form>
-            </div>
-        </div>
-
         <!-- Admin Panel -->
-        <div id="admin-panel" class="screen">
+        <div id="admin-panel" class="screen active">
             <header class="admin-header" role="banner">
                 <div class="header-content">
                     <div class="header-left">
@@ -448,7 +419,69 @@
     <script src="js/components/BackupManager.js"></script>
     <script src="js/components/FileUpload.js"></script>
     <script src="js/components/LogDisplay.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/app_simple.js"></script>
+    
+    <script>
+        // Force authentication check before loading app
+        (function() {
+            console.log('Checking authentication before app load...');
+            
+            function checkAuth() {
+                const sessionKey = 'admin_session';
+                let stored = localStorage.getItem(sessionKey);
+                
+                if (!stored) {
+                    stored = sessionStorage.getItem(sessionKey + '_backup');
+                    if (stored) {
+                        localStorage.setItem(sessionKey, stored);
+                    }
+                }
+                
+                if (!stored) {
+                    console.log('No session found, redirecting to login');
+                    window.location.href = 'login.html';
+                    return false;
+                }
+                
+                try {
+                    const session = JSON.parse(stored);
+                    
+                    if (!session || !session.authenticated) {
+                        console.log('Invalid session, redirecting to login');
+                        window.location.href = 'login.html';
+                        return false;
+                    }
+                    
+                    // Check session timeout (8 hours)
+                    const sessionTimeout = 8 * 60 * 60 * 1000;
+                    const timeSinceActivity = Date.now() - (session.lastActivity || session.loginTime);
+                    
+                    if (timeSinceActivity > sessionTimeout) {
+                        console.log('Session expired, redirecting to login');
+                        localStorage.removeItem(sessionKey);
+                        sessionStorage.removeItem(sessionKey + '_backup');
+                        window.location.href = 'login.html';
+                        return false;
+                    }
+                    
+                    console.log('Session valid, continuing to app');
+                    return true;
+                } catch (error) {
+                    console.error('Error checking session:', error);
+                    window.location.href = 'login.html';
+                    return false;
+                }
+            }
+            
+            // Check authentication immediately
+            if (!checkAuth()) {
+                return; // Stop execution if not authenticated
+            }
+            
+            // If authenticated, continue with app initialization
+            console.log('Authentication check passed, initializing app...');
+        })();
+    </script>
 </body>
 
 </html>

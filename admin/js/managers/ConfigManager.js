@@ -346,7 +346,7 @@ class ConfigManager {
         }
         
         // Validate required sections
-        const requiredSections = ['paroquia', 'arquivos', 'validacao', 'exportacao'];
+        const requiredSections = ['paroquia', 'arquivos'];
         for (const section of requiredSections) {
             if (!config[section] || typeof config[section] !== 'object') {
                 errors.push(`Seção '${section}' é obrigatória`);
@@ -357,7 +357,39 @@ class ConfigManager {
         if (config.paroquia) {
             const requiredParoquiaFields = ['nome', 'secretariado', 'ano_catequetico'];
             for (const field of requiredParoquiaFields) {
-                if (!config.paroquia[field] || typeof config.paroquia[field] !== 'string') {
+                if (!config.paroquia[field] || typeof config.paroquia[field] !== 'string' || config.paroquia[field].trim() === '') {
+                    errors.push(`Campo '${field}' na seção paróquia é obrigatório e não pode estar vazio`);
+                }
+            }
+        }
+        
+        // Validate GitHub token if present
+        if (config.github && config.github.token) {
+            const token = config.github.token.trim();
+            if (token.length > 0) {
+                // Only validate if token is not empty
+                if (token.length < 40) {
+                    errors.push('Token do GitHub deve ter pelo menos 40 caracteres');
+                }
+                
+                const validPrefixes = ['ghp_', 'gho_', 'ghu_', 'ghs_', 'ghr_'];
+                const hasValidPrefix = validPrefixes.some(prefix => token.startsWith(prefix));
+                
+                if (!hasValidPrefix) {
+                    errors.push('Token do GitHub deve começar com um prefixo válido (ghp_, gho_, ghu_, ghs_, ghr_)');
+                }
+                
+                if (!/^[a-zA-Z0-9_]+$/.test(token)) {
+                    errors.push('Token do GitHub contém caracteres inválidos');
+                }
+            }
+        }
+        
+        // Validate arquivos section
+        if (config.arquivos) {
+            const requiredArquivosFields = ['dados_principais'];
+            for (const field of requiredArquivosFields) {
+                if (!config.arquivos[field] || typeof config.arquivos[field] !== 'string' || config.arquivos[field].trim() === '') {
                     errors.push(`Campo 'paroquia.${field}' é obrigatório`);
                 }
             }
