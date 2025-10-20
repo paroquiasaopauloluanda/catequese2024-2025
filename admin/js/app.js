@@ -2101,9 +2101,11 @@ Taxa de erro: ${errorRate.toFixed(2)}/min
                     break;
                     
                 case 'fileUpload':
+                    console.log('Creating FileUpload instance');
                     this.fileUpload = new FileUpload(this.fileManager);
                     this.fileUpload.setProgressComponents(this.progressTracker, this.progressBar);
                     this.fileUpload.init();
+                    console.log('FileUpload initialized');
                     break;
                     
                 case 'logDisplay':
@@ -2363,3 +2365,74 @@ document.addEventListener('DOMContentLoaded', () => {
     // Make app globally available for debugging
     window.adminApp = app;
 });
+
+// Debug functions
+window.debugTest = async function() {
+    const output = document.getElementById('debug-output');
+    output.textContent = 'Testando carregamento de configuração...\n';
+    
+    try {
+        // Test ConfigManager
+        output.textContent += 'Testando ConfigManager...\n';
+        const config = await window.adminApp.configManager.loadSettings();
+        output.textContent += 'Configuração carregada com sucesso:\n' + JSON.stringify(config, null, 2) + '\n';
+        
+        // Test ConfigForm
+        output.textContent += '\nTestando ConfigForm...\n';
+        const container = document.getElementById('config-form-container');
+        if (container) {
+            output.textContent += 'Container encontrado\n';
+            if (window.adminApp.configForm) {
+                output.textContent += 'ConfigForm existe\n';
+                window.adminApp.configForm.init();
+                output.textContent += 'ConfigForm inicializado\n';
+            } else {
+                output.textContent += 'ConfigForm não existe, criando...\n';
+                await window.adminApp.initializeComponent('configForm', container);
+                output.textContent += 'ConfigForm criado\n';
+            }
+        } else {
+            output.textContent += 'Container não encontrado!\n';
+        }
+        
+    } catch (error) {
+        output.textContent += 'ERRO: ' + error.message + '\n' + error.stack;
+    }
+};
+
+window.debugFileUpload = async function() {
+    const output = document.getElementById('debug-output');
+    output.textContent = 'Testando upload de arquivos...\n';
+    
+    try {
+        // Test FileManager
+        output.textContent += 'Testando FileManager...\n';
+        if (window.adminApp.fileManager) {
+            output.textContent += 'FileManager existe\n';
+            output.textContent += 'Tipos permitidos: ' + JSON.stringify(window.adminApp.fileManager.allowedTypes) + '\n';
+        } else {
+            output.textContent += 'FileManager não existe!\n';
+        }
+        
+        // Test FileUpload
+        output.textContent += '\nTestando FileUpload...\n';
+        const container = document.getElementById('file-upload-container');
+        if (container) {
+            output.textContent += 'Container encontrado\n';
+            if (window.adminApp.fileUpload) {
+                output.textContent += 'FileUpload existe\n';
+                window.adminApp.fileUpload.init();
+                output.textContent += 'FileUpload inicializado\n';
+            } else {
+                output.textContent += 'FileUpload não existe, criando...\n';
+                await window.adminApp.initializeComponent('fileUpload', container);
+                output.textContent += 'FileUpload criado\n';
+            }
+        } else {
+            output.textContent += 'Container não encontrado!\n';
+        }
+        
+    } catch (error) {
+        output.textContent += 'ERRO: ' + error.message + '\n' + error.stack;
+    }
+};

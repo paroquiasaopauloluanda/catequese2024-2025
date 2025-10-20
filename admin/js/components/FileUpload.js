@@ -25,16 +25,22 @@ class FileUpload {
      * Initialize file upload interface
      */
     init() {
+        console.log('FileUpload init called');
         this.createUploadInterface();
         this.attachEventListeners();
+        console.log('FileUpload interface created');
     }
 
     /**
      * Create the main file upload interface
      */
     createUploadInterface() {
+        console.log('Creating upload interface');
         const container = document.getElementById('file-upload-container');
-        if (!container) return;
+        if (!container) {
+            console.error('File upload container not found');
+            return;
+        }
 
         container.innerHTML = `
             <div class="file-upload-wrapper">

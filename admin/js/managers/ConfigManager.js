@@ -34,10 +34,12 @@ class ConfigManager {
             // Check cache first
             const cachedConfig = this.fileOptimizer.getCachedConfig(this.configCacheKey);
             if (cachedConfig) {
-                console.log('Loading configuration from cache');
+                console.log('Loading configuration from cache:', cachedConfig);
                 this.currentConfig = cachedConfig;
                 return cachedConfig;
             }
+            
+            console.log('No cached config found, loading fresh');
             
             let config;
             

@@ -295,6 +295,16 @@
 
                     <div id="config-form-container">
                         <!-- Configuration form will be dynamically generated -->
+                        <div id="debug-panel" style="margin: 20px; padding: 20px; border: 2px solid #ccc; background: #f9f9f9;">
+                            <h4>Debug Panel</h4>
+                            <button onclick="window.debugTest()" style="padding: 10px; margin: 5px; background: #007cba; color: white; border: none; border-radius: 4px;">
+                                Testar Carregamento de Configuração
+                            </button>
+                            <button onclick="window.debugFileUpload()" style="padding: 10px; margin: 5px; background: #28a745; color: white; border: none; border-radius: 4px;">
+                                Testar Upload de Arquivos
+                            </button>
+                            <div id="debug-output" style="margin-top: 10px; padding: 10px; background: white; border: 1px solid #ddd; font-family: monospace; white-space: pre-wrap;"></div>
+                        </div>
                     </div>
                 </section>
 

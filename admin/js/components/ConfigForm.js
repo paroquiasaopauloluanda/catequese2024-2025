@@ -109,16 +109,24 @@ class ConfigForm {
      * @param {Object} config - Configuration object
      */
     buildForm(config) {
+        console.log('Building form with config:', config);
         const formContent = document.getElementById('form-content');
+        if (!formContent) {
+            console.error('Form content container not found');
+            return;
+        }
+        
         formContent.innerHTML = '';
         
         // Create sections for each top-level configuration group
         Object.keys(config).forEach(sectionKey => {
+            console.log(`Creating section: ${sectionKey}`);
             const section = this.createSection(sectionKey, config[sectionKey]);
             formContent.appendChild(section);
         });
         
         this.updateFormState();
+        console.log('Form built successfully');
     }
 
     /**
@@ -155,6 +163,7 @@ class ConfigForm {
      * @returns {string} HTML for fields
      */
     createFieldsForSection(sectionKey, sectionData) {
+        console.log(`Creating fields for section: ${sectionKey}`, sectionData);
         let fieldsHTML = '';
         
         Object.keys(sectionData).forEach(fieldKey => {
@@ -162,9 +171,11 @@ class ConfigForm {
             const fieldValue = sectionData[fieldKey];
             const fieldConfig = this.getFieldConfig(sectionKey, fieldKey);
             
+            console.log(`Creating field: ${fieldPath}`, { fieldValue, fieldConfig });
             fieldsHTML += this.createField(fieldPath, fieldKey, fieldValue, fieldConfig);
         });
         
+        console.log(`Generated HTML for ${sectionKey}:`, fieldsHTML);
         return fieldsHTML;
     }
 
