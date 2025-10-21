@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo Funcional - Paróquia</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/functional.css">
+
+    <!-- SheetJS for Excel processing -->
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <!-- Admin Panel -->
+        <div id="admin-panel" class="screen active">
+            <header class="admin-header" role="banner">
+                <div class="header-content">
+                    <div class="header-left">
+                        <h1>Painel Administrativo</h1>
+                        <div class="system-status">
+                            <span class="status-indicator">
+                                <span class="status-dot" style="background: #16a34a;"></span>
+                                <span class="status-text">Sistema Funcional</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <div class="header-info">
+                            <span class="user-info">Administrador</span>
+                        </div>
+                        <button id="logout-btn" class="btn btn-secondary">
+                            <span class="btn-icon">🚪</span>
+                            Sair
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <nav class="admin-nav" role="navigation">
+                <ul class="nav-menu" role="menubar">
+                    <li role="none">
+                        <a href="#config" class="nav-link" data-section="config" role="menuitem">
+                            <span class="nav-icon">⚙️</span>
+                            <span class="nav-text">Configurações</span>
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="#files" class="nav-link" data-section="files" role="menuitem">
+                            <span class="nav-icon">📁</span>
+                            <span class="nav-text">Arquivos</span>
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="#data" class="nav-link" data-section="data" role="menuitem">
+                            <span class="nav-icon">📊</span>
+                            <span class="nav-text">Gerenciar Dados</span>
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="#logs" class="nav-link" data-section="logs" role="menuitem">
+                            <span class="nav-icon">📋</span>
+                            <span class="nav-text">Logs</span>
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="#backup" class="nav-link" data-section="backup" role="menuitem">
+                            <span class="nav-icon">💾</span>
+                            <span class="nav-text">Backup</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <main class="admin-content" role="main">
+                <!-- Dashboard Overview -->
+                <section id="dashboard-section" class="content-section active">
+                    <div class="dashboard-header">
+                        <h2>Painel de Controle Funcional</h2>
+                        <p class="dashboard-subtitle">Sistema administrativo simplificado e funcional</p>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card" data-section="config">
+                            <div class="card-header">
+                                <span class="card-icon">⚙️</span>
+                                <h3>Configurações</h3>
+                            </div>
+                            <div class="card-content">
+                                <p>Gerencie as configurações da paróquia</p>
+                                <div class="card-stats">
+                                    <span id="config-status">Status: Carregando...</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-primary btn-sm" onclick="adminApp.showSection('config')">
+                                    Acessar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card" data-section="files">
+                            <div class="card-header">
+                                <span class="card-icon">📁</span>
+                                <h3>Arquivos</h3>
+                            </div>
+                            <div class="card-content">
+                                <p>Upload e gerenciamento de arquivos</p>
+                                <div class="card-stats">
+                                    <span id="files-count">Arquivos: 0</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-primary btn-sm" onclick="adminApp.showSection('files')">
+                                    Acessar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card" data-section="data">
+                            <div class="card-header">
+                                <span class="card-icon">📊</span>
+                                <h3>Dados</h3>
+                            </div>
+                            <div class="card-content">
+                                <p>Gerencie catequistas e catecúmenos</p>
+                                <div class="card-stats">
+                                    <span>Sistema funcional</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-primary btn-sm" onclick="adminApp.showSection('data')">
+                                    Acessar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card" data-section="logs">
+                            <div class="card-header">
+                                <span class="card-icon">📋</span>
+                                <h3>Logs</h3>
+                            </div>
+                            <div class="card-content">
+                                <p>Visualize logs do sistema</p>
+                                <div class="card-stats">
+                                    <span id="logs-count">Entradas: 0</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-primary btn-sm" onclick="adminApp.showSection('logs')">
+                                    Acessar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card" data-section="backup">
+                            <div class="card-header">
+                                <span class="card-icon">💾</span>
+                                <h3>Backup</h3>
+                            </div>
+                            <div class="card-content">
+                                <p>Backup e restauração</p>
+                                <div class="card-stats">
+                                    <span id="backup-count">Backups: 0</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-primary btn-sm" onclick="adminApp.showSection('backup')">
+                                    Acessar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Configuration Section -->
+                <section id="config-section" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <h2>Configurações da Paróquia</h2>
+                            <p class="section-subtitle">Gerencie as configurações do sistema</p>
+                        </div>
+                        <div class="section-actions">
+                            <button id="back-to-dashboard" class="btn btn-secondary btn-sm"
+                                onclick="adminApp.showSection('dashboard')">
+                                ← Voltar ao Dashboard
+                            </button>
+                        </div>
+                    </div>
+                    <div id="config-form-container">
+                        <!-- Configuration form will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Files Section -->
+                <section id="files-section" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <h2>Gerenciamento de Arquivos</h2>
+                            <p class="section-subtitle">Upload e gerenciamento de arquivos do sistema</p>
+                        </div>
+                        <div class="section-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="adminApp.showSection('dashboard')">
+                                ← Voltar ao Dashboard
+                            </button>
+                        </div>
+                    </div>
+                    <div id="file-upload-container">
+                        <!-- File upload interface will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Data Management Section -->
+                <section id="data-section" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <h2>Gerenciamento de Dados</h2>
+                            <p class="section-subtitle">Gerencie catequistas, catecúmenos e dados do Excel</p>
+                        </div>
+                        <div class="section-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="adminApp.showSection('dashboard')">
+                                ← Voltar ao Dashboard
+                            </button>
+                        </div>
+                    </div>
+                    <div id="data-manager-container">
+                        <!-- Data management interface will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Logs Section -->
+                <section id="logs-section" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <h2>Logs do Sistema</h2>
+                            <p class="section-subtitle">Visualize o histórico de operações</p>
+                        </div>
+                        <div class="section-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="adminApp.showSection('dashboard')">
+                                ← Voltar ao Dashboard
+                            </button>
+                        </div>
+                    </div>
+                    <div id="logs-container">
+                        <!-- Logs will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Backup Section -->
+                <section id="backup-section" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <h2>Backup e Restauração</h2>
+                            <p class="section-subtitle">Gerencie backups das configurações</p>
+                        </div>
+                        <div class="section-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="adminApp.showSection('dashboard')">
+                                ← Voltar ao Dashboard
+                            </button>
+                        </div>
+                    </div>
+                    <div id="backup-container">
+                        <!-- Backup interface will be loaded here -->
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Load the functional JavaScript -->
+    <script src="js/utils/GitHubAPI.js"></script>
+    <script src="js/utils/ExcelManager.js"></script>
+    <script src="js/app_functional.js"></script>
+
+    <script>
+        // Authentication check
+        (function () {
+            console.log('Checking authentication for functional admin...');
+
+            function checkAuth() {
+                const sessionKey = 'admin_session';
+                let stored = localStorage.getItem(sessionKey);
+
+                if (!stored) {
+                    stored = sessionStorage.getItem(sessionKey + '_backup');
+                    if (stored) {
+                        localStorage.setItem(sessionKey, stored);
+                    }
+                }
+
+                if (!stored) {
+                    console.log('No session found, redirecting to login');
+                    window.location.href = 'login.html';
+                    return false;
+                }
+
+                try {
+                    const session = JSON.parse(stored);
+
+                    if (!session || !session.authenticated) {
+                        console.log('Invalid session, redirecting to login');
+                        window.location.href = 'login.html';
+                        return false;
+                    }
+
+                    // Check session timeout (8 hours)
+                    const sessionTimeout = 8 * 60 * 60 * 1000;
+                    const timeSinceActivity = Date.now() - (session.lastActivity || session.loginTime);
+
+                    if (timeSinceActivity > sessionTimeout) {
+                        console.log('Session expired, redirecting to login');
+                        localStorage.removeItem(sessionKey);
+                        sessionStorage.removeItem(sessionKey + '_backup');
+                        window.location.href = 'login.html';
+                        return false;
+                    }
+
+                    console.log('Session valid for functional admin');
+                    return true;
+                } catch (error) {
+                    console.error('Error checking session:', error);
+                    window.location.href = 'login.html';
+                    return false;
+                }
+            }
+
+            // Check authentication immediately
+            if (!checkAuth()) {
+                return; // Stop execution if not authenticated
+            }
+
+            console.log('Authentication passed for functional admin');
+        })();
+    </script>
+</body>
+
+</html>

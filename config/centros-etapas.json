@@ -1,0 +1,97 @@
+{
+  "centros": [
+    {
+      "id": "centro_principal",
+      "nome": "Centro Principal",
+      "endereco": "Rua Principal, Luanda",
+      "responsavel": "Pe. João Silva",
+      "ativo": true
+    },
+    {
+      "id": "centro_norte",
+      "nome": "Centro Norte",
+      "endereco": "Bairro Norte, Luanda", 
+      "responsavel": "Irmã Maria Santos",
+      "ativo": true
+    },
+    {
+      "id": "centro_sul",
+      "nome": "Centro Sul",
+      "endereco": "Bairro Sul, Luanda",
+      "responsavel": "Diác. Pedro Costa",
+      "ativo": true
+    }
+  ],
+  "etapas": [
+    {
+      "id": "primeira_etapa",
+      "nome": "1ª Etapa",
+      "descricao": "Iniciação à vida cristã",
+      "idade_minima": 6,
+      "idade_maxima": 8,
+      "duracao_meses": 12,
+      "ativo": true
+    },
+    {
+      "id": "segunda_etapa", 
+      "nome": "2ª Etapa",
+      "descricao": "Aprofundamento da fé",
+      "idade_minima": 9,
+      "idade_maxima": 11,
+      "duracao_meses": 12,
+      "ativo": true
+    },
+    {
+      "id": "terceira_etapa",
+      "nome": "3ª Etapa", 
+      "descricao": "Preparação para os sacramentos",
+      "idade_minima": 12,
+      "idade_maxima": 14,
+      "duracao_meses": 12,
+      "ativo": true
+    },
+    {
+      "id": "quarta_etapa",
+      "nome": "4ª Etapa",
+      "descricao": "Confirmação e compromisso",
+      "idade_minima": 15,
+      "idade_maxima": 17,
+      "duracao_meses": 12,
+      "ativo": true
+    }
+  ],
+  "horarios": [
+    {
+      "id": "sabado_manha",
+      "nome": "Sábado Manhã",
+      "dia_semana": "Sábado",
+      "hora_inicio": "08:00",
+      "hora_fim": "10:00",
+      "ativo": true
+    },
+    {
+      "id": "sabado_tarde",
+      "nome": "Sábado Tarde", 
+      "dia_semana": "Sábado",
+      "hora_inicio": "14:00",
+      "hora_fim": "16:00",
+      "ativo": true
+    },
+    {
+      "id": "domingo_manha",
+      "nome": "Domingo Manhã",
+      "dia_semana": "Domingo", 
+      "hora_inicio": "08:00",
+      "hora_fim": "10:00",
+      "ativo": true
+    },
+    {
+      "id": "domingo_tarde",
+      "nome": "Domingo Tarde",
+      "dia_semana": "Domingo",
+      "hora_inicio": "14:00", 
+      "hora_fim": "16:00",
+      "ativo": true
+    }
+  ]
+}

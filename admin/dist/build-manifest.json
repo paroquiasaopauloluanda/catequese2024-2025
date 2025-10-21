@@ -1,0 +1,238 @@
+{
+  "version": "1.0.0",
+  "environment": "production",
+  "buildTime": "2025-10-21T09:41:14.554Z",
+  "files": [
+    {
+      "path": "deployment.config.json",
+      "size": 2654,
+      "modified": "2025-10-21T09:41:14.553Z"
+    },
+    {
+      "path": "index.html",
+      "size": 15177,
+      "modified": "2025-10-21T09:41:14.536Z"
+    },
+    {
+      "path": "js/admin-complete.js",
+      "size": 49591,
+      "modified": "2025-10-21T09:41:14.541Z"
+    },
+    {
+      "path": "js/app.js",
+      "size": 110591,
+      "modified": "2025-10-21T09:41:14.542Z"
+    },
+    {
+      "path": "js/app_backup.js",
+      "size": 93,
+      "modified": "2025-10-21T09:41:14.543Z"
+    },
+    {
+      "path": "js/app_functional.js",
+      "size": 93222,
+      "modified": "2025-10-21T09:41:14.543Z"
+    },
+    {
+      "path": "js/app_simple.js",
+      "size": 24850,
+      "modified": "2025-10-21T09:41:14.544Z"
+    },
+    {
+      "path": "js/components/BackupManager.js",
+      "size": 24243,
+      "modified": "2025-10-21T09:41:14.544Z"
+    },
+    {
+      "path": "js/components/ConfigForm.js",
+      "size": 37822,
+      "modified": "2025-10-21T09:41:14.544Z"
+    },
+    {
+      "path": "js/components/DataManager.js",
+      "size": 29105,
+      "modified": "2025-10-21T09:41:14.545Z"
+    },
+    {
+      "path": "js/components/FileUpload.js",
+      "size": 27458,
+      "modified": "2025-10-21T09:41:14.545Z"
+    },
+    {
+      "path": "js/components/LogDisplay.js",
+      "size": 30459,
+      "modified": "2025-10-21T09:41:14.545Z"
+    },
+    {
+      "path": "js/components/ProgressBar.js",
+      "size": 27633,
+      "modified": "2025-10-21T09:41:14.546Z"
+    },
+    {
+      "path": "js/interfaces/types.js",
+      "size": 8104,
+      "modified": "2025-10-21T09:41:14.546Z"
+    },
+    {
+      "path": "js/managers/AuthManager.js",
+      "size": 26050,
+      "modified": "2025-10-21T09:41:14.546Z"
+    },
+    {
+      "path": "js/managers/ConfigManager.js",
+      "size": 36716,
+      "modified": "2025-10-21T09:41:14.546Z"
+    },
+    {
+      "path": "js/managers/DeploymentManager.js",
+      "size": 19730,
+      "modified": "2025-10-21T09:41:14.547Z"
+    },
+    {
+      "path": "js/managers/FileManager.js",
+      "size": 56005,
+      "modified": "2025-10-21T09:41:14.548Z"
+    },
+    {
+      "path": "js/managers/GitHubManager.js",
+      "size": 79773,
+      "modified": "2025-10-21T09:41:14.549Z"
+    },
+    {
+      "path": "js/managers/LogManager.js",
+      "size": 19573,
+      "modified": "2025-10-21T09:41:14.549Z"
+    },
+    {
+      "path": "js/managers/ProgressTracker.js",
+      "size": 24433,
+      "modified": "2025-10-21T09:41:14.549Z"
+    },
+    {
+      "path": "js/managers/SecurityManager.js",
+      "size": 15636,
+      "modified": "2025-10-21T09:41:14.550Z"
+    },
+    {
+      "path": "js/managers/TokenManager.js",
+      "size": 17287,
+      "modified": "2025-10-21T09:41:14.550Z"
+    },
+    {
+      "path": "js/utils/CustomErrors.js",
+      "size": 10843,
+      "modified": "2025-10-21T09:41:14.550Z"
+    },
+    {
+      "path": "js/utils/DeploymentVerifier.js",
+      "size": 24507,
+      "modified": "2025-10-21T09:41:14.551Z"
+    },
+    {
+      "path": "js/utils/DialogManager.js",
+      "size": 23487,
+      "modified": "2025-10-21T09:41:14.551Z"
+    },
+    {
+      "path": "js/utils/ErrorHandler.js",
+      "size": 20151,
+      "modified": "2025-10-21T09:41:14.551Z"
+    },
+    {
+      "path": "js/utils/ErrorReporter.js",
+      "size": 22257,
+      "modified": "2025-10-21T09:41:14.551Z"
+    },
+    {
+      "path": "js/utils/ErrorWrapper.js",
+      "size": 13877,
+      "modified": "2025-10-21T09:41:14.552Z"
+    },
+    {
+      "path": "js/utils/ExcelManager.js",
+      "size": 16096,
+      "modified": "2025-10-21T09:41:14.552Z"
+    },
+    {
+      "path": "js/utils/FileOptimizer.js",
+      "size": 15112,
+      "modified": "2025-10-21T09:41:14.552Z"
+    },
+    {
+      "path": "js/utils/GitHubAPI.js",
+      "size": 6685,
+      "modified": "2025-10-21T09:41:14.552Z"
+    },
+    {
+      "path": "js/utils/GitHubOptimizer.js",
+      "size": 13177,
+      "modified": "2025-10-21T09:41:14.552Z"
+    },
+    {
+      "path": "js/utils/LogThrottler.js",
+      "size": 11363,
+      "modified": "2025-10-21T09:41:14.552Z"
+    },
+    {
+      "path": "js/utils/NotificationManager.js",
+      "size": 21851,
+      "modified": "2025-10-21T09:41:14.552Z"
+    },
+    {
+      "path": "js/utils/ResponseHandler.js",
+      "size": 16103,
+      "modified": "2025-10-21T09:41:14.553Z"
+    },
+    {
+      "path": "js/utils/SessionValidator.js",
+      "size": 10564,
+      "modified": "2025-10-21T09:41:14.553Z"
+    },
+    {
+      "path": "js/utils/SystemRecovery.js",
+      "size": 20489,
+      "modified": "2025-10-21T09:41:14.553Z"
+    },
+    {
+      "path": "js/utils/helpers.js",
+      "size": 17030,
+      "modified": "2025-10-21T09:41:14.553Z"
+    },
+    {
+      "path": "js/utils/validation.js",
+      "size": 12148,
+      "modified": "2025-10-21T09:41:14.553Z"
+    },
+    {
+      "path": "styles/functional.css",
+      "size": 15001,
+      "modified": "2025-10-21T09:41:14.536Z"
+    },
+    {
+      "path": "styles/main.css",
+      "size": 87134,
+      "modified": "2025-10-21T09:41:14.540Z"
+    },
+    {
+      "path": "styles/responsive.css",
+      "size": 8748,
+      "modified": "2025-10-21T09:41:14.541Z"
+    }
+  ],
+  "config": {
+    "name": "Produção",
+    "baseUrl": "https://paroquiasaopauloluanda.github.io/catequese2024-2025",
+    "githubPages": true,
+    "features": {
+      "debugging": false,
+      "analytics": true,
+      "errorReporting": true,
+      "performanceMonitoring": true
+    },
+    "security": {
+      "httpsOnly": true,
+      "contentSecurityPolicy": true,
+      "secureHeaders": true
+    }
+  }
+}

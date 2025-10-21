@@ -1,0 +1,34 @@
+{
+  "resultados": {
+    "aprovado": {
+      "cor": "#16a34a",
+      "nome": "Aprovado",
+      "descricao": "Catecúmeno aprovado para a próxima etapa"
+    },
+    "reprovado": {
+      "cor": "#dc2626", 
+      "nome": "Reprovado",
+      "descricao": "Catecúmeno que precisa repetir a etapa"
+    },
+    "desistente": {
+      "cor": "#6b7280",
+      "nome": "Desistente", 
+      "descricao": "Catecúmeno que abandonou a catequese"
+    },
+    "transferido": {
+      "cor": "#2563eb",
+      "nome": "Transferido",
+      "descricao": "Catecúmeno transferido para outro centro"
+    },
+    "em_avaliacao": {
+      "cor": "#f59e0b",
+      "nome": "Em Avaliação",
+      "descricao": "Situação ainda em análise"
+    }
+  },
+  "configuracao": {
+    "usar_cores_personalizadas": true,
+    "permitir_edicao": true,
+    "mostrar_legenda": true
+  }
+}

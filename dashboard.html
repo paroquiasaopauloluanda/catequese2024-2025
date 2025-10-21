@@ -1,0 +1,2970 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard Profissional — Paróquia de São Paulo de Luanda</title>
+
+  <!-- SheetJS -->
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- html2canvas para exportar gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --bg: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      --card: #ffffff;
+      --ink: #2d3748;
+      --muted: #718096;
+      --accent: #667eea;
+      --accent-2: #764ba2;
+      --accent-3: #f093fb;
+      --accent-4: #f5576c;
+      --ok: #48bb78;
+      --warn: #ed8936;
+      --border: #e2e8f0;
+      --border-light: #f7fafc;
+      --radius: 16px;
+      --error: #f56565;
+      --info: #4299e1;
+      --success: #38b2ac;
+      --purple: #9f7aea;
+      --pink: #ed64a6;
+      --orange: #ff9500;
+      --teal: #319795;
+      --indigo: #5a67d8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 16px;
+      width: 100%;
+    }
+
+    .card {
+      width: 100%;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      margin-bottom: 16px;
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+    }
+
+    .hero-brand {
+      width: 100%;
+      padding: 16px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .hero-brand img {
+      width: 72px;
+      height: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 4px;
+    }
+
+    .title {
+      font-weight: 800;
+      font-size: 18px;
+    }
+
+    .subtitle {
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .info {
+      margin-top: 6px;
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .meta {
+      color: #374151;
+      margin-top: 2px;
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff;
+      border: 0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .btn.secondary {
+      background: #fff;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .btn.small {
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .btn:hover {
+      background: linear-gradient(135deg, var(--accent-2), var(--accent-3));
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn.secondary:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .debug-upload {
+      margin: 16px 0;
+      padding: 16px;
+      border: 2px dashed #dc2626;
+      border-radius: 12px;
+      text-align: center;
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    .debug-upload input[type="file"] {
+      margin: 8px 0;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+      width: 100%;
+    }
+
+    .dashboard-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      position: relative;
+      backdrop-filter: blur(10px);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .dashboard-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    }
+
+    .dashboard-card.wide {
+      grid-column: span 2;
+    }
+
+    .dashboard-card.full {
+      grid-column: 1 / -1;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .card-header h3 {
+      margin: 0;
+      color: var(--accent);
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .stat-number {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin: 8px 0;
+      line-height: 1;
+    }
+
+    .stat-number.large {
+      font-size: 3rem;
+    }
+
+    .stat-number.medium {
+      font-size: 1.8rem;
+    }
+
+    .stat-number.small {
+      font-size: 1.4rem;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 12px;
+      background: #fafafa;
+      border-radius: 8px;
+      border: 1px solid var(--border-light);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 6px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin: 16px 0;
+    }
+
+    .chart-container.small {
+      height: 200px;
+    }
+
+    .table-container {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 12px;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .data-table th {
+      background: #faf7ee;
+      padding: 8px 12px;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .data-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .data-table tr:hover {
+      background: linear-gradient(90deg, rgba(102, 126, 234, 0.1), rgba(240, 147, 251, 0.1));
+      transform: scale(1.01);
+      transition: all 0.2s ease;
+    }
+
+    .data-table tr:nth-child(even) {
+      background: rgba(102, 126, 234, 0.05);
+    }
+
+    .data-table tr:nth-child(odd) {
+      background: rgba(240, 147, 251, 0.05);
+    }
+
+    .highlight-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      color: white;
+      text-align: center;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+      border: none;
+    }
+
+    .highlight-card .stat-number {
+      color: white;
+    }
+
+    .highlight-card .stat-label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .age-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .age-badge.young {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .age-badge.old {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .approval-rate {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    .approval-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .approval-indicator.high {
+      background: linear-gradient(45deg, #53f3c0, #48bb78);
+      box-shadow: 0 2px 8px rgba(83, 243, 192, 0.3);
+    }
+
+    .approval-indicator.medium {
+      background: linear-gradient(45deg, #fce38a, #ed8936);
+      box-shadow: 0 2px 8px rgba(252, 227, 138, 0.3);
+    }
+
+    .approval-indicator.low {
+      background: linear-gradient(45deg, #f38ba8, #f56565);
+      box-shadow: 0 2px 8px rgba(243, 139, 168, 0.3);
+    }
+
+    .footer {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      margin: 24px 0;
+    }
+
+    /* Responsividade Mobile */
+    @media (max-width: 480px) {
+      .container {
+        padding: 8px;
+        max-width: 100%;
+      }
+
+      .dashboard-grid {
+        /* grid-template-columns: 1fr; */
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .dashboard-card {
+        padding: 12px;
+        margin-bottom: 8px;
+        border-radius: 12px;
+      }
+
+      .dashboard-card.wide,
+      .dashboard-card.full {
+        grid-column: 1;
+      }
+
+      .hero-brand {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px;
+        gap: 8px;
+      }
+
+      .hero-brand img {
+        width: 48px;
+      }
+
+      .title {
+        font-size: 16px;
+      }
+
+      .subtitle {
+        font-size: 14px;
+      }
+
+      .info {
+        font-size: 14px;
+      }
+
+      .meta {
+        font-size: 12px;
+      }
+
+      .actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 6px;
+      }
+
+      .actions .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px;
+        font-size: 14px;
+      }
+
+      .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .card-header h3 {
+        font-size: 14px;
+      }
+
+      .card-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .btn.small {
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+
+      .stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+
+      .stat-item {
+        padding: 8px;
+      }
+
+      .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .data-table {
+        min-width: 600px;
+        font-size: 12px;
+      }
+
+      .data-table th,
+      .data-table td {
+        padding: 6px 8px;
+        white-space: nowrap;
+      }
+
+      .chart-container {
+        height: 200px;
+        margin: 8px 0;
+      }
+
+      .chart-container.small {
+        height: 180px;
+      }
+
+      .stat-number {
+        font-size: 1.8rem;
+      }
+
+      .stat-number.large {
+        font-size: 2.2rem;
+      }
+
+      .stat-number.medium {
+        font-size: 1.4rem;
+      }
+
+      .stat-number.small {
+        font-size: 1.2rem;
+      }
+
+      .stat-label {
+        font-size: 11px;
+      }
+
+      .highlight-card {
+        padding: 16px;
+        text-align: center;
+      }
+
+      .approval-rate {
+        flex-direction: column;
+        text-align: center;
+        gap: 4px;
+      }
+
+      .approval-indicator {
+        align-self: center;
+      }
+    }
+
+    @media (max-width: 768px) and (min-width: 481px) {
+      .container {
+        padding: 12px;
+      }
+
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .dashboard-card.wide,
+      .dashboard-card.full {
+        grid-column: 1;
+      }
+
+      .actions {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .actions .btn {
+        flex: 1;
+        min-width: 140px;
+      }
+
+      .chart-container {
+        height: 250px;
+      }
+
+      .chart-container.small {
+        height: 200px;
+      }
+
+      .stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    /* Estilos para modais */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal-content {
+      background-color: var(--card);
+      margin: 5% auto;
+      padding: 0;
+      border-radius: var(--radius);
+      width: 90%;
+      max-width: 800px;
+      max-height: 80vh;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      animation: slideIn 0.3s ease;
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+      margin: 0;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .modal-close:hover {
+      background: var(--border-light);
+      color: var(--ink);
+    }
+
+    .modal-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .modal-table-container {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      max-height: 60vh;
+    }
+
+    .modal-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .modal-table thead {
+      position: sticky;
+      top: 0;
+      background: #faf7ee;
+      z-index: 10;
+    }
+
+    .modal-table th {
+      background: #faf7ee;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .modal-table-body {
+      max-height: calc(60vh - 60px);
+      overflow-y: auto;
+    }
+
+    .modal-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-light);
+      vertical-align: middle;
+    }
+
+    .modal-table tr:hover {
+      background: #fffbf0;
+    }
+
+    .modal-table tr:nth-child(odd) {
+      background: #fffbf0;
+    }
+
+    .result-cell {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 12px;
+      text-align: center;
+      color: white;
+      text-transform: uppercase;
+    }
+
+    .clickable-number {
+      color: var(--accent);
+      cursor: pointer;
+      text-decoration: underline;
+      font-weight: 600;
+    }
+
+    .clickable-number:hover {
+      color: var(--accent-2);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-50px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head><b ody>
+  <header class="card">
+    <div class="container">
+      <div class="hero-brand card">
+        <img id="logoImg" alt="Logo da Paróquia" onerror="this.style.display='none'" />
+        <div>
+          <div class="title" id="paroquiaNome">A carregar...</div>
+          <div class="subtitle" id="secretariado">A carregar...</div>
+          <div class="info">Dashboard Profissional da Catequese</div>
+          <div class="meta">Ano Catequético: <strong id="anoCatequetico">A carregar...</strong></div>
+          <div class="meta">Última atualização: <strong id="lastUpdate">-</strong></div>
+        </div>
+      </div>
+
+      <!-- Debug Mode: File Upload (só aparece se DEBUG_MODE = true) -->
+      <div id="debugUpload" class="debug-upload" style="display:none">
+        <div><strong>🔧 MODO DEBUG ATIVO</strong></div>
+        <div>Carregar arquivo Excel para testes:</div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" />
+        <button class="btn" id="loadSampleBtn">📊 Usar Dados de Exemplo</button>
+      </div>
+
+      <div class="actions">
+        <a href="index.html" class="btn">📋 Lista de Catecúmenos</a>
+        <a href="lista-catequistas.html" class="btn secondary">👥 Lista de Catequistas</a>
+        <a href="aniversarios.html" class="btn secondary">🎂 Aniversários</a>
+        <button class="btn secondary" id="refreshBtn">🔄 Atualizar</button>
+        <button class="btn secondary" id="exportAllBtn">📊 Exportar Tudo</button>
+        <button class="btn secondary" id="printDashboard">🖨️ Imprimir</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="dashboard-grid">
+
+      <!-- Estatísticas Principais -->
+      <div class="dashboard-card highlight-card">
+        <div class="stat-number large" id="totalCatecumenos">-</div>
+        <div class="stat-label">Total de Catecúmenos</div>
+      </div>
+
+      <div class="dashboard-card">
+        <div class="stat-grid">
+          <div class="stat-item" onclick="showAllCatequistasModal()" style="cursor: pointer;">
+            <div class="stat-number medium clickable-number" id="totalCatequistas">-</div>
+            <div class="stat-label">Catequistas</div>
+          </div>
+          <div class="stat-item" onclick="showAllTurmasModal()" style="cursor: pointer;">
+            <div class="stat-number medium clickable-number" id="totalTurmas">-</div>
+            <div class="stat-label">Turmas</div>
+          </div>
+          <div class="stat-item" onclick="showAllCentrosModal()" style="cursor: pointer;">
+            <div class="stat-number medium clickable-number" id="totalCentros">-</div>
+            <div class="stat-label">Centros</div>
+          </div>
+          <div class="stat-item" onclick="showAllHorariosModal()" style="cursor: pointer;">
+            <div class="stat-number medium clickable-number" id="totalHorarios">-</div>
+            <div class="stat-label">Horários</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aprovação Geral -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <h3>📈 Taxa de Aprovação Geral</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('approvalCard', 'aprovacao_geral')">📊 XLSX</button>
+            <button class="btn small secondary" onclick="exportChartAsPNG('approvalCard', 'aprovacao_geral')">🖼️
+              PNG</button>
+          </div>
+        </div>
+        <div id="approvalCard">
+          <div class="approval-rate">
+            <div class="approval-indicator" id="approvalIndicator"></div>
+            <div class="stat-number" id="approvalRate">-</div>
+            <div class="stat-label">Taxa de Aprovação</div>
+          </div>
+          <div id="approvalDetails"></div>
+        </div>
+      </div>
+
+      <!-- Catecúmenos Mais Novo e Mais Velho -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <h3>👶👴 Idades Extremas</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('ageCard', 'idades_extremas')">📊 XLSX</button>
+            <button class="btn small secondary" onclick="exportChartAsPNG('ageCard', 'idades_extremas')">🖼️
+              PNG</button>
+          </div>
+        </div>
+        <div id="ageCard">
+          <div id="youngestStudent"></div>
+          <div id="oldestStudent"></div>
+        </div>
+      </div>
+
+      <!-- Distribuição por Faixa Etária -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <h3>👥 Distribuição por Faixa Etária</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('faixaEtariaCard', 'faixa_etaria')">📊 XLSX</button>
+            <button class="btn small secondary"
+              onclick="exportChartAsPNG('faixaEtariaChart', 'faixa_etaria_grafico')">🖼️ PNG</button>
+          </div>
+        </div>
+        <div id="faixaEtariaCard">
+          <div class="chart-container small">
+            <canvas id="faixaEtariaChart"></canvas>
+          </div>
+          <div id="faixaEtariaStats"></div>
+        </div>
+      </div>
+
+      <!-- Distribuição por Centro -->
+      <div class="dashboard-card wide">
+        <div class="card-header">
+          <h3>🏢 Distribuição por Centro</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('centroCard', 'distribuicao_centros')">📊
+              XLSX</button>
+            <button class="btn small secondary" onclick="exportChartAsPNG('centroChart', 'centros_grafico')">🖼️
+              PNG</button>
+          </div>
+        </div>
+        <div id="centroCard">
+          <div class="chart-container small">
+            <canvas id="centroChart"></canvas>
+          </div>
+          <div id="centroStats"></div>
+        </div>
+      </div>
+
+      <!-- Turmas por Centro -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <h3>🏫 Turmas por Centro</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('turmasCentroCard', 'turmas_centro')">📊
+              XLSX</button>
+            <button class="btn small secondary" onclick="exportChartAsPNG('turmasCentroCard', 'turmas_centro')">🖼️
+              PNG</button>
+          </div>
+        </div>
+        <div id="turmasCentroCard">
+          <div id="turmasCentroStats"></div>
+        </div>
+      </div>
+
+      <!-- Distribuição por Etapa -->
+      <div class="dashboard-card wide">
+        <div class="card-header">
+          <h3>📚 Distribuição por Etapa</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('etapaCard', 'distribuicao_etapas')">📊
+              XLSX</button>
+            <button class="btn small secondary" onclick="exportChartAsPNG('etapaChart', 'etapas_grafico')">🖼️
+              PNG</button>
+          </div>
+        </div>
+        <div id="etapaCard">
+          <div class="chart-container small">
+            <canvas id="etapaChart"></canvas>
+          </div>
+          <div id="etapaStats"></div>
+        </div>
+      </div>
+
+      <!-- Distribuição por Horário -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <h3>⏰ Distribuição por Horário</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('horarioCard', 'distribuicao_horarios')">📊
+              XLSX</button>
+            <button class="btn small secondary" onclick="exportChartAsPNG('horarioCard', 'horarios_grafico')">🖼️
+              PNG</button>
+          </div>
+        </div>
+        <div id="horarioCard">
+          <div id="horarioStats"></div>
+        </div>
+      </div>
+
+      <!-- Catequistas por Centro -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <h3>👥 Catequistas por Centro</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('catequistasCentroCard', 'catequistas_centro')">📊
+              XLSX</button>
+            <button class="btn small secondary"
+              onclick="exportChartAsPNG('catequistasCentroCard', 'catequistas_centro')">🖼️ PNG</button>
+          </div>
+        </div>
+        <div id="catequistasCentroCard">
+          <div id="catequistasCentroStats"></div>
+        </div>
+      </div>
+
+      <!-- Ranking de Turmas -->
+      <div class="dashboard-card full">
+        <div class="card-header">
+          <h3>🏆 Ranking de Turmas</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('rankingCard', 'ranking_turmas')">📊 XLSX</button>
+            <button class="btn small secondary" onclick="exportChartAsPNG('rankingCard', 'ranking_turmas')">🖼️
+              PNG</button>
+          </div>
+        </div>
+        <div id="rankingCard">
+          <div style="margin-bottom: 12px;">
+            <input type="text" id="rankingSearch" placeholder="🔍 Pesquisar por turma, catequista ou catecúmeno..."
+              style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+          </div>
+          <div class="table-container">
+            <table class="data-table" id="rankingTable">
+              <thead>
+                <tr>
+                  <th onclick="sortRankingTable(0)" style="cursor: pointer;">Posição ↕️</th>
+                  <th onclick="sortRankingTable(1)" style="cursor: pointer;">Centro ↕️</th>
+                  <th onclick="sortRankingTable(2)" style="cursor: pointer;">Etapa ↕️</th>
+                  <th onclick="sortRankingTable(3)" style="cursor: pointer;">Sala ↕️</th>
+                  <th onclick="sortRankingTable(4)" style="cursor: pointer;">Horário ↕️</th>
+                  <th onclick="sortRankingTable(5)" style="cursor: pointer;">Catequistas ↕️</th>
+                  <th onclick="sortRankingTable(6)" style="cursor: pointer;">Catecúmenos ↕️</th>
+                  <th onclick="sortRankingTable(7)" style="cursor: pointer;">Taxa Aprovação ↕️</th>
+                </tr>
+              </thead>
+              <tbody id="rankingTableBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aprovação por Centro -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <h3>📊 Aprovação por Centro</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('approvalCentroCard', 'aprovacao_centro')">📊
+              XLSX</button>
+            <button class="btn small secondary" onclick="exportChartAsPNG('approvalCentroCard', 'aprovacao_centro')">🖼️
+              PNG</button>
+          </div>
+        </div>
+        <div id="approvalCentroCard">
+          <div id="approvalCentroStats"></div>
+        </div>
+      </div>
+
+      <!-- Aprovação por Etapa -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <h3>📈 Aprovação por Etapa</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('approvalEtapaCard', 'aprovacao_etapa')">📊
+              XLSX</button>
+            <button class="btn small secondary" onclick="exportChartAsPNG('approvalEtapaCard', 'aprovacao_etapa')">🖼️
+              PNG</button>
+          </div>
+        </div>
+        <div id="approvalEtapaCard">
+          <div id="approvalEtapaStats"></div>
+        </div>
+      </div>
+
+      <!-- Aprovação por Horário -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <h3>⏰ Aprovação por Horário</h3>
+          <div class="card-actions">
+            <button class="btn small secondary" onclick="exportCard('approvalHorarioCard', 'aprovacao_horario')">📊
+              XLSX</button>
+            <button class="btn small secondary"
+              onclick="exportChartAsPNG('approvalHorarioCard', 'aprovacao_horario')">🖼️ PNG</button>
+          </div>
+        </div>
+        <div id="approvalHorarioCard">
+          <div id="approvalHorarioStats"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div class="footer" id="footerText">© Paróquia de São Paulo de Luanda — Secretariado da Catequese</div>
+
+  <!-- Modal para Catequistas -->
+  <div id="catequistasModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="catequistasModalTitle">Catequistas</h3>
+        <button class="modal-close" onclick="closeModal('catequistasModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-table-container">
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Nome do Catequista</th>
+              </tr>
+            </thead>
+          </table>
+          <div class="modal-table-body">
+            <table class="modal-table">
+              <tbody id="catequistasModalBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Catecúmenos -->
+  <div id="catecumenosModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="catecumenosModalTitle">Catecúmenos</h3>
+        <button class="modal-close" onclick="closeModal('catecumenosModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-table-container">
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Data de Nascimento</th>
+                <th>Resultado</th>
+              </tr>
+            </thead>
+          </table>
+          <div class="modal-table-body">
+            <table class="modal-table">
+              <tbody id="catecumenosModalBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Resultado Específico -->
+  <div id="resultadoModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="resultadoModalTitle">Catecúmenos por Resultado</h3>
+        <button class="modal-close" onclick="closeModal('resultadoModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom: 12px;">
+          <input type="text" id="resultadoSearch" placeholder="🔍 Pesquisar catecúmenos..."
+            style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+        </div>
+        <div class="modal-table-container">
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Centro</th>
+                <th>Etapa</th>
+                <th>Sala</th>
+                <th>Data de Nascimento</th>
+              </tr>
+            </thead>
+          </table>
+          <div class="modal-table-body">
+            <table class="modal-table">
+              <tbody id="resultadoModalBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Todos os Catequistas -->
+  <div id="allCatequistasModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Todos os Catequistas</h3>
+        <button class="modal-close" onclick="closeModal('allCatequistasModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom: 12px;">
+          <input type="text" id="allCatequistasSearch" placeholder="🔍 Pesquisar catequistas..."
+            style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+        </div>
+        <div class="modal-table-container">
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Nome do Catequista</th>
+                <th>Centros</th>
+                <th>Turmas</th>
+              </tr>
+            </thead>
+          </table>
+          <div class="modal-table-body">
+            <table class="modal-table">
+              <tbody id="allCatequistasModalBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Todas as Turmas -->
+  <div id="allTurmasModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Todas as Turmas</h3>
+        <button class="modal-close" onclick="closeModal('allTurmasModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom: 12px;">
+          <input type="text" id="allTurmasSearch" placeholder="🔍 Pesquisar turmas..."
+            style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+        </div>
+        <div class="modal-table-container">
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Centro</th>
+                <th>Etapa</th>
+                <th>Sala</th>
+                <th>Horário</th>
+                <th>Catecúmenos</th>
+              </tr>
+            </thead>
+          </table>
+          <div class="modal-table-body">
+            <table class="modal-table">
+              <tbody id="allTurmasModalBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Todos os Centros -->
+  <div id="allCentrosModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Todos os Centros</h3>
+        <button class="modal-close" onclick="closeModal('allCentrosModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-table-container">
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Centro</th>
+                <th>Catecúmenos</th>
+                <th>Turmas</th>
+                <th>Catequistas</th>
+              </tr>
+            </thead>
+          </table>
+          <div class="modal-table-body">
+            <table class="modal-table">
+              <tbody id="allCentrosModalBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Todos os Horários -->
+  <div id="allHorariosModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Todos os Horários</h3>
+        <button class="modal-close" onclick="closeModal('allHorariosModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-table-container">
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Horário</th>
+                <th>Catecúmenos</th>
+                <th>Turmas</th>
+                <th>Centros</th>
+              </tr>
+            </thead>
+          </table>
+          <div class="modal-table-body">
+            <table class="modal-table">
+              <tbody id="allHorariosModalBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // 🔧 DEBUG MODE: Altere para true para mostrar opção de upload de arquivo
+    const DEBUG_MODE = false;
+
+    let CONFIG = null;
+    let dashboardData = null;
+    let charts = {};
+
+    // Dados de exemplo expandidos
+    const SAMPLE_DATA = [
+      {
+        nome: "João Silva Santos", nascimento: "15/03/2010", centro: "Centro Principal",
+        etapa: "1ª Etapa", sala: "101", horario: "Sábado Manhã",
+        catequistas: "Maria José|Pedro Costa", resultado: "Aprovado"
+      },
+      {
+        nome: "Ana Maria Fernandes", nascimento: "22/07/2009", centro: "Centro Norte",
+        etapa: "2ª Etapa", sala: "205", horario: "Domingo Tarde",
+        catequistas: "Carlos Silva", resultado: "Aprovado"
+      },
+      {
+        nome: "Miguel António Lopes", nascimento: "08/11/2011", centro: "Centro Sul",
+        etapa: "1ª Etapa", sala: "102", horario: "Sábado Tarde",
+        catequistas: "Isabel Santos|João Pereira", resultado: "Em Avaliação"
+      },
+      {
+        nome: "Beatriz Costa Rodrigues", nascimento: "14/05/2008", centro: "Centro Principal",
+        etapa: "3ª Etapa", sala: "301", horario: "Domingo Manhã",
+        catequistas: "António Silva", resultado: "Aprovado"
+      },
+      {
+        nome: "Francisco Manuel Sousa", nascimento: "30/09/2010", centro: "Centro Norte",
+        etapa: "2ª Etapa", sala: "203", horario: "Sábado Manhã",
+        catequistas: "Teresa Lopes|Manuel Costa", resultado: "Reprovado"
+      },
+      {
+        nome: "Luísa Pereira Gomes", nascimento: "12/01/2009", centro: "Centro Sul",
+        etapa: "2ª Etapa", sala: "204", horario: "Domingo Tarde",
+        catequistas: "Fernanda Lima", resultado: "Aprovado"
+      },
+      {
+        nome: "Carlos Eduardo Martins", nascimento: "03/08/2007", centro: "Centro Principal",
+        etapa: "4ª Etapa", sala: "401", horario: "Sábado Manhã",
+        catequistas: "Rosa Silva", resultado: "Aprovado"
+      },
+      {
+        nome: "Mariana Santos Oliveira", nascimento: "28/12/2012", centro: "Centro Norte",
+        etapa: "1ª Etapa", sala: "103", horario: "Domingo Manhã",
+        catequistas: "Paulo Mendes", resultado: "Aprovado"
+      },
+      {
+        nome: "Ricardo Pereira Lima", nascimento: "17/04/2009", centro: "Centro Sul",
+        etapa: "3ª Etapa", sala: "302", horario: "Sábado Tarde",
+        catequistas: "Lucia Costa|André Silva", resultado: "Reprovado"
+      },
+      {
+        nome: "Sofia Rodrigues Alves", nascimento: "09/06/2011", centro: "Centro Principal",
+        etapa: "2ª Etapa", sala: "202", horario: "Domingo Tarde",
+        catequistas: "Helena Santos", resultado: "Aprovado"
+      }
+    ];
+
+    // Utilitários
+    const norm = (s) => (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const formatNumber = (num) => new Intl.NumberFormat('pt-AO').format(num);
+    const nowStamp = () => {
+      const d = new Date();
+      return d.toLocaleString('pt-AO', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    };
+    // Função para calcular idade
+    function calculateAge(birthDate) {
+      if (!birthDate) return null;
+
+      let birth;
+
+      // Se for um número (serial do Excel), converter para data
+      if (typeof birthDate === 'number') {
+        // Excel serial date: 1 = 1 de Janeiro de 1900
+        birth = new Date((birthDate - 25569) * 86400 * 1000);
+      } else if (typeof birthDate === 'string') {
+        if (birthDate.includes('/')) {
+          const [day, month, year] = birthDate.split('/');
+          birth = new Date(year, month - 1, day);
+        } else if (birthDate.includes('-')) {
+          // Formato ISO ou similar
+          birth = new Date(birthDate);
+        } else {
+          // Tentar converter diretamente
+          birth = new Date(birthDate);
+        }
+      } else {
+        birth = new Date(birthDate);
+      }
+
+      if (isNaN(birth)) return null;
+
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const monthDiff = today.getMonth() - birth.getMonth();
+
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age--;
+      }
+
+      return age;
+    }
+
+    // Função para formatar data
+    function formatDate(birthDate) {
+      if (!birthDate) return '-';
+
+      let birth;
+
+      // Se for um número (serial do Excel), converter para data
+      if (typeof birthDate === 'number') {
+        birth = new Date((birthDate - 25569) * 86400 * 1000);
+      } else if (typeof birthDate === 'string') {
+        if (birthDate.includes('/')) {
+          return birthDate; // Já está formatado
+        } else if (birthDate.includes('-')) {
+          birth = new Date(birthDate);
+        } else {
+          birth = new Date(birthDate);
+        }
+      } else {
+        birth = new Date(birthDate);
+      }
+
+      if (isNaN(birth)) return birthDate.toString();
+
+      // Formatar como DD/MM/YYYY
+      const day = birth.getDate().toString().padStart(2, '0');
+      const month = (birth.getMonth() + 1).toString().padStart(2, '0');
+      const year = birth.getFullYear();
+
+      return `${day}/${month}/${year}`;
+    }
+
+    function mapHeaders(cols) {
+      const wanted = {
+        nome: ['nome', 'nomecompleto'],
+        nascimento: ['nascimento', 'datanascimento', 'data', 'dn'],
+        centro: ['centro', 'centrodecatequese', 'paroquia', 'comunidade'],
+        etapa: ['etapa', 'etapacatequese', 'nivel', 'ano', 'classe'],
+        sala: ['sala', 'numerosala', 'turma', 'salaaula'],
+        horario: ['horario', 'hora', 'turno', 'periodo', 'diaehora', 'diahora'],
+        catequistas: ['catequistas', 'catequista', 'responsaveis', 'responsavel'],
+        resultado: ['resultado', 'situacao', 'status']
+      };
+      const idx = {};
+      cols.forEach((c, i) => {
+        const k = norm(c).replace(/[^a-z0-9]/g, '');
+        for (const [t, aliases] of Object.entries(wanted)) {
+          if (aliases.includes(k)) idx[t] = i;
+        }
+      });
+      return idx;
+    }
+
+    // Carrega configurações
+    async function loadConfig() {
+      try {
+        const response = await fetch('config/settings.json?v=' + Date.now());
+        if (!response.ok) throw new Error('Erro ao carregar configurações: ' + response.status);
+        CONFIG = await response.json();
+
+        document.getElementById('logoImg').src = CONFIG.arquivos.logo;
+        document.getElementById('paroquiaNome').textContent = CONFIG.paroquia.nome;
+        document.getElementById('secretariado').textContent = CONFIG.paroquia.secretariado;
+        document.getElementById('anoCatequetico').textContent = CONFIG.paroquia.ano_catequetico;
+        document.getElementById('footerText').textContent = `© ${CONFIG.paroquia.nome} — ${CONFIG.paroquia.secretariado}`;
+
+        console.log('✅ Configurações carregadas:', CONFIG);
+        return CONFIG;
+
+      } catch (error) {
+        console.error('❌ Erro ao carregar configurações:', error);
+        CONFIG = {
+          paroquia: {
+            nome: "Paróquia de São Paulo de Luanda",
+            secretariado: "Secretariado da Catequese",
+            ano_catequetico: "2025/2026"
+          },
+          arquivos: {
+            dados_principais: "data/dados-catequese.xlsx",
+            logo: "assets/images/logo-paroquia.jpg"
+          },
+          validacao: {
+            campos_obrigatorios: ["nome", "centro", "etapa", "sala", "horario", "catequistas", "resultado"]
+          }
+        };
+
+        document.getElementById('logoImg').src = CONFIG.arquivos.logo;
+        document.getElementById('paroquiaNome').textContent = CONFIG.paroquia.nome;
+        document.getElementById('secretariado').textContent = CONFIG.paroquia.secretariado;
+        document.getElementById('anoCatequetico').textContent = CONFIG.paroquia.ano_catequetico;
+        document.getElementById('footerText').textContent = `© ${CONFIG.paroquia.nome} — ${CONFIG.paroquia.secretariado}`;
+
+        return CONFIG;
+      }
+    }
+
+    // Carrega dados do Excel
+    async function loadExcelData() {
+      try {
+        if (!CONFIG) throw new Error('Configurações não carregadas');
+
+        const url = CONFIG.arquivos.dados_principais + '?v=' + Date.now();
+        console.log('🔄 Carregando Excel:', url);
+
+        // Timeout para evitar travamentos
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos
+
+        const response = await fetch(url, {
+          signal: controller.signal,
+          cache: 'no-cache',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const buffer = await response.arrayBuffer();
+
+        if (buffer.byteLength === 0) {
+          throw new Error('Arquivo Excel vazio ou corrompido');
+        }
+
+        const workbook = XLSX.read(buffer, { type: 'array' });
+
+        if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+          throw new Error('Excel não contém planilhas');
+        }
+
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+        if (!json.length) throw new Error('Planilha vazia');
+
+        const headers = json[0].map(String);
+        const idx = mapHeaders(headers);
+        const req = CONFIG.validacao?.campos_obrigatorios || ['nome', 'centro', 'etapa'];
+        const missing = req.filter(k => !(k in idx));
+        if (missing.length) throw new Error('Cabeçalhos ausentes: ' + missing.join(', '));
+
+        const rows = json.slice(1).filter(r => r.some(v => String(v).trim() !== ''));
+
+        if (rows.length === 0) {
+          throw new Error('Nenhum dado válido encontrado no Excel');
+        }
+
+        dashboardData = rows.map(r => ({
+          nome: r[idx.nome] ?? '',
+          nascimento: r[idx.nascimento] ?? '',
+          centro: r[idx.centro] ?? '',
+          etapa: r[idx.etapa] ?? '',
+          sala: r[idx.sala] ?? '',
+          horario: r[idx.horario] ?? '',
+          catequistas: r[idx.catequistas] ?? '',
+          resultado: r[idx.resultado] ?? ''
+        }));
+
+        // Limpar gráficos existentes antes de atualizar
+        clearExistingCharts();
+
+        updateDashboard();
+        console.log(`✅ Dashboard atualizado com ${dashboardData.length} registos do Excel`);
+
+      } catch (error) {
+        console.error('❌ Erro ao carregar Excel:', error);
+        console.log('🔄 Usando dados de exemplo como fallback');
+
+        // Limpar gráficos existentes antes de usar dados de exemplo
+        clearExistingCharts();
+
+        dashboardData = [...SAMPLE_DATA];
+        updateDashboard();
+
+        // Mostrar aviso de que está usando dados de exemplo
+        const lastUpdateElement = document.getElementById('lastUpdate');
+        if (lastUpdateElement) {
+          lastUpdateElement.innerHTML = `<span style="color: #dc2626; font-weight: bold;">⚠️ Usando dados de exemplo - ${nowStamp()}</span>`;
+        }
+      }
+    }
+
+    // Função para limpar gráficos existentes
+    function clearExistingCharts() {
+      try {
+        Object.keys(charts).forEach(key => {
+          if (charts[key] && typeof charts[key].destroy === 'function') {
+            charts[key].destroy();
+            charts[key] = null;
+          }
+        });
+        charts = {};
+      } catch (error) {
+        console.warn('Erro ao limpar gráficos:', error);
+        charts = {};
+      }
+    }
+
+    // Função principal de atualização do dashboard
+    function updateDashboard() {
+      if (!dashboardData) return;
+
+      updateBasicStats();
+      updateApprovalStats();
+      updateAgeStats();
+      updateFaixaEtariaStats();
+      updateDistributionCharts();
+      updateRankingTable();
+      updateApprovalByCategory();
+
+      document.getElementById('lastUpdate').textContent = nowStamp();
+    }
+
+    // Estatísticas básicas
+    function updateBasicStats() {
+      const totalCatecumenos = dashboardData.length;
+      const catequistasUnicos = new Set();
+      const turmasUnicas = new Set();
+      const centrosUnicos = new Set();
+      const horariosUnicos = new Set();
+
+      dashboardData.forEach(d => {
+        if (d.catequistas) {
+          d.catequistas.split('|').forEach(c => catequistasUnicos.add(c.trim()));
+        }
+        if (d.centro && d.etapa && d.sala && d.horario) {
+          turmasUnicas.add(`${d.centro}-${d.etapa}-${d.sala}-${d.horario}`);
+        }
+        if (d.centro) centrosUnicos.add(d.centro);
+        if (d.horario) horariosUnicos.add(d.horario);
+      });
+
+      document.getElementById('totalCatecumenos').textContent = formatNumber(totalCatecumenos);
+      document.getElementById('totalCatequistas').textContent = formatNumber(catequistasUnicos.size);
+      document.getElementById('totalTurmas').textContent = formatNumber(turmasUnicas.size);
+      document.getElementById('totalCentros').textContent = formatNumber(centrosUnicos.size);
+      document.getElementById('totalHorarios').textContent = formatNumber(horariosUnicos.size);
+    }
+    // Estatísticas de aprovação
+    function updateApprovalStats() {
+      const totalWithResult = dashboardData.filter(d => d.resultado && d.resultado.trim()).length;
+
+      // Contar todos os tipos de resultado existentes nos dados
+      const resultados = {};
+      const resultadosUnicos = new Set();
+
+      dashboardData.forEach(d => {
+        if (d.resultado && d.resultado.trim()) {
+          const resultado = d.resultado.trim();
+          resultadosUnicos.add(resultado);
+          resultados[resultado] = (resultados[resultado] || 0) + 1;
+        }
+      });
+
+      // Contar aprovados para taxa de aprovação
+      const aprovados = dashboardData.filter(d =>
+        d.resultado && norm(d.resultado).includes('aprovado')
+      ).length;
+
+      const approvalRate = totalWithResult > 0 ? (aprovados / totalWithResult * 100) : 0;
+
+      document.getElementById('approvalRate').textContent = approvalRate.toFixed(1) + '%';
+
+      const indicator = document.getElementById('approvalIndicator');
+      if (approvalRate >= 80) {
+        indicator.className = 'approval-indicator high';
+      } else if (approvalRate >= 60) {
+        indicator.className = 'approval-indicator medium';
+      } else {
+        indicator.className = 'approval-indicator low';
+      }
+
+      // Função para obter cor do resultado
+      function getResultColor(resultado) {
+        const resultadoNorm = norm(resultado);
+        if (resultadoNorm.includes('aprovado')) return { bg: '#dcfce7', color: '#166534' };
+        if (resultadoNorm.includes('reprovado')) return { bg: '#fef2f2', color: '#dc2626' };
+        if (resultadoNorm.includes('desistente') || resultadoNorm.includes('desistiu')) return { bg: '#f3f4f6', color: '#6b7280' };
+        if (resultadoNorm.includes('transferido')) return { bg: '#dbeafe', color: '#2563eb' };
+        if (resultadoNorm.includes('avaliacao') || resultadoNorm.includes('avaliação')) return { bg: '#fef3c7', color: '#f59e0b' };
+        return { bg: '#f9fafb', color: '#374151' }; // cor padrão
+      }
+
+      const details = document.getElementById('approvalDetails');
+      const resultadosCards = Object.entries(resultados)
+        .sort(([, a], [, b]) => b - a) // Ordenar por quantidade (maior primeiro)
+        .map(([resultado, count]) => {
+          const colors = getResultColor(resultado);
+          return `
+            <div onclick="showResultadoModal('${resultado.replace(/'/g, "\\'")}', ${count})" 
+                 style="text-align: center; padding: 8px; background: ${colors.bg}; border-radius: 6px; cursor: pointer; transition: transform 0.2s ease;" 
+                 onmouseover="this.style.transform='scale(1.05)'" 
+                 onmouseout="this.style.transform='scale(1)'">
+              <div style="font-weight: bold; color: ${colors.color};">${count}</div>
+              <div style="font-size: 12px; color: ${colors.color};">${resultado}</div>
+            </div>
+          `;
+        }).join('');
+
+      details.innerHTML = `
+        <div style="margin-top: 12px; font-size: 14px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 8px;">
+            ${resultadosCards}
+          </div>
+          <div style="margin-top: 8px; text-align: center; color: var(--muted);">
+            Total avaliados: <strong>${totalWithResult}</strong> de <strong>${dashboardData.length}</strong>
+          </div>
+        </div>
+      `;
+    }
+
+    // Estatísticas de idade
+    function updateAgeStats() {
+      const studentsWithAge = dashboardData
+        .map(d => ({ ...d, age: calculateAge(d.nascimento) }))
+        .filter(d => d.age !== null);
+
+      if (studentsWithAge.length === 0) {
+        document.getElementById('youngestStudent').innerHTML = '<div>Dados de idade não disponíveis</div>';
+        document.getElementById('oldestStudent').innerHTML = '';
+        return;
+      }
+
+      // Corrigir: encontrar o mais novo (menor idade) e mais velho (maior idade) corretamente
+      const youngest = studentsWithAge.reduce((min, student) =>
+        student.age < min.age ? student : min
+      );
+
+      const oldest = studentsWithAge.reduce((max, student) =>
+        student.age > max.age ? student : max
+      );
+
+      // Verificar se são pessoas diferentes
+      if (youngest.nome === oldest.nome && studentsWithAge.length > 1) {
+        // Se for a mesma pessoa, encontrar a segunda menor/maior idade
+        const sortedByAge = studentsWithAge.sort((a, b) => a.age - b.age);
+        const actualYoungest = sortedByAge[0];
+        const actualOldest = sortedByAge[sortedByAge.length - 1];
+
+        document.getElementById('youngestStudent').innerHTML = `
+          <div style="margin-bottom: 16px;">
+            <div class="age-badge young">Mais Novo</div>
+            <div style="margin-top: 8px;">
+              <strong>${actualYoungest.nome}</strong><br>
+              <span style="color: var(--muted);">${actualYoungest.age} anos</span><br>
+              <small>${actualYoungest.centro} • ${actualYoungest.etapa} • Sala ${actualYoungest.sala}</small>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('oldestStudent').innerHTML = `
+          <div>
+            <div class="age-badge old">Mais Velho</div>
+            <div style="margin-top: 8px;">
+              <strong>${actualOldest.nome}</strong><br>
+              <span style="color: var(--muted);">${actualOldest.age} anos</span><br>
+              <small>${actualOldest.centro} • ${actualOldest.etapa} • Sala ${actualOldest.sala}</small>
+            </div>
+          </div>
+        `;
+      } else {
+        document.getElementById('youngestStudent').innerHTML = `
+          <div style="margin-bottom: 16px;">
+            <div class="age-badge young">Mais Novo</div>
+            <div style="margin-top: 8px;">
+              <strong>${youngest.nome}</strong><br>
+              <span style="color: var(--muted);">${youngest.age} anos</span><br>
+              <small>${youngest.centro} • ${youngest.etapa} • Sala ${youngest.sala}</small>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('oldestStudent').innerHTML = `
+          <div>
+            <div class="age-badge old">Mais Velho</div>
+            <div style="margin-top: 8px;">
+              <strong>${oldest.nome}</strong><br>
+              <span style="color: var(--muted);">${oldest.age} anos</span><br>
+              <small>${oldest.centro} • ${oldest.etapa} • Sala ${oldest.sala}</small>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Estatísticas por Faixa Etária
+    function updateFaixaEtariaStats() {
+      const studentsWithAge = dashboardData
+        .map(d => ({ ...d, age: calculateAge(d.nascimento) }))
+        .filter(d => d.age !== null);
+
+      if (studentsWithAge.length === 0) {
+        document.getElementById('faixaEtariaStats').innerHTML = '<div>Dados de idade não disponíveis</div>';
+        return;
+      }
+
+      // Definir faixas etárias
+      const faixas = {
+        'Crianças (7-13 anos)': { min: 7, max: 13, count: 0, color: '#53f3c0' },
+        'Adolescentes (14-17 anos)': { min: 14, max: 17, count: 0, color: '#667eea' },
+        'Jovens (18-40 anos)': { min: 18, max: 40, count: 0, color: '#f093fb' },
+        'Adultos (40+ anos)': { min: 41, max: 999, count: 0, color: '#fce38a' }
+      };
+
+      // Contar por faixa etária
+      studentsWithAge.forEach(student => {
+        Object.keys(faixas).forEach(faixa => {
+          const { min, max } = faixas[faixa];
+          if (student.age >= min && student.age <= max) {
+            faixas[faixa].count++;
+          }
+        });
+      });
+
+      const total = studentsWithAge.length;
+
+      // Renderizar gráfico
+      try {
+        const faixaCanvas = document.getElementById('faixaEtariaChart');
+        if (faixaCanvas) {
+          const ctx = faixaCanvas.getContext('2d');
+
+          if (charts.faixaEtaria) {
+            charts.faixaEtaria.destroy();
+            charts.faixaEtaria = null;
+          }
+
+          charts.faixaEtaria = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: Object.keys(faixas),
+              datasets: [{
+                data: Object.values(faixas).map(f => f.count),
+                backgroundColor: Object.values(faixas).map(f => f.color),
+                borderWidth: 2,
+                borderColor: '#fff'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  labels: {
+                    padding: 15,
+                    usePointStyle: true
+                  }
+                }
+              }
+            }
+          });
+        }
+      } catch (error) {
+        console.warn('Erro ao criar gráfico de faixa etária:', error);
+      }
+
+      // Renderizar estatísticas
+      const statsHtml = Object.entries(faixas)
+        .sort(([, a], [, b]) => b.count - a.count)
+        .map(([nome, dados]) => {
+          const percentual = total > 0 ? ((dados.count / total) * 100).toFixed(1) : 0;
+          return `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 8px; background: #f8f9fa; border-radius: 6px;">
+              <div>
+                <strong style="color: ${dados.color};">${nome}</strong>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-weight: 600;">${dados.count}</span>
+                <br>
+                <small style="color: var(--muted);">${percentual}%</small>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      document.getElementById('faixaEtariaStats').innerHTML = statsHtml;
+    }
+
+    // Gráficos de distribuição
+    function updateDistributionCharts() {
+
+      // Distribuição por Centro
+      const centros = {};
+      dashboardData.forEach(d => {
+        if (d.centro) {
+          centros[d.centro] = (centros[d.centro] || 0) + 1;
+        }
+      });
+
+      const centroEntries = Object.entries(centros).sort(([, a], [, b]) => b - a);
+
+      // Gráfico de Centro
+
+      const centroCanvas = document.getElementById('centroChart');
+      if (centroCanvas) {
+        const centroCtx = centroCanvas.getContext('2d');
+        if (charts.centro) {
+          charts.centro.destroy();
+          charts.centro = null;
+        }
+
+        charts.centro = new Chart(centroCtx, {
+          type: 'doughnut',
+          data: {
+            labels: centroEntries.map(([centro]) => centro),
+            datasets: [{
+              data: centroEntries.map(([, count]) => count),
+              backgroundColor: [
+                '#667eea', '#f093fb', '#53f3c0', '#fce38a', '#f38ba8',
+                '#a8edea', '#fed6e3', '#d299c2', '#ffeaa7', '#74b9ff'
+              ]
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom' }
+            }
+          }
+        });
+      }
+
+      // Estatísticas de Centro
+      const centroStatsHtml = centroEntries.map(([centro, count]) => {
+        const percentage = ((count / dashboardData.length) * 100).toFixed(1);
+        return `
+          <div style="margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span>${centro}</span>
+              <span>${count} (${percentage}%)</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${percentage}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('centroStats').innerHTML = centroStatsHtml;
+
+      // Distribuição por Etapa
+      const etapas = {};
+      dashboardData.forEach(d => {
+        if (d.etapa) {
+          etapas[d.etapa] = (etapas[d.etapa] || 0) + 1;
+        }
+      });
+
+      const etapaEntries = Object.entries(etapas).sort(([a], [b]) => a.localeCompare(b));
+
+      // Gráfico de Etapa
+      try {
+        const etapaCanvas = document.getElementById('etapaChart');
+        if (etapaCanvas) {
+          const etapaCtx = etapaCanvas.getContext('2d');
+          if (charts.etapa) {
+            charts.etapa.destroy();
+            charts.etapa = null;
+          }
+
+          charts.etapa = new Chart(etapaCtx, {
+            type: 'bar',
+            data: {
+              labels: etapaEntries.map(([etapa]) => etapa),
+              datasets: [{
+                label: 'Catecúmenos',
+                data: etapaEntries.map(([, count]) => count),
+                backgroundColor: 'rgba(102, 126, 234, 0.8)'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    stepSize: 1
+                  }
+                }
+              },
+              animation: {
+                onComplete: function () {
+                  try {
+                    if (this.chart && this.chart.ctx) {
+                      const ctx = this.chart.ctx;
+                      ctx.font = '12px Arial';
+                      ctx.fillStyle = '#1b1a17';
+                      ctx.textAlign = 'center';
+                      ctx.textBaseline = 'bottom';
+
+                      this.data.datasets.forEach((dataset, i) => {
+                        const meta = this.getDatasetMeta(i);
+                        if (meta && meta.data) {
+                          meta.data.forEach((bar, index) => {
+                            const data = dataset.data[index];
+                            if (data > 0 && bar && bar.x !== undefined && bar.y !== undefined) {
+                              ctx.fillText(data, bar.x, bar.y - 5);
+                            }
+                          });
+                        }
+                      });
+                    }
+                  } catch (error) {
+                    console.warn('Erro na animação do gráfico:', error);
+                  }
+                }
+              }
+            }
+          });
+        }
+      } catch (error) {
+        console.warn('Erro ao criar gráfico de etapa:', error);
+      }
+
+      // Estatísticas de Etapa
+      const etapaStatsHtml = etapaEntries.map(([etapa, count]) => {
+        const percentage = ((count / dashboardData.length) * 100).toFixed(1);
+        return `
+          <div style="margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span>${etapa}</span>
+              <span>${count} (${percentage}%)</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${percentage}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('etapaStats').innerHTML = etapaStatsHtml;
+
+      // Distribuição por Horário
+      const horarios = {};
+      dashboardData.forEach(d => {
+        if (d.horario) {
+          horarios[d.horario] = (horarios[d.horario] || 0) + 1;
+        }
+      });
+
+      const horarioStatsHtml = Object.entries(horarios)
+        .sort(([, a], [, b]) => b - a)
+        .map(([horario, count]) => {
+          const percentage = ((count / dashboardData.length) * 100).toFixed(1);
+          return `
+            <div style="margin-bottom: 8px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span>${horario}</span>
+                <span>${count} (${percentage}%)</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${percentage}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      document.getElementById('horarioStats').innerHTML = horarioStatsHtml;
+
+      // Catequistas por Centro
+      updateCatequistasByCenter();
+
+      // Turmas por Centro
+      updateClassesByCenter();
+
+
+    }
+    // Catequistas por Centro
+    function updateCatequistasByCenter() {
+      const catequistasPorCentro = {};
+
+      dashboardData.forEach(d => {
+        if (d.centro && d.catequistas) {
+          if (!catequistasPorCentro[d.centro]) {
+            catequistasPorCentro[d.centro] = new Set();
+          }
+          d.catequistas.split('|').forEach(c => {
+            catequistasPorCentro[d.centro].add(c.trim());
+          });
+        }
+      });
+
+      const catequistasStatsHtml = Object.entries(catequistasPorCentro)
+        .map(([centro, catequistasSet]) => ({
+          centro,
+          count: catequistasSet.size
+        }))
+        .sort((a, b) => b.count - a.count)
+        .map(({ centro, count }) => `
+          <div style="margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span>${centro}</span>
+              <span>${count} catequistas</span>
+            </div>
+          </div>
+        `).join('');
+
+      document.getElementById('catequistasCentroStats').innerHTML = catequistasStatsHtml;
+    }
+
+    // Turmas por Centro
+    function updateClassesByCenter() {
+      const turmasPorCentro = {};
+
+      dashboardData.forEach(d => {
+        if (d.centro && d.etapa && d.sala && d.horario) {
+          if (!turmasPorCentro[d.centro]) {
+            turmasPorCentro[d.centro] = new Set();
+          }
+          turmasPorCentro[d.centro].add(`${d.etapa}-${d.sala}-${d.horario}`);
+        }
+      });
+
+      const turmasStatsHtml = Object.entries(turmasPorCentro)
+        .map(([centro, turmasSet]) => ({
+          centro,
+          count: turmasSet.size
+        }))
+        .sort((a, b) => b.count - a.count)
+        .map(({ centro, count }) => `
+          <div style="margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span>${centro}</span>
+              <span>${count} turmas</span>
+            </div>
+          </div>
+        `).join('');
+
+      document.getElementById('turmasCentroStats').innerHTML = turmasStatsHtml;
+    }
+
+    // Variáveis globais para ranking
+    let rankingData = [];
+    let rankingSortColumn = 7; // Taxa de aprovação por padrão
+    let rankingSortDirection = 'desc';
+
+    // Tabela de ranking de turmas
+    function updateRankingTable() {
+      const turmas = new Map();
+
+      dashboardData.forEach(d => {
+        if (d.centro && d.etapa && d.sala && d.horario) {
+          const key = `${d.centro}|${d.etapa}|${d.sala}|${d.horario}`;
+          if (!turmas.has(key)) {
+            turmas.set(key, {
+              centro: d.centro,
+              etapa: d.etapa,
+              sala: d.sala,
+              horario: d.horario,
+              catequistas: new Set(),
+              catecumenos: [],
+              aprovados: 0
+            });
+          }
+
+          const turma = turmas.get(key);
+          turma.catecumenos.push(d);
+
+          if (d.catequistas) {
+            d.catequistas.split('|').forEach(c => {
+              turma.catequistas.add(c.trim());
+            });
+          }
+
+          if (d.resultado && norm(d.resultado).includes('aprovado')) {
+            turma.aprovados++;
+          }
+        }
+      });
+
+      rankingData = Array.from(turmas.values())
+        .map(turma => ({
+          ...turma,
+          numCatequistas: turma.catequistas.size,
+          numCatecumenos: turma.catecumenos.length,
+          taxaAprovacao: turma.catecumenos.length > 0 ?
+            (turma.aprovados / turma.catecumenos.length * 100) : 0,
+          catequistas: Array.from(turma.catequistas),
+          catecumenos: turma.catecumenos
+        }))
+        // Ordenar por taxa de aprovação (melhores primeiro)
+        .sort((a, b) => b.taxaAprovacao - a.taxaAprovacao || b.numCatecumenos - a.numCatecumenos);
+
+      renderRankingTable();
+
+      // Adicionar event listener para pesquisa
+      const searchInput = document.getElementById('rankingSearch');
+      if (searchInput) {
+        searchInput.addEventListener('input', filterRankingTable);
+      }
+    }
+
+    function renderRankingTable(filteredData = null) {
+      const data = filteredData || rankingData;
+      const tbody = document.getElementById('rankingTableBody');
+
+      tbody.innerHTML = data.map((turma, index) => `
+        <tr>
+          <td>${index + 1}º</td>
+          <td>${turma.centro}</td>
+          <td>${turma.etapa}</td>
+          <td>${turma.sala}</td>
+          <td>${turma.horario}</td>
+          <td>
+            <span class="clickable-number" onclick="showCatequistasModal('${turma.centro.replace(/'/g, "\\'")}', '${turma.etapa.replace(/'/g, "\\'")}', '${turma.sala.replace(/'/g, "\\'")}', '${turma.horario.replace(/'/g, "\\'")}')">
+              ${turma.numCatequistas}
+            </span>
+          </td>
+          <td>
+            <span class="clickable-number" onclick="showCatecumenosModal('${turma.centro.replace(/'/g, "\\'")}', '${turma.etapa.replace(/'/g, "\\'")}', '${turma.sala.replace(/'/g, "\\'")}', '${turma.horario.replace(/'/g, "\\'")}')">
+              <strong>${turma.numCatecumenos}</strong>
+            </span>
+          </td>
+          <td>
+            <div class="approval-rate">
+              <div class="approval-indicator ${turma.taxaAprovacao >= 80 ? 'high' : turma.taxaAprovacao >= 60 ? 'medium' : 'low'}"></div>
+              ${turma.taxaAprovacao.toFixed(1)}% (${turma.aprovados}/${turma.numCatecumenos})
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function filterRankingTable() {
+      const searchTerm = document.getElementById('rankingSearch').value.toLowerCase();
+      if (!searchTerm) {
+        renderRankingTable();
+        return;
+      }
+
+      const filtered = rankingData.filter(turma => {
+        // Pesquisa básica por campos da turma
+        const basicMatch = turma.centro.toLowerCase().includes(searchTerm) ||
+          turma.etapa.toLowerCase().includes(searchTerm) ||
+          turma.sala.toLowerCase().includes(searchTerm) ||
+          turma.horario.toLowerCase().includes(searchTerm);
+
+        // Pesquisa por catequistas
+        const catequistaMatch = turma.catequistas && turma.catequistas.some(cat =>
+          cat.toLowerCase().includes(searchTerm)
+        );
+
+        // Pesquisa por catecúmenos
+        const catecumenoMatch = turma.catecumenos && turma.catecumenos.some(cat =>
+          cat.nome.toLowerCase().includes(searchTerm)
+        );
+
+        return basicMatch || catequistaMatch || catecumenoMatch;
+      });
+
+      renderRankingTable(filtered);
+    }
+
+    function sortRankingTable(columnIndex) {
+      if (rankingSortColumn === columnIndex) {
+        rankingSortDirection = rankingSortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        rankingSortColumn = columnIndex;
+        rankingSortDirection = 'desc';
+      }
+
+      const sortedData = [...rankingData].sort((a, b) => {
+        let valueA, valueB;
+
+        switch (columnIndex) {
+          case 0: // Posição (não faz sentido ordenar)
+            return 0;
+          case 1: // Centro
+            valueA = a.centro;
+            valueB = b.centro;
+            break;
+          case 2: // Etapa
+            valueA = a.etapa;
+            valueB = b.etapa;
+            break;
+          case 3: // Sala
+            valueA = a.sala;
+            valueB = b.sala;
+            break;
+          case 4: // Horário
+            valueA = a.horario;
+            valueB = b.horario;
+            break;
+          case 5: // Catequistas
+            valueA = a.numCatequistas;
+            valueB = b.numCatequistas;
+            break;
+          case 6: // Catecúmenos
+            valueA = a.numCatecumenos;
+            valueB = b.numCatecumenos;
+            break;
+          case 7: // Taxa Aprovação
+            valueA = a.taxaAprovacao;
+            valueB = b.taxaAprovacao;
+            break;
+          default:
+            return 0;
+        }
+
+        if (typeof valueA === 'string') {
+          const comparison = valueA.localeCompare(valueB);
+          return rankingSortDirection === 'asc' ? comparison : -comparison;
+        } else {
+          const comparison = valueA - valueB;
+          return rankingSortDirection === 'asc' ? comparison : -comparison;
+        }
+      });
+
+      renderRankingTable(sortedData);
+    }
+    // Aprovação por categoria
+    function updateApprovalByCategory() {
+      // Aprovação por Centro
+      const approvalByCentro = {};
+      dashboardData.forEach(d => {
+        if (d.centro && d.resultado) {
+          if (!approvalByCentro[d.centro]) {
+            approvalByCentro[d.centro] = { total: 0, aprovados: 0 };
+          }
+          approvalByCentro[d.centro].total++;
+          if (norm(d.resultado).includes('aprovado')) {
+            approvalByCentro[d.centro].aprovados++;
+          }
+        }
+      });
+
+      const approvalCentroHtml = Object.entries(approvalByCentro)
+        .map(([centro, stats]) => {
+          const rate = stats.total > 0 ? (stats.aprovados / stats.total * 100) : 0;
+          return { centro, stats, rate };
+        })
+        .sort((a, b) => b.rate - a.rate) // Ordenar por taxa de aprovação (melhores primeiro)
+        .map(({ centro, stats, rate }) => `
+          <div class="approval-rate">
+            <div class="approval-indicator ${rate >= 80 ? 'high' : rate >= 60 ? 'medium' : 'low'}"></div>
+            <div>
+              <strong>${centro}</strong><br>
+              <span style="color: var(--muted);">${rate.toFixed(1)}% (${stats.aprovados}/${stats.total})</span>
+            </div>
+          </div>
+        `).join('');
+
+      document.getElementById('approvalCentroStats').innerHTML = approvalCentroHtml;
+
+      // Aprovação por Etapa
+      const approvalByEtapa = {};
+      dashboardData.forEach(d => {
+        if (d.etapa && d.resultado) {
+          if (!approvalByEtapa[d.etapa]) {
+            approvalByEtapa[d.etapa] = { total: 0, aprovados: 0 };
+          }
+          approvalByEtapa[d.etapa].total++;
+          if (norm(d.resultado).includes('aprovado')) {
+            approvalByEtapa[d.etapa].aprovados++;
+          }
+        }
+      });
+
+      const approvalEtapaHtml = Object.entries(approvalByEtapa)
+        .map(([etapa, stats]) => {
+          const rate = stats.total > 0 ? (stats.aprovados / stats.total * 100) : 0;
+          return { etapa, stats, rate };
+        })
+        .sort((a, b) => b.rate - a.rate) // Ordenar por taxa de aprovação (melhores primeiro)
+        .map(({ etapa, stats, rate }) => `
+          <div class="approval-rate">
+            <div class="approval-indicator ${rate >= 80 ? 'high' : rate >= 60 ? 'medium' : 'low'}"></div>
+            <div>
+              <strong>${etapa}</strong><br>
+              <span style="color: var(--muted);">${rate.toFixed(1)}% (${stats.aprovados}/${stats.total})</span>
+            </div>
+          </div>
+        `).join('');
+
+      document.getElementById('approvalEtapaStats').innerHTML = approvalEtapaHtml;
+
+      // Aprovação por Horário
+      const approvalByHorario = {};
+      dashboardData.forEach(d => {
+        if (d.horario && d.resultado) {
+          if (!approvalByHorario[d.horario]) {
+            approvalByHorario[d.horario] = { total: 0, aprovados: 0 };
+          }
+          approvalByHorario[d.horario].total++;
+          if (norm(d.resultado).includes('aprovado')) {
+            approvalByHorario[d.horario].aprovados++;
+          }
+        }
+      });
+
+      const approvalHorarioHtml = Object.entries(approvalByHorario)
+        .map(([horario, stats]) => {
+          const rate = stats.total > 0 ? (stats.aprovados / stats.total * 100) : 0;
+          return { horario, stats, rate };
+        })
+        .sort((a, b) => b.rate - a.rate) // Ordenar por taxa de aprovação (melhores primeiro)
+        .map(({ horario, stats, rate }) => `
+          <div class="approval-rate">
+            <div class="approval-indicator ${rate >= 80 ? 'high' : rate >= 60 ? 'medium' : 'low'}"></div>
+            <div>
+              <strong>${horario}</strong><br>
+              <span style="color: var(--muted);">${rate.toFixed(1)}% (${stats.aprovados}/${stats.total})</span>
+            </div>
+          </div>
+        `).join('');
+
+      document.getElementById('approvalHorarioStats').innerHTML = approvalHorarioHtml;
+    }
+    // Funções de exportação
+    function exportCard(cardId, filename) {
+      try {
+        const cardElement = document.getElementById(cardId);
+        if (!cardElement) {
+          alert('Elemento não encontrado para exportação');
+          return;
+        }
+
+        // Extrai dados do card para Excel
+        const data = extractCardData(cardId);
+        if (!data || data.length === 0) {
+          alert('Nenhum dado encontrado para exportar');
+          return;
+        }
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, ws, 'Dados');
+        XLSX.writeFile(wb, `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+        alert('Dados exportados com sucesso!');
+      } catch (error) {
+        alert('Erro ao exportar: ' + error.message);
+      }
+    }
+
+    function exportChartAsPNG(elementId, filename) {
+      try {
+        const element = document.getElementById(elementId);
+        if (!element) {
+          alert('Elemento não encontrado para exportação');
+          return;
+        }
+
+        html2canvas(element, {
+          backgroundColor: '#ffffff',
+          scale: 2
+        }).then(canvas => {
+          const link = document.createElement('a');
+          link.download = `${filename}_${new Date().toISOString().split('T')[0]}.png`;
+          link.href = canvas.toDataURL();
+          link.click();
+          alert('Gráfico exportado como PNG!');
+        }).catch(error => {
+          alert('Erro ao exportar gráfico: ' + error.message);
+        });
+      } catch (error) {
+        alert('Erro ao exportar: ' + error.message);
+      }
+    }
+
+    function extractCardData(cardId) {
+      switch (cardId) {
+        case 'approvalCard':
+          return [
+            ['Métrica', 'Valor'],
+            ['Taxa de Aprovação Geral', document.getElementById('approvalRate').textContent],
+            ['Total de Catecúmenos', dashboardData.length],
+            ['Aprovados', dashboardData.filter(d => d.resultado && norm(d.resultado).includes('aprovado')).length]
+          ];
+
+        case 'ageCard':
+          const studentsWithAge = dashboardData
+            .map(d => ({ ...d, age: calculateAge(d.nascimento) }))
+            .filter(d => d.age !== null);
+
+          if (studentsWithAge.length === 0) return [['Dados de idade não disponíveis']];
+
+          const youngest = studentsWithAge.reduce((min, s) => s.age < min.age ? s : min);
+          const oldest = studentsWithAge.reduce((max, s) => s.age > max.age ? s : max);
+
+          return [
+            ['Categoria', 'Nome', 'Idade', 'Centro', 'Etapa', 'Sala'],
+            ['Mais Novo', youngest.nome, youngest.age, youngest.centro, youngest.etapa, youngest.sala],
+            ['Mais Velho', oldest.nome, oldest.age, oldest.centro, oldest.etapa, oldest.sala]
+          ];
+
+        case 'centroCard':
+          const centros = {};
+          dashboardData.forEach(d => {
+            if (d.centro) centros[d.centro] = (centros[d.centro] || 0) + 1;
+          });
+
+          return [
+            ['Centro', 'Catecúmenos', 'Percentual'],
+            ...Object.entries(centros).map(([centro, count]) => [
+              centro, count, ((count / dashboardData.length) * 100).toFixed(1) + '%'
+            ])
+          ];
+
+        case 'rankingCard':
+          const table = document.getElementById('rankingTable');
+          const data = [];
+
+          // Cabeçalhos
+          const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent);
+          data.push(headers);
+
+          // Dados
+          Array.from(table.querySelectorAll('tbody tr')).forEach(row => {
+            const rowData = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
+            data.push(rowData);
+          });
+
+          return data;
+
+        default:
+          return [['Dados não disponíveis para este card']];
+      }
+    }
+    // Funções de carregamento de dados
+    function loadSampleData() {
+      clearExistingCharts();
+      dashboardData = [...SAMPLE_DATA];
+      updateDashboard();
+      console.log('✅ Dados de exemplo carregados no dashboard');
+    }
+
+    function loadExcelFile(file) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+          if (!json.length) throw new Error('Excel vazio');
+
+          const headers = json[0].map(String);
+          const idx = mapHeaders(headers);
+          const rows = json.slice(1).filter(r => r.some(v => String(v).trim() !== ''));
+
+          dashboardData = rows.map(r => ({
+            nome: r[idx.nome] ?? '',
+            nascimento: r[idx.nascimento] ?? '',
+            centro: r[idx.centro] ?? '',
+            etapa: r[idx.etapa] ?? '',
+            sala: r[idx.sala] ?? '',
+            horario: r[idx.horario] ?? '',
+            catequistas: r[idx.catequistas] ?? '',
+            resultado: r[idx.resultado] ?? ''
+          }));
+
+          updateDashboard();
+          console.log(`✅ Dashboard atualizado com ${dashboardData.length} registos do Excel`);
+
+        } catch (error) {
+          console.error('❌ Erro ao carregar dados:', error);
+          alert('Erro ao carregar dados: ' + error.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // Event listeners
+    if (DEBUG_MODE) {
+      document.getElementById('debugUpload').style.display = 'block';
+
+      document.getElementById('fileInput').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) loadExcelFile(file);
+      });
+
+      document.getElementById('loadSampleBtn').addEventListener('click', loadSampleData);
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      if (dashboardData) {
+        updateDashboard();
+        alert('Dashboard atualizado!');
+      } else {
+        alert('Carregue dados primeiro');
+      }
+    });
+
+    document.getElementById('exportAllBtn').addEventListener('click', () => {
+      if (!dashboardData) {
+        alert('Nenhum dado carregado para exportar');
+        return;
+      }
+
+      try {
+        const wb = XLSX.utils.book_new();
+
+        // Dados principais
+        const ws1 = XLSX.utils.json_to_sheet(dashboardData);
+        XLSX.utils.book_append_sheet(wb, ws1, 'Dados Completos');
+
+        // Estatísticas resumidas
+        const stats = [
+          ['Estatística', 'Valor'],
+          ['Total de Catecúmenos', dashboardData.length],
+          ['Total de Catequistas', new Set(dashboardData.flatMap(d => d.catequistas ? d.catequistas.split('|').map(c => c.trim()) : [])).size],
+          ['Total de Centros', new Set(dashboardData.map(d => d.centro).filter(Boolean)).size],
+          ['Taxa de Aprovação', document.getElementById('approvalRate').textContent]
+        ];
+
+        const ws2 = XLSX.utils.aoa_to_sheet(stats);
+        XLSX.utils.book_append_sheet(wb, ws2, 'Estatísticas');
+
+        XLSX.writeFile(wb, `dashboard_completo_${new Date().toISOString().split('T')[0]}.xlsx`);
+        alert('Dashboard completo exportado!');
+      } catch (error) {
+        alert('Erro ao exportar: ' + error.message);
+      }
+    });
+
+    document.getElementById('printDashboard').addEventListener('click', () => {
+      window.print();
+    });
+
+    // Funções para modais
+    function showCatequistasModal(centro, etapa, sala, horario) {
+      const turmaKey = `${centro}|${etapa}|${sala}|${horario}`;
+      const catequistas = new Set();
+
+      dashboardData.forEach(d => {
+        if (d.centro === centro && d.etapa === etapa && d.sala === sala && d.horario === horario) {
+          if (d.catequistas) {
+            d.catequistas.split('|').forEach(c => {
+              catequistas.add(c.trim());
+            });
+          }
+        }
+      });
+
+      const modalTitle = document.getElementById('catequistasModalTitle');
+      const modalBody = document.getElementById('catequistasModalBody');
+
+      modalTitle.textContent = `Catequistas - ${centro} • ${etapa} • Sala ${sala} • ${horario}`;
+
+      modalBody.innerHTML = Array.from(catequistas)
+        .sort()
+        .map(catequista => `
+          <tr>
+            <td>${catequista}</td>
+          </tr>
+        `).join('');
+
+      document.getElementById('catequistasModal').style.display = 'block';
+    }
+
+    function showCatecumenosModal(centro, etapa, sala, horario) {
+      const catecumenos = dashboardData.filter(d =>
+        d.centro === centro && d.etapa === etapa && d.sala === sala && d.horario === horario
+      );
+
+      const modalTitle = document.getElementById('catecumenosModalTitle');
+      const modalBody = document.getElementById('catecumenosModalBody');
+
+      modalTitle.textContent = `Catecúmenos - ${centro} • ${etapa} • Sala ${sala} • ${horario}`;
+
+      // Função para obter cor de fundo do resultado
+      function getResultBackgroundColor(resultado) {
+        if (!resultado) return '#f9fafb';
+        const resultadoNorm = norm(resultado);
+        if (resultadoNorm.includes('aprovado')) return '#16a34a';
+        if (resultadoNorm.includes('reprovado')) return '#dc2626';
+        if (resultadoNorm.includes('desistente') || resultadoNorm.includes('desistiu')) return '#6b7280';
+        if (resultadoNorm.includes('transferido')) return '#2563eb';
+        if (resultadoNorm.includes('avaliacao') || resultadoNorm.includes('avaliação')) return '#f59e0b';
+        return '#374151';
+      }
+
+      modalBody.innerHTML = catecumenos
+        .sort((a, b) => a.nome.localeCompare(b.nome))
+        .map(catecumeno => `
+          <tr>
+            <td>${catecumeno.nome}</td>
+            <td>${formatDate(catecumeno.nascimento)}</td>
+            <td>
+              <div class="result-cell" style="background-color: ${getResultBackgroundColor(catecumeno.resultado)};">
+                ${catecumeno.resultado || 'Sem resultado'}
+              </div>
+            </td>
+          </tr>
+        `).join('');
+
+      document.getElementById('catecumenosModal').style.display = 'block';
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).style.display = 'none';
+    }
+
+    // Modal para resultado específico
+    function showResultadoModal(resultado, count) {
+      const catecumenos = dashboardData.filter(d => d.resultado === resultado);
+
+      const modalTitle = document.getElementById('resultadoModalTitle');
+      const modalBody = document.getElementById('resultadoModalBody');
+
+      modalTitle.textContent = `${count} Catecúmenos com resultado: ${resultado}`;
+
+      function renderResultadoTable(filteredData = null) {
+        const data = filteredData || catecumenos;
+        modalBody.innerHTML = data
+          .sort((a, b) => a.nome.localeCompare(b.nome))
+          .map(catecumeno => `
+            <tr>
+              <td>${catecumeno.nome}</td>
+              <td>${catecumeno.centro}</td>
+              <td>${catecumeno.etapa}</td>
+              <td>${catecumeno.sala}</td>
+              <td>${formatDate(catecumeno.nascimento)}</td>
+            </tr>
+          `).join('');
+      }
+
+      renderResultadoTable();
+
+      // Adicionar pesquisa
+      const searchInput = document.getElementById('resultadoSearch');
+      searchInput.value = '';
+      searchInput.oninput = function () {
+        const searchTerm = this.value.toLowerCase();
+        if (!searchTerm) {
+          renderResultadoTable();
+          return;
+        }
+
+        const filtered = catecumenos.filter(c =>
+          c.nome.toLowerCase().includes(searchTerm) ||
+          c.centro.toLowerCase().includes(searchTerm) ||
+          c.etapa.toLowerCase().includes(searchTerm) ||
+          c.sala.toLowerCase().includes(searchTerm)
+        );
+
+        renderResultadoTable(filtered);
+      };
+
+      document.getElementById('resultadoModal').style.display = 'block';
+    }
+
+    // Modal para todos os catequistas
+    function showAllCatequistasModal() {
+      const catequistasData = new Map();
+
+      dashboardData.forEach(d => {
+        if (d.catequistas) {
+          d.catequistas.split('|').forEach(c => {
+            const catequista = c.trim();
+            if (!catequistasData.has(catequista)) {
+              catequistasData.set(catequista, {
+                centros: new Set(),
+                turmas: new Set()
+              });
+            }
+
+            const data = catequistasData.get(catequista);
+            data.centros.add(d.centro);
+            data.turmas.add(`${d.centro} - ${d.etapa} - Sala ${d.sala}`);
+          });
+        }
+      });
+
+      const modalBody = document.getElementById('allCatequistasModalBody');
+
+      function renderCatequistasTable(filteredData = null) {
+        const entries = filteredData || Array.from(catequistasData.entries());
+        modalBody.innerHTML = entries
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([catequista, data]) => `
+            <tr>
+              <td>${catequista}</td>
+              <td>${Array.from(data.centros).join(', ')}</td>
+              <td>${data.turmas.size}</td>
+            </tr>
+          `).join('');
+      }
+
+      renderCatequistasTable();
+
+      // Adicionar pesquisa
+      const searchInput = document.getElementById('allCatequistasSearch');
+      searchInput.value = '';
+      searchInput.oninput = function () {
+        const searchTerm = this.value.toLowerCase();
+        if (!searchTerm) {
+          renderCatequistasTable();
+          return;
+        }
+
+        const filtered = Array.from(catequistasData.entries()).filter(([catequista]) =>
+          catequista.toLowerCase().includes(searchTerm)
+        );
+
+        renderCatequistasTable(filtered);
+      };
+
+      document.getElementById('allCatequistasModal').style.display = 'block';
+    }
+
+    // Modal para todas as turmas
+    function showAllTurmasModal() {
+      const turmas = new Map();
+
+      dashboardData.forEach(d => {
+        if (d.centro && d.etapa && d.sala && d.horario) {
+          const key = `${d.centro}|${d.etapa}|${d.sala}|${d.horario}`;
+          if (!turmas.has(key)) {
+            turmas.set(key, {
+              centro: d.centro,
+              etapa: d.etapa,
+              sala: d.sala,
+              horario: d.horario,
+              catecumenos: 0
+            });
+          }
+          turmas.get(key).catecumenos++;
+        }
+      });
+
+      const modalBody = document.getElementById('allTurmasModalBody');
+
+      function renderTurmasTable(filteredData = null) {
+        const data = filteredData || Array.from(turmas.values());
+        modalBody.innerHTML = data
+          .sort((a, b) => a.centro.localeCompare(b.centro) || a.etapa.localeCompare(b.etapa))
+          .map(turma => `
+            <tr>
+              <td>${turma.centro}</td>
+              <td>${turma.etapa}</td>
+              <td>${turma.sala}</td>
+              <td>${turma.horario}</td>
+              <td><strong>${turma.catecumenos}</strong></td>
+            </tr>
+          `).join('');
+      }
+
+      renderTurmasTable();
+
+      // Adicionar pesquisa
+      const searchInput = document.getElementById('allTurmasSearch');
+      searchInput.value = '';
+      searchInput.oninput = function () {
+        const searchTerm = this.value.toLowerCase();
+        if (!searchTerm) {
+          renderTurmasTable();
+          return;
+        }
+
+        const filtered = Array.from(turmas.values()).filter(turma =>
+          turma.centro.toLowerCase().includes(searchTerm) ||
+          turma.etapa.toLowerCase().includes(searchTerm) ||
+          turma.sala.toLowerCase().includes(searchTerm) ||
+          turma.horario.toLowerCase().includes(searchTerm)
+        );
+
+        renderTurmasTable(filtered);
+      };
+
+      document.getElementById('allTurmasModal').style.display = 'block';
+    }
+
+    // Modal para todos os centros
+    function showAllCentrosModal() {
+      const centros = new Map();
+
+      dashboardData.forEach(d => {
+        if (d.centro) {
+          if (!centros.has(d.centro)) {
+            centros.set(d.centro, {
+              catecumenos: 0,
+              turmas: new Set(),
+              catequistas: new Set()
+            });
+          }
+
+          const data = centros.get(d.centro);
+          data.catecumenos++;
+
+          if (d.etapa && d.sala && d.horario) {
+            data.turmas.add(`${d.etapa}-${d.sala}-${d.horario}`);
+          }
+
+          if (d.catequistas) {
+            d.catequistas.split('|').forEach(c => {
+              data.catequistas.add(c.trim());
+            });
+          }
+        }
+      });
+
+      const modalBody = document.getElementById('allCentrosModalBody');
+      modalBody.innerHTML = Array.from(centros.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([centro, data]) => `
+          <tr>
+            <td><strong>${centro}</strong></td>
+            <td>${data.catecumenos}</td>
+            <td>${data.turmas.size}</td>
+            <td>${data.catequistas.size}</td>
+          </tr>
+        `).join('');
+
+      document.getElementById('allCentrosModal').style.display = 'block';
+    }
+
+    // Modal para todos os horários
+    function showAllHorariosModal() {
+      const horarios = new Map();
+
+      dashboardData.forEach(d => {
+        if (d.horario) {
+          if (!horarios.has(d.horario)) {
+            horarios.set(d.horario, {
+              catecumenos: 0,
+              turmas: new Set(),
+              centros: new Set()
+            });
+          }
+
+          const data = horarios.get(d.horario);
+          data.catecumenos++;
+
+          if (d.centro && d.etapa && d.sala) {
+            data.turmas.add(`${d.centro}-${d.etapa}-${d.sala}`);
+            data.centros.add(d.centro);
+          }
+        }
+      });
+
+      const modalBody = document.getElementById('allHorariosModalBody');
+      modalBody.innerHTML = Array.from(horarios.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([horario, data]) => `
+          <tr>
+            <td><strong>${horario}</strong></td>
+            <td>${data.catecumenos}</td>
+            <td>${data.turmas.size}</td>
+            <td>${data.centros.size}</td>
+          </tr>
+        `).join('');
+
+      document.getElementById('allHorariosModal').style.display = 'block';
+    }
+
+    // Fechar modal clicando fora dele
+    window.onclick = function (event) {
+      const modals = [
+        'catequistasModal', 'catecumenosModal', 'resultadoModal',
+        'allCatequistasModal', 'allTurmasModal', 'allCentrosModal', 'allHorariosModal'
+      ];
+
+      modals.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (event.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+    }
+
+    // Inicialização
+    async function init() {
+      try {
+        await loadConfig();
+        await loadExcelData();
+      } catch (error) {
+        console.error('❌ Erro na inicialização:', error);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+
+  <!-- Script de rastreamento -->
+  <script src="assets/js/tracking.js"></script>
+  </body>
+
+</html>

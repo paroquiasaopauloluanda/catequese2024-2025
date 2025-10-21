@@ -1,0 +1,279 @@
+/* Estilos específicos para a página de Analytics */
+
+.analytics-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    border-radius: 15px;
+}
+
+.analytics-header h1 {
+    margin: 0;
+    font-weight: 700;
+}
+
+.analytics-header .lead {
+    margin: 0;
+    opacity: 0.9;
+}
+
+.period-selector {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.analytics-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.analytics-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    opacity: 0.8;
+    margin-bottom: 1rem;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0.5rem 0;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.chart-container {
+    position: relative;
+    height: 400px;
+    padding: 1rem;
+}
+
+.top-pages-item {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.top-pages-item:last-child {
+    border-bottom: none;
+}
+
+.page-info {
+    flex: 1;
+}
+
+.page-name {
+    font-weight: 600;
+    color: #495057;
+}
+
+.page-url {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.page-stats {
+    text-align: right;
+}
+
+.visit-count {
+    font-weight: 700;
+    color: #007bff;
+}
+
+.visit-percentage {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.progress-bar-custom {
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.progress-fill-custom {
+    height: 100%;
+    background: linear-gradient(90deg, #007bff, #0056b3);
+    transition: width 0.3s ease;
+}
+
+.details-table {
+    font-size: 0.9rem;
+}
+
+.details-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.details-table td {
+    vertical-align: middle;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.details-table tr:hover {
+    background: #f8f9fa;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.btn-action {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-danger-outline {
+    background: white;
+    color: #dc3545;
+    border: 1px solid #dc3545;
+}
+
+.btn-danger-outline:hover {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-success-outline {
+    background: white;
+    color: #28a745;
+    border: 1px solid #28a745;
+}
+
+.btn-success-outline:hover {
+    background: #28a745;
+    color: white;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .analytics-header {
+        padding: 1.5rem 0;
+        text-align: center;
+    }
+    
+    .period-selector {
+        padding: 1rem;
+    }
+    
+    .period-selector .btn-group {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .period-selector .btn {
+        border-radius: 8px !important;
+        margin-bottom: 0.5rem;
+    }
+    
+    .chart-container {
+        height: 300px;
+        padding: 0.5rem;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+    }
+    
+    .stat-icon {
+        font-size: 2rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .top-pages-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .page-stats {
+        text-align: left;
+        width: 100%;
+    }
+}
+
+/* Tema escuro (opcional) */
+@media (prefers-color-scheme: dark) {
+    .analytics-card {
+        background: #2d3748;
+        color: #e2e8f0;
+    }
+    
+    .period-selector {
+        background: #2d3748;
+        color: #e2e8f0;
+    }
+    
+    .details-table th {
+        background: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .details-table tr:hover {
+        background: #4a5568;
+    }
+}

@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Catequistas — Paróquia de São Paulo de Luanda</title>
+
+  <!-- SheetJS -->
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #fffdf6;
+      --card: #ffffff;
+      --ink: #1b1a17;
+      --muted: #6b7280;
+      --accent: #c28402;
+      --accent-2: #d39f21;
+      --ok: #16a34a;
+      --warn: #b45309;
+      --border: #ecd39a;
+      --border-light: #f0e1b6;
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .card {
+      width: 100%;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: -1px 9px 8px rgba(0, 0, 0, 0.08);
+      margin-bottom: 16px;
+    }
+
+    .hero-brand {
+      width: 100%;
+      padding: 16px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .hero-brand img {
+      width: 72px;
+      height: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 4px;
+    }
+
+    .title {
+      font-weight: 800;
+      font-size: 18px;
+    }
+
+    .subtitle {
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .info {
+      margin-top: 6px;
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .meta {
+      color: #374151;
+      margin-top: 2px;
+      font-size: 14px;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .filters select,
+    .filters input[type="search"] {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #fff;
+      font-size: 16px;
+    }
+
+    .filters .sala-field {
+      min-width: 120px;
+      flex: 0 0 160px;
+    }
+
+    .filters .cateq-field {
+      min-width: 200px;
+      flex: 1;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: 0;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn.secondary {
+      background: #fff;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .btn:hover {
+      background: var(--accent-2);
+    }
+
+    .btn.secondary:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .stats {
+      padding: 8px 4px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .results {
+      margin-top: 8px;
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1.3fr 0.9fr 0.8fr 0.5fr 0.7fr 0.5fr;
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+      border-bottom: 1px dashed var(--border-light);
+      word-break: break-word;
+    }
+
+    .row:nth-child(odd) {
+      background: #fff9e9;
+    }
+
+    .row.header {
+      font-weight: 700;
+      color: #111;
+      background: #ffeab9;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .row>div {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    .center {
+      color: #7a4d00;
+      font-weight: 600;
+    }
+
+    .footer {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      margin: 24px 0;
+    }
+
+    .debug-upload {
+      margin: 16px 0;
+      padding: 16px;
+      border: 2px dashed #dc2626;
+      border-radius: 12px;
+      text-align: center;
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    .debug-upload input[type="file"] {
+      margin: 8px 0;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+
+    .modal {
+      background: #fff;
+      border-radius: 16px;
+      max-width: 900px;
+      width: 100%;
+      max-height: 85vh;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal header {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 14px 16px;
+      z-index: 2;
+    }
+
+    .modal .title {
+      font-weight: 800;
+    }
+
+    .modal .subtitle {
+      color: #6b7280;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .modal .close {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 6px 10px;
+      cursor: pointer;
+      float: right;
+    }
+
+    .m-body {
+      padding: 8px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .m-table {
+      border: 1px solid #eee;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .m-header {
+      display: grid;
+      grid-template-columns: 1.4fr 0.6fr;
+      gap: 12px;
+      padding: 10px 12px;
+      background: #faf7ee;
+      border-bottom: 1px solid #eee;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .m-rows {
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    .m-row {
+      display: grid;
+      grid-template-columns: 1.4fr 0.6fr;
+      gap: 12px;
+      padding: 10px 12px;
+      border-bottom: 1px dashed #eee;
+      background: #fff;
+    }
+
+    .m-row:nth-child(odd) {
+      background: #fffbf0;
+    }
+
+    /* Responsividade Mobile */
+    @media (max-width: 480px) {
+      .container {
+        padding: 8px;
+        max-width: 100%;
+      }
+
+      .card {
+        margin-bottom: 8px;
+        border-radius: 12px;
+      }
+
+      .hero-brand {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px;
+        gap: 8px;
+      }
+
+      .hero-brand img {
+        width: 48px;
+      }
+
+      .title {
+        font-size: 16px;
+      }
+
+      .subtitle {
+        font-size: 14px;
+      }
+
+      .info {
+        font-size: 14px;
+      }
+
+      .meta {
+        font-size: 12px;
+      }
+
+      .filters {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .filters select,
+      .filters input[type="search"] {
+        width: 100%;
+        padding: 12px;
+        font-size: 14px;
+      }
+
+      .filters .sala-field,
+      .filters .cateq-field {
+        min-width: auto;
+        flex: none;
+      }
+
+      .actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 6px;
+      }
+
+      .actions .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px;
+        font-size: 14px;
+      }
+
+      .stats {
+        padding: 8px 4px;
+        font-size: 12px;
+      }
+
+      .results {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 12px;
+        min-width: 300px;
+      }
+
+      .row.header {
+        display: none;
+      }
+
+      .row>div {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .row>div::before {
+        content: attr(data-label);
+        flex: 0 0 100px;
+        font-weight: 600;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .modal {
+        max-width: 95vw;
+        margin: 10px;
+      }
+
+      .modal header {
+        padding: 12px;
+      }
+
+      .modal .title {
+        font-size: 16px;
+      }
+
+      .modal .subtitle {
+        font-size: 12px;
+      }
+
+      .m-header {
+        grid-template-columns: 1fr;
+        padding: 8px;
+      }
+
+      .m-row {
+        grid-template-columns: 1fr;
+        padding: 8px;
+        font-size: 12px;
+      }
+
+      .m-row.header {
+        display: none;
+      }
+
+      .m-table {
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 800px) and (min-width: 481px) {
+      .hero-brand {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .filters {
+        gap: 8px;
+      }
+
+      .actions {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .actions .btn {
+        flex: 1;
+        min-width: 140px;
+      }
+
+      .row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        padding: 12px;
+      }
+
+      .row.header {
+        display: none;
+      }
+
+      .row>div {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .row>div::before {
+        content: attr(data-label);
+        flex: 0 0 120px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+
+      .m-header {
+        grid-template-columns: 1fr;
+      }
+
+      .m-row {
+        grid-template-columns: 1fr;
+      }
+
+      .m-row.header {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="card">
+    <div class="container">
+      <div class="hero-brand card">
+        <img id="logoImg" alt="Logo da Paróquia" onerror="this.style.display='none'" />
+        <div>
+          <div class="title" id="paroquiaNome">Paróquia de São Paulo de Luanda</div>
+          <div class="subtitle" id="secretariado">Secretariado da Catequese</div>
+          <div class="info">Lista de Catequistas</div>
+          <div class="meta">Ano Catequético: <strong id="anoCatequetico">2025/2026</strong></div>
+        </div>
+      </div>
+
+      <!-- Debug Mode: File Upload (só aparece se DEBUG_MODE = true) -->
+      <div id="debugUpload" class="debug-upload" style="display:none">
+        <div><strong>🔧 MODO DEBUG ATIVO</strong></div>
+        <div>Carregar arquivo Excel para testes:</div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" />
+        <button class="btn" id="loadSampleBtn">📊 Usar Dados de Exemplo</button>
+      </div>
+
+      <div class="filters">
+        <select id="centroFilter">
+          <option value="">Centro (todos)</option>
+        </select>
+        <select id="etapaFilter">
+          <option value="">Etapa (todas)</option>
+        </select>
+        <select id="horarioFilter">
+          <option value="">Horário (todos)</option>
+        </select>
+        <input id="salaSearch" class="sala-field" type="search" inputmode="numeric" placeholder="Sala (ex.: 305)" />
+        <input id="catequistaSearch" class="cateq-field" type="search" placeholder="Pesquisar catequista..." />
+      </div>
+
+      <div class="actions">
+        <a href="dashboard.html" class="btn secondary">📊 Dashboard</a>
+        <a href="index.html" class="btn secondary">📋 Catecúmenos</a>
+        <a href="aniversarios.html" class="btn secondary">🎂 Aniversários</a>
+        <button class="btn" id="exportBtn">📊 Exportar XLSX</button>
+        <button class="btn secondary" id="printBtn">🖨️ Imprimir</button>
+      </div>
+
+      <div class="stats" id="stats">Carregue um arquivo Excel ou use dados de exemplo</div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="card results" id="results"></div>
+  </main>
+
+  <div class="footer" id="footerText">© Paróquia de São Paulo de Luanda — Secretariado da Catequese</div>
+
+  <!-- Modal -->
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" role="document">
+      <header>
+        <button class="close" id="modalClose">Fechar ✕</button>
+        <div class="title" id="modalTitle">Turma</div>
+        <div class="subtitle" id="modalSub">—</div>
+      </header>
+      <div class="m-body">
+        <div class="m-table">
+          <div class="m-header">
+            <div>Nome</div>
+            <div>Nascimento</div>
+          </div>
+          <div class="m-rows" id="modalRows"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 🔧 DEBUG MODE: Altere para true para mostrar opção de upload de arquivo
+    const DEBUG_MODE = false;
+
+    let CONFIG = null;
+
+    // Dados de exemplo
+    const SAMPLE_DATA = [
+      {
+        nome: "João Silva Santos",
+        nascimento: "15/03/2010",
+        nascimento_fmt: "15/03/2010",
+        centro: "Centro Principal",
+        etapa: "1ª Etapa",
+        sala: "101",
+        horario: "Sábado Manhã",
+        catequistas: "Maria José|Pedro Costa"
+      },
+      {
+        nome: "Ana Maria Fernandes",
+        nascimento: "22/07/2009",
+        nascimento_fmt: "22/07/2009",
+        centro: "Centro Norte",
+        etapa: "2ª Etapa",
+        sala: "205",
+        horario: "Domingo Tarde",
+        catequistas: "Carlos Silva"
+      },
+      {
+        nome: "Miguel António Lopes",
+        nascimento: "08/11/2011",
+        nascimento_fmt: "08/11/2011",
+        centro: "Centro Sul",
+        etapa: "1ª Etapa",
+        sala: "102",
+        horario: "Sábado Tarde",
+        catequistas: "Isabel Santos|João Pereira"
+      },
+      {
+        nome: "Beatriz Costa Rodrigues",
+        nascimento: "14/05/2008",
+        nascimento_fmt: "14/05/2008",
+        centro: "Centro Principal",
+        etapa: "3ª Etapa",
+        sala: "301",
+        horario: "Domingo Manhã",
+        catequistas: "António Silva"
+      },
+      {
+        nome: "Francisco Manuel Sousa",
+        nascimento: "30/09/2010",
+        nascimento_fmt: "30/09/2010",
+        centro: "Centro Norte",
+        etapa: "2ª Etapa",
+        sala: "203",
+        horario: "Sábado Manhã",
+        catequistas: "Teresa Lopes|Manuel Costa"
+      },
+      {
+        nome: "Luísa Pereira Gomes",
+        nascimento: "12/01/2009",
+        nascimento_fmt: "12/01/2009",
+        centro: "Centro Sul",
+        etapa: "2ª Etapa",
+        sala: "204",
+        horario: "Domingo Tarde",
+        catequistas: "Fernanda Lima"
+      }
+    ];
+
+    let CURRENT_GROUPS = [];
+    let CURRENT_FILTERED = [];
+
+    // Utilitários
+    const norm = (s) => (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const fmtDate = (s) => {
+      if (!s) return '';
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
+      const d = new Date(s);
+      if (!isNaN(d)) {
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yy = d.getFullYear();
+        return `${dd}/${mm}/${yy}`;
+      }
+      return s;
+    };
+    const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt'));
+
+    // Carrega configurações do arquivo settings.json
+    async function loadConfig() {
+      try {
+        const response = await fetch('config/settings.json?v=' + Date.now());
+        if (!response.ok) throw new Error('Erro ao carregar configurações: ' + response.status);
+        CONFIG = await response.json();
+
+        // Atualiza interface com configurações
+        document.getElementById('logoImg').src = CONFIG.arquivos.logo;
+        document.getElementById('paroquiaNome').textContent = CONFIG.paroquia.nome;
+        document.getElementById('secretariado').textContent = CONFIG.paroquia.secretariado;
+        document.getElementById('anoCatequetico').textContent = CONFIG.paroquia.ano_catequetico;
+        document.getElementById('footerText').textContent = `© ${CONFIG.paroquia.nome} — ${CONFIG.paroquia.secretariado}`;
+
+        console.log('✅ Configurações carregadas:', CONFIG);
+        return CONFIG;
+
+      } catch (error) {
+        console.error('❌ Erro ao carregar configurações:', error);
+        // Valores padrão em caso de erro
+        CONFIG = {
+          paroquia: {
+            nome: "Paróquia de São Paulo de Luanda",
+            secretariado: "Secretariado da Catequese",
+            ano_catequetico: "2025/2026"
+          },
+          arquivos: {
+            dados_principais: "data/dados-catequese.xlsx",
+            logo: "assets/images/logo-paroquia.jpg"
+          },
+          exportacao: {
+            nome_arquivo_padrao: "catequistas_filtrado"
+          },
+          validacao: {
+            campos_obrigatorios: ["nome", "centro", "etapa", "sala", "horario", "catequistas"]
+          }
+        };
+
+        // Atualiza interface com valores padrão
+        document.getElementById('logoImg').src = CONFIG.arquivos.logo;
+        document.getElementById('paroquiaNome').textContent = CONFIG.paroquia.nome;
+        document.getElementById('secretariado').textContent = CONFIG.paroquia.secretariado;
+        document.getElementById('anoCatequetico').textContent = CONFIG.paroquia.ano_catequetico;
+        document.getElementById('footerText').textContent = `© ${CONFIG.paroquia.nome} — ${CONFIG.paroquia.secretariado}`;
+
+        return CONFIG;
+      }
+    }
+
+    // Carrega dados do Excel usando o caminho configurado
+    async function loadExcelData() {
+      try {
+        if (!CONFIG) throw new Error('Configurações não carregadas');
+
+        const url = CONFIG.arquivos.dados_principais + '?v=' + Date.now();
+        console.log('🔄 Carregando Excel:', url);
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Erro ao carregar Excel: ' + response.status);
+
+        const buffer = await response.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array' });
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+        if (!json.length) throw new Error('Excel vazio');
+
+        const headers = json[0].map(String);
+        const idx = mapHeaders(headers);
+        const req = CONFIG.validacao?.campos_obrigatorios || ['nome', 'centro', 'etapa'];
+        const missing = req.filter(k => !(k in idx));
+        if (missing.length) throw new Error('Cabeçalhos ausentes: ' + missing.join(', '));
+
+        const rows = json.slice(1).filter(r => r.some(v => String(v).trim() !== ''));
+        const allData = rows.map(r => ({
+          nome: r[idx.nome] ?? '',
+          nascimento: r[idx.nascimento] ?? '',
+          centro: r[idx.centro] ?? '',
+          etapa: r[idx.etapa] ?? '',
+          sala: r[idx.sala] ?? '',
+          horario: r[idx.horario] ?? '',
+          catequistas: r[idx.catequistas] ?? ''
+        }));
+        allData.forEach(d => d.nascimento_fmt = fmtDate(d.nascimento));
+
+        CURRENT_GROUPS = buildGroups(allData);
+        const searchFactory = applySearchFactory(CURRENT_GROUPS);
+        searchFactory.populate();
+        searchFactory.apply();
+
+        console.log(`✅ ${allData.length} registos carregados do Excel`);
+
+      } catch (error) {
+        console.error('❌ Erro ao carregar Excel:', error);
+        console.log('🔄 Usando dados de exemplo como fallback');
+
+        // Usa dados de exemplo como fallback
+        const allData = [...SAMPLE_DATA];
+        CURRENT_GROUPS = buildGroups(allData);
+        const searchFactory = applySearchFactory(CURRENT_GROUPS);
+        searchFactory.populate();
+        searchFactory.apply();
+      }
+    }
+
+    function mapHeaders(cols) {
+      const wanted = {
+        nome: ['nome', 'nomecompleto'],
+        nascimento: ['nascimento', 'datanascimento', 'data', 'dn'],
+        centro: ['centro', 'centrodecatequese', 'paroquia', 'comunidade'],
+        etapa: ['etapa', 'etapacatequese', 'nivel', 'ano', 'classe'],
+        sala: ['sala', 'numerosala', 'turma', 'salaaula'],
+        horario: ['horario', 'hora', 'turno', 'periodo', 'diaehora', 'diahora'],
+        catequistas: ['catequistas', 'catequista', 'responsaveis', 'responsavel']
+      };
+      const idx = {};
+      cols.forEach((c, i) => {
+        const k = norm(c).replace(/[^a-z0-9]/g, '');
+        for (const [t, aliases] of Object.entries(wanted)) {
+          if (aliases.includes(k)) idx[t] = i;
+        }
+      });
+      return idx;
+    }
+
+    // Monta grupos (catequista, centro, etapa, sala, horario)
+    function buildGroups(DATA) {
+      const groups = new Map();
+      for (const d of DATA) {
+        const raw = String(d.catequistas || '');
+        if (!raw.trim()) continue;
+        const parts = raw.split('|').map(s => s.trim()).filter(Boolean);
+        for (const cateq of parts) {
+          const k = [cateq, d.centro, d.etapa, d.sala, d.horario].join('§');
+          if (!groups.has(k)) {
+            groups.set(k, {
+              catequista: cateq,
+              centro: d.centro,
+              etapa: d.etapa,
+              sala: d.sala,
+              horario: d.horario,
+              alunos: []
+            });
+          }
+          groups.get(k).alunos.push({ nome: d.nome, nascimento_fmt: d.nascimento_fmt });
+        }
+      }
+      for (const g of groups.values()) {
+        g.alunos.sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
+      }
+      return Array.from(groups.values());
+    }
+
+    function render(list) {
+      const results = document.getElementById('results');
+      results.innerHTML = '';
+
+      const header = document.createElement('div');
+      header.className = 'row header';
+      header.innerHTML = `<div>Catequista</div><div>Centro</div><div>Etapa</div><div>Sala</div><div>Horário</div><div>Catecúmenos</div>`;
+      results.appendChild(header);
+
+      const frag = document.createDocumentFragment();
+      for (const g of list) {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.innerHTML = `
+          <div data-label="Catequista">${g.catequista}</div>
+          <div data-label="Centro" class="center">${g.centro}</div>
+          <div data-label="Etapa">${g.etapa}</div>
+          <div data-label="Sala">${g.sala}</div>
+          <div data-label="Horário">${g.horario}</div>
+          <div data-label="Catecúmenos"><button class="btn secondary" data-open="modal" data-key="${encodeURIComponent([g.catequista, g.centro, g.etapa, g.sala, g.horario].join('§'))}">${g.alunos.length}</button></div>
+        `;
+        frag.appendChild(row);
+      }
+      results.appendChild(frag);
+
+      results.querySelectorAll('button[data-open="modal"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const k = decodeURIComponent(btn.getAttribute('data-key'));
+          const [catequista, centro, etapa, sala, horario] = k.split('§');
+          const grp = list.find(g => g.catequista === catequista && g.centro === centro && g.etapa === etapa && g.sala === sala && g.horario === horario);
+          if (grp) openModal(grp);
+        });
+      });
+    }
+
+    function openModal(group) {
+      const bd = document.getElementById('modalBackdrop');
+      const title = document.getElementById('modalTitle');
+      const sub = document.getElementById('modalSub');
+      const rowsWrap = document.getElementById('modalRows');
+
+      title.textContent = `Turma de ${group.catequista}`;
+      sub.textContent = `${group.centro} • ${group.etapa} • Sala ${group.sala} • ${group.horario}`;
+
+      rowsWrap.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      for (const a of group.alunos) {
+        const r = document.createElement('div');
+        r.className = 'm-row';
+        r.innerHTML = `<div>${a.nome}</div><div>${a.nascimento_fmt || '-'}</div>`;
+        frag.appendChild(r);
+      }
+      rowsWrap.appendChild(frag);
+
+      bd.style.display = 'flex';
+      bd.setAttribute('aria-hidden', 'false');
+      setTimeout(() => document.getElementById('modalClose').focus(), 50);
+    }
+
+    function closeModal() {
+      const bd = document.getElementById('modalBackdrop');
+      bd.style.display = 'none';
+      bd.setAttribute('aria-hidden', 'true');
+    }
+
+    function updateStats(filtered) {
+      const totalTurmas = filtered.length;
+      const uniqueCats = new Set(filtered.map(g => g.catequista)).size;
+      document.getElementById('stats').textContent =
+        `${totalTurmas} turma${totalTurmas === 1 ? '' : 's'} | ${uniqueCats} catequista${uniqueCats === 1 ? '' : 's'}`;
+    }
+
+    // Exportação
+    function exportXLSX(filtered) {
+      try {
+        const nomeArquivo = CONFIG.exportacao.nome_arquivo_padrao;
+
+        const headerResumo = ['Catequista', 'Centro', 'Etapa', 'Sala', 'Horario', 'Catecumenos'];
+        const bodyResumo = filtered.map(g => [g.catequista, g.centro, g.etapa, g.sala, g.horario, g.alunos.length]);
+
+        const headerDet = ['Centro', 'Etapa', 'Sala', 'Horario', 'Catequista', 'Nome', 'Nascimento'];
+        const bodyDet = [];
+        for (const g of filtered) {
+          for (const a of g.alunos) {
+            bodyDet.push([g.centro, g.etapa, g.sala, g.horario, g.catequista, a.nome, a.nascimento_fmt || '']);
+          }
+        }
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([headerResumo, ...bodyResumo]), 'Catequistas');
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([headerDet, ...bodyDet]), 'Detalhe');
+        XLSX.writeFile(wb, nomeArquivo + '.xlsx');
+        alert('Arquivo exportado com sucesso!');
+      } catch (error) {
+        alert('Erro ao exportar: ' + error.message);
+      }
+    }
+
+    function applySearchFactory(GROUPS) {
+      const centroFilter = document.getElementById('centroFilter');
+      const etapaFilter = document.getElementById('etapaFilter');
+      const horarioFilter = document.getElementById('horarioFilter');
+      const salaSearch = document.getElementById('salaSearch');
+      const cateqSearch = document.getElementById('catequistaSearch');
+
+      function populate() {
+        centroFilter.innerHTML = '<option value="">Centro (todos)</option>';
+        etapaFilter.innerHTML = '<option value="">Etapa (todas)</option>';
+        horarioFilter.innerHTML = '<option value="">Horário (todos)</option>';
+        for (const c of uniq(GROUPS.map(g => g.centro))) {
+          const o = document.createElement('option');
+          o.value = c; o.textContent = c;
+          centroFilter.appendChild(o);
+        }
+        for (const e of uniq(GROUPS.map(g => g.etapa))) {
+          const o = document.createElement('option');
+          o.value = e; o.textContent = e;
+          etapaFilter.appendChild(o);
+        }
+        for (const h of uniq(GROUPS.map(g => g.horario))) {
+          const o = document.createElement('option');
+          o.value = h; o.textContent = h;
+          horarioFilter.appendChild(o);
+        }
+      }
+
+      function apply() {
+        const salaQ = norm(salaSearch.value);
+        const cateqQ = norm(cateqSearch.value);
+        const fCentro = centroFilter.value;
+        const fEtapa = etapaFilter.value;
+        const fHorario = horarioFilter.value;
+
+        let list = GROUPS.slice();
+        if (fCentro) list = list.filter(g => g.centro === fCentro);
+        if (fEtapa) list = list.filter(g => g.etapa === fEtapa);
+        if (fHorario) list = list.filter(g => g.horario === fHorario);
+        if (salaQ) list = list.filter(g => norm(String(g.sala)).includes(salaQ));
+        if (cateqQ) list = list.filter(g => norm(g.catequista).includes(cateqQ));
+
+        list.sort((a, b) => {
+          return a.centro.localeCompare(b.centro, 'pt') ||
+            a.etapa.localeCompare(b.etapa, 'pt') ||
+            String(a.sala).localeCompare(String(b.sala), 'pt') ||
+            a.catequista.localeCompare(b.catequista, 'pt');
+        });
+
+        CURRENT_FILTERED = list;
+        render(list);
+        updateStats(list);
+      }
+
+      let t;
+      function deb() { clearTimeout(t); t = setTimeout(apply, 80); }
+
+      salaSearch.addEventListener('input', deb);
+      cateqSearch.addEventListener('input', deb);
+      centroFilter.addEventListener('change', apply);
+      etapaFilter.addEventListener('change', apply);
+      horarioFilter.addEventListener('change', apply);
+
+      return { populate, apply };
+    }
+
+    function loadSampleData() {
+      const allData = [...SAMPLE_DATA];
+      CURRENT_GROUPS = buildGroups(allData);
+      const searchFactory = applySearchFactory(CURRENT_GROUPS);
+      searchFactory.populate();
+      searchFactory.apply();
+      console.log('✅ Dados de exemplo carregados');
+    }
+
+    function loadExcelFile(file) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+          if (!json.length) throw new Error('Excel vazio');
+
+          const headers = json[0].map(String);
+          const idx = mapHeaders(headers);
+          const req = CONFIG.validacao.campos_obrigatorios;
+          const missing = req.filter(k => !(k in idx));
+          if (missing.length) throw new Error('Cabeçalhos ausentes: ' + missing.join(', '));
+
+          const rows = json.slice(1).filter(r => r.some(v => String(v).trim() !== ''));
+          const DATA = rows.map(r => ({
+            nome: r[idx.nome] ?? '',
+            nascimento: r[idx.nascimento] ?? '',
+            centro: r[idx.centro] ?? '',
+            etapa: r[idx.etapa] ?? '',
+            sala: r[idx.sala] ?? '',
+            horario: r[idx.horario] ?? '',
+            catequistas: r[idx.catequistas] ?? ''
+          }));
+          DATA.forEach(d => d.nascimento_fmt = fmtDate(d.nascimento));
+
+          const GROUPS = buildGroups(DATA);
+          CURRENT_GROUPS = GROUPS;
+          applySearchFactory(GROUPS);
+
+          document.getElementById('stats').textContent = `${GROUPS.length} grupos carregados do Excel`;
+          console.log(`✅ ${GROUPS.length} grupos carregados do Excel`);
+
+        } catch (error) {
+          console.error('❌ Erro ao carregar Excel:', error);
+          document.getElementById('stats').textContent = 'Erro ao carregar Excel: ' + error.message;
+          alert('Erro: ' + error.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // Event listeners
+    document.getElementById('fileInput').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (file) {
+        loadExcelFile(file);
+      }
+    });
+
+    document.getElementById('loadSampleBtn').addEventListener('click', loadSampleData);
+
+    document.getElementById('modalBackdrop').addEventListener('click', (e) => {
+      if (e.target.id === 'modalBackdrop') closeModal();
+    });
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    document.getElementById('printBtn').addEventListener('click', () => window.print());
+    document.getElementById('exportBtn').addEventListener('click', () => exportXLSX(CURRENT_FILTERED));
+
+    // Event listeners para modo debug
+    // Event listeners para modo debug
+    if (DEBUG_MODE) {
+      document.getElementById('debugUpload').style.display = 'block';
+
+      document.getElementById('fileInput').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) {
+          loadExcelFile(file);
+        }
+      });
+
+      document.getElementById('loadSampleBtn').addEventListener('click', loadSampleData);
+    }
+
+    // Inicialização
+    async function init() {
+      try {
+        await loadConfig();
+        await loadExcelData();
+      } catch (error) {
+        console.error('❌ Erro na inicialização:', error);
+      }
+    }
+
+    // Inicia quando a página carrega
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+
+  <!-- Script de rastreamento -->
+  <script src="assets/js/tracking.js"></script>
+</body>
+
+</html>
