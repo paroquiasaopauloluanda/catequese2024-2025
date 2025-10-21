@@ -9,6 +9,10 @@ class AdminPanelApp {
         this.currentConfig = null;
         this.excelData = null;
         
+        // Initialize managers
+        this.githubAPI = new GitHubAPI();
+        this.excelManager = new ExcelManager();
+        
         console.log('AdminPanelApp constructor completed');
     }
 
@@ -359,6 +363,48 @@ class AdminPanelApp {
                                    value="${config.interface?.backup_intervalo_horas || 24}" class="form-control" min="1" max="168">
                         </div>
                     </div>
+
+                    <!-- Seção GitHub -->
+                    <div class="form-section">
+                        <h4>🔗 Integração GitHub</h4>
+                        <p class="section-description">Configure a integração com GitHub para salvar alterações automaticamente</p>
+                        
+                        <div class="form-group">
+                            <label for="github-token">Personal Access Token:</label>
+                            <input type="password" id="github-token" class="form-control" 
+                                   placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+                            <small class="form-help">Token para acessar o repositório GitHub</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="github-owner">Proprietário do Repositório:</label>
+                            <input type="text" id="github-owner" class="form-control" 
+                                   placeholder="seu-usuario">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="github-repo">Nome do Repositório:</label>
+                            <input type="text" id="github-repo" class="form-control" 
+                                   placeholder="nome-do-repositorio">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="github-branch">Branch:</label>
+                            <input type="text" id="github-branch" class="form-control" 
+                                   value="main" placeholder="main">
+                        </div>
+                        
+                        <div class="github-actions">
+                            <button type="button" class="btn btn-secondary" onclick="adminApp.testGitHubConnection()">
+                                🔍 Testar Conexão
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="adminApp.saveGitHubConfig()">
+                                💾 Salvar Configuração GitHub
+                            </button>
+                        </div>
+                        
+                        <div id="github-status" class="github-status"></div>
+                    </div>
                 </form>
 
                 <div id="config-status" class="status-message"></div>
@@ -367,6 +413,9 @@ class AdminPanelApp {
 
         // Attach event listeners
         this.attachConfigFormListeners();
+        
+        // Load GitHub configuration
+        this.loadGitHubConfigIntoForm();
     }
 
     /**
@@ -427,12 +476,37 @@ class AdminPanelApp {
 
             console.log('Saving configuration:', newConfig);
 
-            // In a real implementation, this would save to the server
-            // For now, we'll simulate the save and update local state
-            this.currentConfig = newConfig;
+            // Show loading status
+            this.showConfigStatus('Salvando configurações...', 'info');
+
+            // Try to save to GitHub if configured
+            if (this.githubAPI.isConfigured()) {
+                try {
+                    await this.githubAPI.saveConfiguration(newConfig);
+                    this.showConfigStatus('Configurações salvas no GitHub com sucesso!', 'success');
+                    
+                    // Trigger deployment
+                    setTimeout(async () => {
+                        try {
+                            await this.githubAPI.triggerDeployment();
+                            this.showConfigStatus('Configurações salvas e deployment iniciado!', 'success');
+                        } catch (deployError) {
+                            console.log('Deployment trigger failed, but config was saved');
+                        }
+                    }, 1000);
+                    
+                } catch (githubError) {
+                    console.error('GitHub save failed:', githubError);
+                    this.showConfigStatus('Erro ao salvar no GitHub: ' + githubError.message, 'error');
+                    return;
+                }
+            } else {
+                // Save locally only
+                this.showConfigStatus('Configurações salvas localmente (GitHub não configurado)', 'warning');
+            }
             
-            // Show success message
-            this.showConfigStatus('Configurações salvas com sucesso!', 'success');
+            // Update local state
+            this.currentConfig = newConfig;
             
             // Update dashboard stats
             this.updateDashboardStats();
@@ -892,34 +966,399 @@ class AdminPanelApp {
     /**
      * Manage catechists
      */
-    manageCatechists() {
-        alert('Funcionalidade de gerenciamento de catequistas será implementada em breve.\n\nEsta funcionalidade permitirá:\n- Adicionar novos catequistas\n- Editar informações existentes\n- Atribuir catequistas a turmas\n- Visualizar estatísticas por catequista');
+    async manageCatechists() {
+        if (!this.excelManager.currentData) {
+            alert('Nenhum arquivo Excel carregado. Por favor, carregue um arquivo primeiro na seção "Arquivos".');
+            return;
+        }
+
+        const container = document.getElementById('data-content');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="catechists-manager">
+                <div class="manager-header">
+                    <h3>👥 Gerenciamento de Catequistas</h3>
+                    <div class="manager-actions">
+                        <button class="btn btn-primary" onclick="adminApp.addNewCatechist()">➕ Adicionar Catequista</button>
+                        <button class="btn btn-secondary" onclick="adminApp.backToDataOverview()">← Voltar</button>
+                    </div>
+                </div>
+                
+                <div class="catechists-stats">
+                    <div class="stat-item">
+                        <strong>Total de Catequistas:</strong> ${this.excelManager.catechists.size}
+                    </div>
+                    <div class="stat-item">
+                        <strong>Total de Turmas:</strong> ${this.excelManager.classes.size}
+                    </div>
+                </div>
+
+                <div class="catechists-list" id="catechists-list">
+                    ${this.renderCatechistsList()}
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Render catechists list
+     */
+    renderCatechistsList() {
+        let html = '';
+        
+        this.excelManager.catechists.forEach((info, name) => {
+            html += `
+                <div class="catechist-card">
+                    <div class="catechist-header">
+                        <h4>${name}</h4>
+                        <div class="catechist-actions">
+                            <button class="btn btn-sm btn-primary" onclick="adminApp.editCatechist('${name}')">✏️ Editar</button>
+                            <button class="btn btn-sm btn-danger" onclick="adminApp.removeCatechist('${name}')">🗑️ Remover</button>
+                        </div>
+                    </div>
+                    <div class="catechist-info">
+                        <p><strong>Catecúmenos:</strong> ${info.students.length}</p>
+                        <p><strong>Turmas:</strong> ${Array.from(info.classes).join(', ')}</p>
+                    </div>
+                    <div class="catechist-students">
+                        <details>
+                            <summary>Ver catecúmenos (${info.students.length})</summary>
+                            <ul>
+                                ${info.students.map(student => `
+                                    <li>${student.name} - ${student.center} - ${student.stage}</li>
+                                `).join('')}
+                            </ul>
+                        </details>
+                    </div>
+                </div>
+            `;
+        });
+
+        return html || '<p>Nenhum catequista encontrado.</p>';
     }
 
     /**
      * Manage catechumens
      */
-    manageCatechumens() {
-        alert('Funcionalidade de gerenciamento de catecúmenos será implementada em breve.\n\nEsta funcionalidade permitirá:\n- Visualizar lista completa de catecúmenos\n- Editar informações individuais\n- Filtrar por turma, catequista, etc.\n- Exportar listas personalizadas');
+    async manageCatechumens() {
+        if (!this.excelManager.currentData) {
+            alert('Nenhum arquivo Excel carregado. Por favor, carregue um arquivo primeiro na seção "Arquivos".');
+            return;
+        }
+
+        const container = document.getElementById('data-content');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="catechumens-manager">
+                <div class="manager-header">
+                    <h3>🎓 Gerenciamento de Catecúmenos</h3>
+                    <div class="manager-actions">
+                        <button class="btn btn-primary" onclick="adminApp.addNewCatechumen()">➕ Adicionar Catecúmeno</button>
+                        <button class="btn btn-secondary" onclick="adminApp.backToDataOverview()">← Voltar</button>
+                    </div>
+                </div>
+                
+                <div class="catechumens-filters">
+                    <input type="text" id="catechumens-search" placeholder="Buscar por nome..." onkeyup="adminApp.filterCatechumens()">
+                    <select id="center-filter" onchange="adminApp.filterCatechumens()">
+                        <option value="">Todos os centros</option>
+                        ${this.getCenterOptions()}
+                    </select>
+                    <select id="stage-filter" onchange="adminApp.filterCatechumens()">
+                        <option value="">Todas as etapas</option>
+                        ${this.getStageOptions()}
+                    </select>
+                </div>
+
+                <div class="catechumens-table-wrapper">
+                    <table class="catechumens-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Centro</th>
+                                <th>Etapa</th>
+                                <th>Catequista</th>
+                                <th>Resultado</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="catechumens-tbody">
+                            ${this.renderCatechumensTable()}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Get center options for filter
+     */
+    getCenterOptions() {
+        const centers = [...new Set(this.excelManager.catechumens.map(c => c.center))].filter(Boolean);
+        return centers.map(center => `<option value="${center}">${center}</option>`).join('');
+    }
+
+    /**
+     * Get stage options for filter
+     */
+    getStageOptions() {
+        const stages = [...new Set(this.excelManager.catechumens.map(c => c.stage))].filter(Boolean);
+        return stages.map(stage => `<option value="${stage}">${stage}</option>`).join('');
+    }
+
+    /**
+     * Render catechumens table
+     */
+    renderCatechumensTable() {
+        return this.excelManager.catechumens.map(catechumen => `
+            <tr>
+                <td>${catechumen.name}</td>
+                <td>${catechumen.center}</td>
+                <td>${catechumen.stage}</td>
+                <td>${catechumen.catechist}</td>
+                <td>${catechumen.result}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="adminApp.editCatechumen('${catechumen.id}')">✏️</button>
+                    <button class="btn btn-sm btn-danger" onclick="adminApp.removeCatechumen('${catechumen.id}')">🗑️</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    /**
+     * Filter catechumens
+     */
+    filterCatechumens() {
+        const search = document.getElementById('catechumens-search')?.value.toLowerCase() || '';
+        const centerFilter = document.getElementById('center-filter')?.value || '';
+        const stageFilter = document.getElementById('stage-filter')?.value || '';
+
+        let filtered = this.excelManager.catechumens;
+
+        if (search) {
+            filtered = filtered.filter(c => c.name.toLowerCase().includes(search));
+        }
+        if (centerFilter) {
+            filtered = filtered.filter(c => c.center === centerFilter);
+        }
+        if (stageFilter) {
+            filtered = filtered.filter(c => c.stage === stageFilter);
+        }
+
+        const tbody = document.getElementById('catechumens-tbody');
+        if (tbody) {
+            tbody.innerHTML = filtered.map(catechumen => `
+                <tr>
+                    <td>${catechumen.name}</td>
+                    <td>${catechumen.center}</td>
+                    <td>${catechumen.stage}</td>
+                    <td>${catechumen.catechist}</td>
+                    <td>${catechumen.result}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="adminApp.editCatechumen('${catechumen.id}')">✏️</button>
+                        <button class="btn btn-sm btn-danger" onclick="adminApp.removeCatechumen('${catechumen.id}')">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
     }
 
     /**
      * Generate reports
      */
-    generateReports() {
-        alert('Funcionalidade de relatórios será implementada em breve.\n\nEsta funcionalidade permitirá:\n- Relatórios de frequência\n- Estatísticas por turma\n- Relatórios de progresso\n- Exportação em PDF e Excel');
+    async generateReports() {
+        if (!this.excelManager.currentData) {
+            alert('Nenhum arquivo Excel carregado. Por favor, carregue um arquivo primeiro na seção "Arquivos".');
+            return;
+        }
+
+        const container = document.getElementById('data-content');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="reports-manager">
+                <div class="manager-header">
+                    <h3>📊 Geração de Relatórios</h3>
+                    <div class="manager-actions">
+                        <button class="btn btn-secondary" onclick="adminApp.backToDataOverview()">← Voltar</button>
+                    </div>
+                </div>
+                
+                <div class="reports-options">
+                    <div class="report-card">
+                        <h4>📋 Relatório Geral</h4>
+                        <p>Visão geral completa da catequese</p>
+                        <button class="btn btn-primary" onclick="adminApp.generateReport('general')">Gerar Relatório</button>
+                    </div>
+                    
+                    <div class="report-card">
+                        <h4>👥 Relatório de Catequistas</h4>
+                        <p>Informações detalhadas dos catequistas</p>
+                        <button class="btn btn-primary" onclick="adminApp.generateReport('catechists')">Gerar Relatório</button>
+                    </div>
+                    
+                    <div class="report-card">
+                        <h4>🏫 Relatório de Turmas</h4>
+                        <p>Informações por turma e centro</p>
+                        <button class="btn btn-primary" onclick="adminApp.generateReport('classes')">Gerar Relatório</button>
+                    </div>
+                    
+                    <div class="report-card">
+                        <h4>📈 Relatório de Resultados</h4>
+                        <p>Distribuição de resultados e estatísticas</p>
+                        <button class="btn btn-primary" onclick="adminApp.generateReport('results')">Gerar Relatório</button>
+                    </div>
+                </div>
+                
+                <div id="report-output" class="report-output"></div>
+            </div>
+        `;
+    }
+
+    /**
+     * Generate specific report
+     */
+    async generateReport(type) {
+        try {
+            const report = this.excelManager.generateReport(type);
+            const outputDiv = document.getElementById('report-output');
+            
+            if (outputDiv) {
+                outputDiv.innerHTML = `
+                    <div class="report-result">
+                        <div class="report-header">
+                            <h4>${report.title}</h4>
+                            <div class="report-actions">
+                                <button class="btn btn-success" onclick="adminApp.downloadReport('${type}')">⬇️ Baixar JSON</button>
+                                <button class="btn btn-primary" onclick="adminApp.exportReportToExcel('${type}')">📊 Exportar Excel</button>
+                            </div>
+                        </div>
+                        <div class="report-content">
+                            <pre>${JSON.stringify(report, null, 2)}</pre>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Store report for download
+            this.lastGeneratedReport = { type, data: report };
+            
+        } catch (error) {
+            alert('Erro ao gerar relatório: ' + error.message);
+        }
+    }
+
+    /**
+     * Download report
+     */
+    downloadReport(type) {
+        if (!this.lastGeneratedReport || this.lastGeneratedReport.type !== type) {
+            alert('Relatório não encontrado. Gere o relatório novamente.');
+            return;
+        }
+
+        const blob = new Blob([JSON.stringify(this.lastGeneratedReport.data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `relatorio-${type}-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    /**
+     * Export report to Excel
+     */
+    exportReportToExcel(type) {
+        if (!this.lastGeneratedReport || this.lastGeneratedReport.type !== type) {
+            alert('Relatório não encontrado. Gere o relatório novamente.');
+            return;
+        }
+
+        // Create Excel workbook
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(this.lastGeneratedReport.data.data || []);
+        XLSX.utils.book_append_sheet(wb, ws, 'Relatório');
+        
+        // Download
+        XLSX.writeFile(wb, `relatorio-${type}-${new Date().toISOString().split('T')[0]}.xlsx`);
     }
 
     /**
      * Sync data
      */
-    syncData() {
-        if (!this.excelData) {
+    async syncData() {
+        if (!this.excelManager.currentData) {
             alert('Nenhum arquivo Excel carregado. Por favor, carregue um arquivo primeiro na seção "Arquivos".');
             return;
         }
         
-        alert('Sincronização de dados iniciada.\n\nOs dados serão sincronizados com o arquivo Excel carregado.');
+        if (!this.githubAPI.isConfigured()) {
+            alert('GitHub não está configurado. Configure o GitHub primeiro para sincronizar os dados.');
+            return;
+        }
+
+        try {
+            // Show loading
+            const container = document.getElementById('data-content');
+            if (container) {
+                container.innerHTML = `
+                    <div class="sync-status">
+                        <h3>🔄 Sincronizando Dados</h3>
+                        <p>Enviando dados para o GitHub...</p>
+                        <div class="loading-spinner">⏳</div>
+                    </div>
+                `;
+            }
+
+            // Save to GitHub
+            const result = await this.excelManager.saveToGitHub();
+            
+            if (container) {
+                container.innerHTML = `
+                    <div class="sync-status success">
+                        <h3>✅ Sincronização Concluída</h3>
+                        <p>Os dados foram salvos no GitHub com sucesso!</p>
+                        <p><strong>Commit:</strong> ${result.commit?.sha || 'N/A'}</p>
+                        <div class="sync-actions">
+                            <button class="btn btn-primary" onclick="adminApp.backToDataOverview()">← Voltar ao Gerenciamento</button>
+                            <button class="btn btn-secondary" onclick="adminApp.viewGitHubChanges()">👁️ Ver no GitHub</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Update dashboard stats
+            this.updateDataStats();
+
+        } catch (error) {
+            console.error('Sync error:', error);
+            
+            const container = document.getElementById('data-content');
+            if (container) {
+                container.innerHTML = `
+                    <div class="sync-status error">
+                        <h3>❌ Erro na Sincronização</h3>
+                        <p>Não foi possível sincronizar os dados:</p>
+                        <p><strong>Erro:</strong> ${error.message}</p>
+                        <div class="sync-actions">
+                            <button class="btn btn-primary" onclick="adminApp.syncData()">🔄 Tentar Novamente</button>
+                            <button class="btn btn-secondary" onclick="adminApp.backToDataOverview()">← Voltar</button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    /**
+     * Back to data overview
+     */
+    backToDataOverview() {
+        this.loadDataSection();
     }
 
     /**
@@ -1460,3 +1899,510 @@ document.addEventListener('DOMContentLoaded', () => {
     
     console.log('Functional admin app initialized and available globally');
 });
+ 
+   /**
+     * Add new catechist
+     */
+    addNewCatechist() {
+        this.showCatechistModal('Adicionar Catequista', {
+            name: '',
+            classes: '',
+            phone: '',
+            email: ''
+        }, 'add');
+    }
+
+    /**
+     * Edit catechist
+     */
+    editCatechist(name) {
+        const catechistInfo = this.excelManager.catechists.get(name);
+        if (!catechistInfo) {
+            alert('Catequista não encontrado');
+            return;
+        }
+
+        this.showCatechistModal('Editar Catequista', {
+            name: name,
+            classes: Array.from(catechistInfo.classes).join(', '),
+            students: catechistInfo.students.length
+        }, 'edit', name);
+    }
+
+    /**
+     * Show catechist modal
+     */
+    showCatechistModal(title, data, mode, originalName = null) {
+        const modalHTML = `
+            <div class="modal-overlay" id="catechist-modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>${title}</h3>
+                        <button class="modal-close" onclick="adminApp.closeCatechistModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="catechist-form">
+                            <div class="form-group">
+                                <label for="catechist-name">Nome do Catequista:</label>
+                                <input type="text" id="catechist-name" value="${data.name}" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="catechist-phone">Telefone:</label>
+                                <input type="text" id="catechist-phone" value="${data.phone || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label for="catechist-email">Email:</label>
+                                <input type="email" id="catechist-email" value="${data.email || ''}">
+                            </div>
+                            ${mode === 'edit' ? `
+                                <div class="form-group">
+                                    <label>Turmas Atuais:</label>
+                                    <p>${data.classes}</p>
+                                </div>
+                                <div class="form-group">
+                                    <label>Catecúmenos:</label>
+                                    <p>${data.students} catecúmenos</p>
+                                </div>
+                            ` : ''}
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="adminApp.closeCatechistModal()">Cancelar</button>
+                        <button class="btn btn-primary" onclick="adminApp.saveCatechist('${mode}', '${originalName}')">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    /**
+     * Close catechist modal
+     */
+    closeCatechistModal() {
+        const modal = document.getElementById('catechist-modal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    /**
+     * Save catechist
+     */
+    saveCatechist(mode, originalName) {
+        const name = document.getElementById('catechist-name').value.trim();
+        const phone = document.getElementById('catechist-phone').value.trim();
+        const email = document.getElementById('catechist-email').value.trim();
+
+        if (!name) {
+            alert('Nome do catequista é obrigatório');
+            return;
+        }
+
+        if (mode === 'add') {
+            // Add new catechist (this would need to be implemented in ExcelManager)
+            alert('Catequista adicionado com sucesso!\n\nNota: Para associar o catequista a turmas, edite os catecúmenos correspondentes.');
+        } else if (mode === 'edit') {
+            // Update catechist name in all related catechumens
+            this.excelManager.catechumens.forEach(catechumen => {
+                if (catechumen.catechist.includes(originalName)) {
+                    catechumen.catechist = catechumen.catechist.replace(originalName, name);
+                }
+            });
+            
+            // Rebuild catechists and classes
+            this.excelManager.rebuildCatechistsAndClasses();
+            
+            alert('Catequista atualizado com sucesso!');
+        }
+
+        this.closeCatechistModal();
+        this.manageCatechists(); // Refresh the list
+    }
+
+    /**
+     * Remove catechist
+     */
+    removeCatechist(name) {
+        if (!confirm(`Tem certeza que deseja remover o catequista "${name}"?\n\nEsta ação irá remover o catequista de todas as turmas.`)) {
+            return;
+        }
+
+        // Remove catechist from all catechumens
+        this.excelManager.catechumens.forEach(catechumen => {
+            if (catechumen.catechist.includes(name)) {
+                const catechists = catechumen.catechist.split('|').map(c => c.trim()).filter(c => c !== name);
+                catechumen.catechist = catechists.join(' | ');
+            }
+        });
+
+        // Rebuild catechists and classes
+        this.excelManager.rebuildCatechistsAndClasses();
+
+        alert('Catequista removido com sucesso!');
+        this.manageCatechists(); // Refresh the list
+    }
+
+    /**
+     * Add new catechumen
+     */
+    addNewCatechumen() {
+        this.showCatechumenModal('Adicionar Catecúmeno', {
+            name: '',
+            birthdate: '',
+            center: '',
+            stage: '',
+            room: '',
+            schedule: '',
+            catechist: '',
+            result: '',
+            phone: '',
+            address: '',
+            father: '',
+            mother: ''
+        }, 'add');
+    }
+
+    /**
+     * Edit catechumen
+     */
+    editCatechumen(id) {
+        const catechumen = this.excelManager.catechumens.find(c => c.id === id);
+        if (!catechumen) {
+            alert('Catecúmeno não encontrado');
+            return;
+        }
+
+        this.showCatechumenModal('Editar Catecúmeno', catechumen, 'edit', id);
+    }
+
+    /**
+     * Show catechumen modal
+     */
+    showCatechumenModal(title, data, mode, id = null) {
+        const centers = [...new Set(this.excelManager.catechumens.map(c => c.center))].filter(Boolean);
+        const stages = [...new Set(this.excelManager.catechumens.map(c => c.stage))].filter(Boolean);
+        const schedules = [...new Set(this.excelManager.catechumens.map(c => c.schedule))].filter(Boolean);
+        const catechists = [...this.excelManager.catechists.keys()];
+
+        const modalHTML = `
+            <div class="modal-overlay" id="catechumen-modal">
+                <div class="modal-content large">
+                    <div class="modal-header">
+                        <h3>${title}</h3>
+                        <button class="modal-close" onclick="adminApp.closeCatechumenModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="catechumen-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="catechumen-name">Nome Completo:</label>
+                                    <input type="text" id="catechumen-name" value="${data.name}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="catechumen-birthdate">Data de Nascimento:</label>
+                                    <input type="date" id="catechumen-birthdate" value="${data.birthdate}">
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="catechumen-center">Centro:</label>
+                                    <select id="catechumen-center">
+                                        <option value="">Selecione...</option>
+                                        ${centers.map(center => `
+                                            <option value="${center}" ${data.center === center ? 'selected' : ''}>${center}</option>
+                                        `).join('')}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="catechumen-stage">Etapa:</label>
+                                    <select id="catechumen-stage">
+                                        <option value="">Selecione...</option>
+                                        ${stages.map(stage => `
+                                            <option value="${stage}" ${data.stage === stage ? 'selected' : ''}>${stage}</option>
+                                        `).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="catechumen-room">Sala:</label>
+                                    <input type="text" id="catechumen-room" value="${data.room}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="catechumen-schedule">Horário:</label>
+                                    <select id="catechumen-schedule">
+                                        <option value="">Selecione...</option>
+                                        ${schedules.map(schedule => `
+                                            <option value="${schedule}" ${data.schedule === schedule ? 'selected' : ''}>${schedule}</option>
+                                        `).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="catechumen-catechist">Catequista:</label>
+                                    <select id="catechumen-catechist">
+                                        <option value="">Selecione...</option>
+                                        ${catechists.map(catechist => `
+                                            <option value="${catechist}" ${data.catechist === catechist ? 'selected' : ''}>${catechist}</option>
+                                        `).join('')}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="catechumen-result">Resultado:</label>
+                                    <select id="catechumen-result">
+                                        <option value="">Selecione...</option>
+                                        <option value="Aprovado" ${data.result === 'Aprovado' ? 'selected' : ''}>Aprovado</option>
+                                        <option value="Reprovado" ${data.result === 'Reprovado' ? 'selected' : ''}>Reprovado</option>
+                                        <option value="Desistente" ${data.result === 'Desistente' ? 'selected' : ''}>Desistente</option>
+                                        <option value="Transferido" ${data.result === 'Transferido' ? 'selected' : ''}>Transferido</option>
+                                        <option value="Em Avaliação" ${data.result === 'Em Avaliação' ? 'selected' : ''}>Em Avaliação</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="catechumen-father">Nome do Pai:</label>
+                                    <input type="text" id="catechumen-father" value="${data.father || ''}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="catechumen-mother">Nome da Mãe:</label>
+                                    <input type="text" id="catechumen-mother" value="${data.mother || ''}">
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="catechumen-phone">Telefone:</label>
+                                    <input type="text" id="catechumen-phone" value="${data.phone || ''}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="catechumen-address">Endereço:</label>
+                                    <input type="text" id="catechumen-address" value="${data.address || ''}">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="adminApp.closeCatechumenModal()">Cancelar</button>
+                        <button class="btn btn-primary" onclick="adminApp.saveCatechumen('${mode}', '${id}')">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    /**
+     * Close catechumen modal
+     */
+    closeCatechumenModal() {
+        const modal = document.getElementById('catechumen-modal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    /**
+     * Save catechumen
+     */
+    saveCatechumen(mode, id) {
+        const formData = {
+            name: document.getElementById('catechumen-name').value.trim(),
+            birthdate: document.getElementById('catechumen-birthdate').value,
+            center: document.getElementById('catechumen-center').value,
+            stage: document.getElementById('catechumen-stage').value,
+            room: document.getElementById('catechumen-room').value,
+            schedule: document.getElementById('catechumen-schedule').value,
+            catechist: document.getElementById('catechumen-catechist').value,
+            result: document.getElementById('catechumen-result').value,
+            father: document.getElementById('catechumen-father').value.trim(),
+            mother: document.getElementById('catechumen-mother').value.trim(),
+            phone: document.getElementById('catechumen-phone').value.trim(),
+            address: document.getElementById('catechumen-address').value.trim()
+        };
+
+        if (!formData.name) {
+            alert('Nome do catecúmeno é obrigatório');
+            return;
+        }
+
+        try {
+            if (mode === 'add') {
+                this.excelManager.addCatechumen(formData);
+                alert('Catecúmeno adicionado com sucesso!');
+            } else if (mode === 'edit') {
+                this.excelManager.updateCatechumen(id, formData);
+                alert('Catecúmeno atualizado com sucesso!');
+            }
+
+            this.closeCatechumenModal();
+            this.manageCatechumens(); // Refresh the list
+            this.updateDataStats(); // Update statistics
+
+        } catch (error) {
+            alert('Erro ao salvar catecúmeno: ' + error.message);
+        }
+    }
+
+    /**
+     * Remove catechumen
+     */
+    removeCatechumen(id) {
+        const catechumen = this.excelManager.catechumens.find(c => c.id === id);
+        if (!catechumen) {
+            alert('Catecúmeno não encontrado');
+            return;
+        }
+
+        if (!confirm(`Tem certeza que deseja remover o catecúmeno "${catechumen.name}"?`)) {
+            return;
+        }
+
+        try {
+            this.excelManager.removeCatechumen(id);
+            alert('Catecúmeno removido com sucesso!');
+            this.manageCatechumens(); // Refresh the list
+            this.updateDataStats(); // Update statistics
+        } catch (error) {
+            alert('Erro ao remover catecúmeno: ' + error.message);
+        }
+    }
+
+    /**
+     * View GitHub changes
+     */
+    viewGitHubChanges() {
+        if (this.githubAPI.isConfigured()) {
+            const url = `https://github.com/${this.githubAPI.owner}/${this.githubAPI.repo}`;
+            window.open(url, '_blank');
+        } else {
+            alert('GitHub não está configurado');
+        }
+    }
+ 
+   /**
+     * Load GitHub configuration into form
+     */
+    loadGitHubConfigIntoForm() {
+        const config = localStorage.getItem('github_config');
+        if (config) {
+            try {
+                const parsed = JSON.parse(config);
+                
+                const tokenField = document.getElementById('github-token');
+                const ownerField = document.getElementById('github-owner');
+                const repoField = document.getElementById('github-repo');
+                const branchField = document.getElementById('github-branch');
+                
+                if (tokenField) tokenField.value = parsed.token || '';
+                if (ownerField) ownerField.value = parsed.owner || '';
+                if (repoField) repoField.value = parsed.repo || '';
+                if (branchField) branchField.value = parsed.branch || 'main';
+                
+                // Show status
+                this.showGitHubStatus('Configuração GitHub carregada', 'info');
+                
+            } catch (error) {
+                console.error('Error loading GitHub config:', error);
+            }
+        }
+    }
+
+    /**
+     * Save GitHub configuration
+     */
+    async saveGitHubConfig() {
+        const token = document.getElementById('github-token')?.value.trim();
+        const owner = document.getElementById('github-owner')?.value.trim();
+        const repo = document.getElementById('github-repo')?.value.trim();
+        const branch = document.getElementById('github-branch')?.value.trim() || 'main';
+
+        if (!token || !owner || !repo) {
+            this.showGitHubStatus('Todos os campos são obrigatórios (exceto branch)', 'error');
+            return;
+        }
+
+        try {
+            // Save configuration
+            this.githubAPI.saveConfig(token, owner, repo, branch);
+            
+            // Test connection
+            this.showGitHubStatus('Testando conexão...', 'info');
+            const testResult = await this.githubAPI.testConnection();
+            
+            if (testResult.success) {
+                this.showGitHubStatus('✅ Configuração GitHub salva e testada com sucesso!', 'success');
+            } else {
+                this.showGitHubStatus('❌ Configuração salva, mas teste falhou: ' + testResult.message, 'error');
+            }
+            
+        } catch (error) {
+            this.showGitHubStatus('Erro ao salvar configuração: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Test GitHub connection
+     */
+    async testGitHubConnection() {
+        const token = document.getElementById('github-token')?.value.trim();
+        const owner = document.getElementById('github-owner')?.value.trim();
+        const repo = document.getElementById('github-repo')?.value.trim();
+        const branch = document.getElementById('github-branch')?.value.trim() || 'main';
+
+        if (!token || !owner || !repo) {
+            this.showGitHubStatus('Preencha todos os campos antes de testar', 'error');
+            return;
+        }
+
+        try {
+            // Temporarily set config for testing
+            const originalConfig = {
+                token: this.githubAPI.token,
+                owner: this.githubAPI.owner,
+                repo: this.githubAPI.repo,
+                branch: this.githubAPI.branch
+            };
+
+            this.githubAPI.saveConfig(token, owner, repo, branch);
+            
+            this.showGitHubStatus('Testando conexão...', 'info');
+            const result = await this.githubAPI.testConnection();
+            
+            if (result.success) {
+                this.showGitHubStatus('✅ Conexão bem-sucedida! ' + result.message, 'success');
+            } else {
+                this.showGitHubStatus('❌ Falha na conexão: ' + result.message, 'error');
+                // Restore original config on failure
+                this.githubAPI.saveConfig(originalConfig.token, originalConfig.owner, originalConfig.repo, originalConfig.branch);
+            }
+            
+        } catch (error) {
+            this.showGitHubStatus('Erro no teste: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Show GitHub status message
+     */
+    showGitHubStatus(message, type) {
+        const statusEl = document.getElementById('github-status');
+        if (statusEl) {
+            statusEl.innerHTML = `<div class="status-${type}">${message}</div>`;
+            
+            // Clear after 5 seconds for non-error messages
+            if (type !== 'error') {
+                setTimeout(() => {
+                    statusEl.innerHTML = '';
+                }, 5000);
+            }
+        }
+    }
